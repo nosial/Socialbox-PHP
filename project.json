@@ -1,0 +1,39 @@
+{
+    "project": {
+        "compiler": {
+            "extension": "php",
+            "minimum_version": "8.0",
+            "maximum_version": "8.2"
+        }
+    },
+    "assembly": {
+        "name": "socialbox",
+        "package": "net.nosial.socialbox",
+        "version": "1.0.0",
+        "uuid": "573597f7-c7f0-408a-8a02-462756927cb6"
+    },
+    "build": {
+        "source_path": "src/Socialbox",
+        "default_configuration": "release",
+        "define_constants": {
+            "ASSEMBLY_PACKAGE": "%ASSEMBLY.PACKAGE%",
+            "ASSEMBLY_VERSION": "%ASSEMBLY.VERSION%",
+            "ASSEMBLY_UID": "%ASSEMBLY.UID%"
+        },
+        "configurations": [
+            {
+                "name": "release",
+                "build_type": "ncc",
+                "output": "build/release/%ASSEMBLY.PACKAGE%.ncc"
+            },
+            {
+                "name": "debug",
+                "build_type": "ncc",
+                "output": "build/debug/%ASSEMBLY.PACKAGE%.ncc",
+                "define_constants": {
+                    "DEBUG": "1"
+                }
+            }
+        ]
+    }
+}
