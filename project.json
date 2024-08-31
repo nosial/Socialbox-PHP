@@ -7,7 +7,7 @@
         }
     },
     "assembly": {
-        "name": "socialbox",
+        "name": "Socialbox",
         "package": "net.nosial.socialbox",
         "version": "1.0.0",
         "uuid": "573597f7-c7f0-408a-8a02-462756927cb6"
