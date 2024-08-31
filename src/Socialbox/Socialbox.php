@@ -2,7 +2,7 @@
 
     namespace socialbox;
 
-    class socialbox
+    class Socialbox
     {
 
     }
