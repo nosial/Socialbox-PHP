@@ -3,8 +3,9 @@
 namespace Socialbox\Abstracts;
 
 use Socialbox\Enums\EntityType;
+use Socialbox\Interfaces\SerializableInterface;
 
-abstract class Entity
+abstract class Entity implements SerializableInterface
 {
     protected string $uuid;
     protected EntityType $type;
@@ -84,5 +85,31 @@ abstract class Entity
     public function getAddress(): string
     {
         return sprintf('%s@%s', $this->username, $this->domain);
+    }
+
+    /**
+     * Serializes the entity to an array.
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'uuid' => $this->uuid,
+            'type' => $this->type,
+            'username' => $this->username,
+            'domain' => $this->domain,
+            'display_name' => $this->display_name,
+        ];
+    }
+
+    /**
+     * Constructs the entity object from an array of data.
+     *
+     * @param array $data The data to construct the entity from.
+     */
+    public static function fromArray(array $data): Entity
+    {
+        return new static($data);
     }
 }
