@@ -2,7 +2,6 @@
 
 namespace Socialbox\Objects;
 
-use Socialbox\Abstracts\Entity;
 use Socialbox\Interfaces\SerializableInterface;
 
 class RpcRequest implements SerializableInterface
