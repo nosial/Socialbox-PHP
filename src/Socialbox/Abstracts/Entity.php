@@ -108,7 +108,7 @@ abstract class Entity implements SerializableInterface
      *
      * @param array $data The data to construct the entity from.
      */
-    public static function fromArray(array $data): Entity
+    public static function fromArray(array $data): static
     {
         return new static($data);
     }
