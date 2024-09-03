@@ -16,5 +16,5 @@ interface SerializableInterface
      *
      * @param array $data The data to construct the object from.
      */
-    public static function fromArray(array $data): static;
+    public static function fromArray(array $data): object;
 }
