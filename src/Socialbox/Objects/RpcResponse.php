@@ -2,7 +2,9 @@
 
 namespace Socialbox\Objects;
 
-class RpcResponse
+use Socialbox\Interfaces\SerializableInterface;
+
+class RpcResponse implements SerializableInterface
 {
     private string $id;
     private ?object $result;
