@@ -2,8 +2,6 @@
 
 namespace Socialbox\Interfaces;
 
-use Socialbox\Abstracts\Entity;
-
 interface SerializableInterface
 {
     /**
@@ -18,5 +16,5 @@ interface SerializableInterface
      *
      * @param array $data The data to construct the object from.
      */
-    public static function fromArray(array $data): Entity;
+    public static function fromArray(array $data): static;
 }
