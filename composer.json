@@ -1,0 +1,14 @@
+{
+  "name": "vendor_name/socialbox-php",
+  "description": "description",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Netkas",
+      "email": "netkas@nosial.net"
+    }
+  ],
+  "require": {
+  }
+}

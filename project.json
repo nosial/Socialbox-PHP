@@ -34,6 +34,14 @@
                     "DEBUG": "1"
                 }
             }
+        ],
+        "dependencies": [
+            {
+                "name": "com.symfony.uid",
+                "version": "latest",
+                "source_type": "remote",
+                "source": "symfony/uid=latest@packagist"
+            }
         ]
     }
 }
