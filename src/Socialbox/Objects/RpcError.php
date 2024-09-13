@@ -2,26 +2,27 @@
 
 namespace Socialbox\Objects;
 
+use Socialbox\Enums\StandardError;
 use Socialbox\Interfaces\SerializableInterface;
 
 class RpcError implements SerializableInterface
 {
     private string $id;
-    private string $error;
-    private int $code;
+    private string $message;
+    private StandardError $code;
 
     /**
      * Constructs the RPC error object.
      *
      * @param string $id The ID of the RPC request
-     * @param string $error The error message
-     * @param int $code The error code
+     * @param StandardError $error The error code
+     * @param string $message The error message
      */
-    public function __construct(string $id, string $error, int $code)
+    public function __construct(string $id, StandardError $error, string $message)
     {
         $this->id = $id;
-        $this->error = $error;
-        $this->code = $code;
+        $this->code = $error;
+        $this->message = $message;
     }
 
     /**
@@ -39,17 +40,17 @@ class RpcError implements SerializableInterface
      *
      * @return string The error message.
      */
-    public function getError(): string
+    public function getMessage(): string
     {
-        return $this->error;
+        return $this->message;
     }
 
     /**
      * Returns the error code.
      *
-     * @return int The error code.
+     * @return StandardError The error code.
      */
-    public function getCode(): int
+    public function getCode(): StandardError
     {
         return $this->code;
     }
@@ -63,8 +64,8 @@ class RpcError implements SerializableInterface
     {
         return [
             'id' => $this->id,
-            'error' => $this->error,
-            'code' => $this->code
+            'error' => $this->message,
+            'code' => $this->code->value
         ];
     }
 
@@ -76,6 +77,13 @@ class RpcError implements SerializableInterface
      */
     public static function fromArray(array $data): RpcError
     {
-        return new RpcError($data['id'], $data['error'], $data['code']);
+        $errorCode = StandardError::tryFrom($data['code']);
+
+        if($errorCode == null)
+        {
+            $errorCode = StandardError::UNKNOWN;
+        }
+
+        return new RpcError($data['id'], $data['error'], $errorCode);
     }
 }

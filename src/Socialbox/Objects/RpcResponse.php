@@ -7,15 +7,15 @@ use Socialbox\Interfaces\SerializableInterface;
 class RpcResponse implements SerializableInterface
 {
     private string $id;
-    private ?object $result;
+    private mixed $result;
 
     /**
      * Constructs the response object.
      *
      * @param string $id The ID of the response.
-     * @param object|null $result The result of the response.
+     * @param mixed|null $result The result of the response.
      */
-    public function __construct(string $id, ?object $result)
+    public function __construct(string $id, mixed $result)
     {
         $this->id = $id;
         $this->result = $result;
@@ -34,11 +34,35 @@ class RpcResponse implements SerializableInterface
     /**
      * Returns the result of the response.
      *
-     * @return object|null The result of the response.
+     * @return mixed|null The result of the response.
      */
-    public function getResult(): ?object
+    public function getResult(): mixed
     {
         return $this->result;
+    }
+
+    /**
+     * Converts the given data to an array.
+     *
+     * @param mixed $data The data to be converted. This can be an instance of SerializableInterface, an array, or a scalar value.
+     * @return mixed The converted data as an array if applicable, or the original data.
+     */
+    private function convertToArray(mixed $data): mixed
+    {
+        // If the data is an instance of SerializableInterface, call toArray on it
+        if ($data instanceof SerializableInterface)
+        {
+            return $data->toArray();
+        }
+
+        // If the data is an array, recursively apply this method to each element
+        if (is_array($data))
+        {
+            return array_map([$this, 'convertToArray'], $data);
+        }
+
+        // Otherwise, return the data as-is (e.g., for scalar values)
+        return $data;
     }
 
     /**
@@ -50,7 +74,7 @@ class RpcResponse implements SerializableInterface
     {
         return [
             'id' => $this->id,
-            'result' => $this->result->toArray()
+            'result' => $this->convertToArray($this->result)
         ];
     }
 
