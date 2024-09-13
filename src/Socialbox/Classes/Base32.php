@@ -83,4 +83,32 @@ class Base32
 
         return $binary_string;
     }
+
+    public static function encode(string $data): string
+    {
+        $binaryLength = strlen($data);
+        $base32String = '';
+
+        $buffer = 0;
+        $bitsLeft = 0;
+
+        for ($i = 0; $i < $binaryLength; $i++)
+        {
+            $buffer = ($buffer << 8) | (ord($data[$i]) & 0xFF);
+            $bitsLeft += 8;
+
+            while ($bitsLeft >= 5)
+            {
+                $base32String .= self::LOOKUP_TABLE[($buffer >> ($bitsLeft - 5)) & 0x1F];
+                $bitsLeft -= 5;
+            }
+        }
+
+        if ($bitsLeft > 0)
+        {
+            $base32String .= self::LOOKUP_TABLE[($buffer << (5 - $bitsLeft)) & 0x1F];
+        }
+
+        return $base32String;
+    }
 }
