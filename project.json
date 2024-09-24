@@ -2,8 +2,11 @@
     "project": {
         "compiler": {
             "extension": "php",
-            "minimum_version": "8.0",
-            "maximum_version": "8.2"
+            "minimum_version": "8.2",
+            "maximum_version": "8.0"
+        },
+        "options": {
+            "create_symlink": true
         }
     },
     "assembly": {
@@ -15,11 +18,24 @@
     "build": {
         "source_path": "src/Socialbox",
         "default_configuration": "release",
+        "main": "main_policy",
         "define_constants": {
             "ASSEMBLY_PACKAGE": "%ASSEMBLY.PACKAGE%",
             "ASSEMBLY_VERSION": "%ASSEMBLY.VERSION%",
             "ASSEMBLY_UID": "%ASSEMBLY.UID%"
         },
+        "dependencies": [
+            {
+                "name": "com.symfony.uid",
+                "version": "latest",
+                "source": "symfony/uid=latest@packagist"
+            },
+            {
+                "name": "net.nosial.configlib",
+                "version": "latest",
+                "source": "nosial/libs.config=latest@n64"
+            }
+        ],
         "configurations": [
             {
                 "name": "release",
@@ -33,15 +49,40 @@
                 "define_constants": {
                     "DEBUG": "1"
                 }
-            }
-        ],
-        "dependencies": [
+            },
             {
-                "name": "com.symfony.uid",
-                "version": "latest",
-                "source_type": "remote",
-                "source": "symfony/uid=latest@packagist"
+                "name": "release_executable",
+                "build_type": "executable",
+                "output": "build/release/%ASSEMBLY.NAME%",
+                "options": {
+                    "ncc_configuration": "release"
+                }
+            },
+            {
+                "name": "debug_executable",
+                "build_type": "executable",
+                "output": "build/debug/%ASSEMBLY.NAME%",
+                "options": {
+                    "ncc_configuration": "debug"
+                },
+                "define_constants": {
+                    "DEBUG": "1"
+                }
             }
         ]
-    }
+    },
+    "execution_policies": [
+        {
+            "name": "main_policy",
+            "runner": "php",
+            "execute": {
+                "working_directory": "%CWD%",
+                "silent": false,
+                "tty": true,
+                "timeout": null,
+                "idle_timeout": null,
+                "target": "main"
+            }
+        }
+    ]
 }

@@ -12,134 +12,18 @@
   </component>
   <component name="PhpIncludePathManager">
     <include_path>
-      <path value="$PROJECT_DIR$/../../../var/ncc/packages/com.symfony.uid=v7.1.4" />
-      <path value="$PROJECT_DIR$/../.phive/phars" />
-      <path value="$PROJECT_DIR$/../../../etc/ncc" />
-      <path value="$PROJECT_DIR$/../../../usr/share/ncc" />
-      <path value="$PROJECT_DIR$/../../../etc/php" />
-      <path value="$PROJECT_DIR$/../../../var/www/html" />
-      <path value="$PROJECT_DIR$/../../../var/ncc/packages/net.nosial.socialbox=1.0.0" />
+      <path value="/var/ncc/packages/com.symfony.filesystem=v7.1.2" />
+      <path value="/var/ncc/packages/com.symfony.polyfill_ctype=v1.31.0" />
+      <path value="/var/ncc/packages/com.symfony.polyfill_mbstring=v1.31.0" />
+      <path value="/var/ncc/packages/com.symfony.polyfill_uuid=v1.31.0" />
+      <path value="/var/ncc/packages/com.symfony.process=2.0.7" />
+      <path value="/var/ncc/packages/com.symfony.uid=v7.1.4" />
+      <path value="/var/ncc/packages/com.symfony.yaml=2.0.7" />
+      <path value="/var/ncc/packages/net.nosial.configlib=1.0.4" />
+      <path value="/var/ncc/packages/net.nosial.loglib=1.1.0" />
+      <path value="/var/ncc/packages/net.nosial.optslib=1.1.0" />
+      <path value="/usr/share/ncc" />
     </include_path>
-  </component>
-  <component name="PhpInterpreters">
-    <interpreters>
-      <interpreter id="ca3a8963-de43-46f5-b440-698923ca9fc3" name="PHP WSL 8.1.2" home="\\wsl$\Ubuntu/usr/bin/php" auto="false" debugger_id="php.debugger.XDebug">
-        <remote_data INTERPRETER_PATH="/usr/bin/php" HELPERS_PATH="" VALID="true" RUN_AS_ROOT_VIA_SUDO="false" DISTRIBUTION_ID="Ubuntu" />
-      </interpreter>
-      <interpreter id="97a5bd20-380b-4ced-b7c8-1ab65b74addb" name="PHP WSL 8.3.11" home="\\wsl$\Ubuntu/usr/bin/php" auto="false" debugger_id="php.debugger.XDebug">
-        <remote_data INTERPRETER_PATH="/usr/bin/php" HELPERS_PATH="" VALID="true" RUN_AS_ROOT_VIA_SUDO="false" DISTRIBUTION_ID="Ubuntu" />
-      </interpreter>
-    </interpreters>
-  </component>
-  <component name="PhpInterpretersPhpInfoCache">
-    <phpInfoCache>
-      <interpreter name="PHP WSL 8.3.11">
-        <phpinfo binary_type="PHP" php_cgi="/usr/bin/php-cgi" php_cli="/usr/bin/php8.3" path_separator=":" remote_host="10.255.255.254" version="8.3.11">
-          <additional_php_ini>/etc/php/8.3/cli/conf.d/10-opcache.ini, /etc/php/8.3/cli/conf.d/10-pdo.ini, /etc/php/8.3/cli/conf.d/20-calendar.ini, /etc/php/8.3/cli/conf.d/20-ctype.ini, /etc/php/8.3/cli/conf.d/20-exif.ini, /etc/php/8.3/cli/conf.d/20-ffi.ini, /etc/php/8.3/cli/conf.d/20-fileinfo.ini, /etc/php/8.3/cli/conf.d/20-ftp.ini, /etc/php/8.3/cli/conf.d/20-gettext.ini, /etc/php/8.3/cli/conf.d/20-iconv.ini, /etc/php/8.3/cli/conf.d/20-igbinary.ini, /etc/php/8.3/cli/conf.d/20-memcache.ini, /etc/php/8.3/cli/conf.d/20-phar.ini, /etc/php/8.3/cli/conf.d/20-posix.ini, /etc/php/8.3/cli/conf.d/20-readline.ini, /etc/php/8.3/cli/conf.d/20-redis.ini, /etc/php/8.3/cli/conf.d/20-shmop.ini, /etc/php/8.3/cli/conf.d/20-sockets.ini, /etc/php/8.3/cli/conf.d/20-sysvmsg.ini, /etc/php/8.3/cli/conf.d/20-sysvsem.ini, /etc/php/8.3/cli/conf.d/20-sysvshm.ini, /etc/php/8.3/cli/conf.d/20-tokenizer.ini</additional_php_ini>
-          <configuration_file>/etc/php/8.3/cli/php.ini</configuration_file>
-          <configuration_options>
-            <configuration_option name="include_path" value=".:/usr/share/php" />
-          </configuration_options>
-          <debuggers />
-          <loaded_extensions>
-            <extension name="Core" />
-            <extension name="FFI" />
-            <extension name="PDO" />
-            <extension name="Phar" />
-            <extension name="Reflection" />
-            <extension name="SPL" />
-            <extension name="Zend OPcache" />
-            <extension name="calendar" />
-            <extension name="ctype" />
-            <extension name="date" />
-            <extension name="exif" />
-            <extension name="fileinfo" />
-            <extension name="filter" />
-            <extension name="ftp" />
-            <extension name="gettext" />
-            <extension name="hash" />
-            <extension name="iconv" />
-            <extension name="igbinary" />
-            <extension name="json" />
-            <extension name="libxml" />
-            <extension name="memcache" />
-            <extension name="openssl" />
-            <extension name="pcntl" />
-            <extension name="pcre" />
-            <extension name="posix" />
-            <extension name="random" />
-            <extension name="readline" />
-            <extension name="redis" />
-            <extension name="session" />
-            <extension name="shmop" />
-            <extension name="sockets" />
-            <extension name="sodium" />
-            <extension name="standard" />
-            <extension name="sysvmsg" />
-            <extension name="sysvsem" />
-            <extension name="sysvshm" />
-            <extension name="tokenizer" />
-            <extension name="zlib" />
-          </loaded_extensions>
-        </phpinfo>
-      </interpreter>
-      <interpreter name="PHP WSL 8.1.2">
-        <phpinfo binary_type="PHP" php_cli="/usr/bin/php8.1" path_separator=":" remote_host="10.255.255.254" version="8.1.2-1ubuntu2.18">
-          <additional_php_ini>/etc/php/8.1/cli/conf.d/10-opcache.ini, /etc/php/8.1/cli/conf.d/10-pdo.ini, /etc/php/8.1/cli/conf.d/15-xml.ini, /etc/php/8.1/cli/conf.d/20-calendar.ini, /etc/php/8.1/cli/conf.d/20-ctype.ini, /etc/php/8.1/cli/conf.d/20-curl.ini, /etc/php/8.1/cli/conf.d/20-dom.ini, /etc/php/8.1/cli/conf.d/20-exif.ini, /etc/php/8.1/cli/conf.d/20-ffi.ini, /etc/php/8.1/cli/conf.d/20-fileinfo.ini, /etc/php/8.1/cli/conf.d/20-ftp.ini, /etc/php/8.1/cli/conf.d/20-gd.ini, /etc/php/8.1/cli/conf.d/20-gettext.ini, /etc/php/8.1/cli/conf.d/20-iconv.ini, /etc/php/8.1/cli/conf.d/20-mbstring.ini, /etc/php/8.1/cli/conf.d/20-phar.ini, /etc/php/8.1/cli/conf.d/20-posix.ini, /etc/php/8.1/cli/conf.d/20-readline.ini, /etc/php/8.1/cli/conf.d/20-shmop.ini, /etc/php/8.1/cli/conf.d/20-simplexml.ini, /etc/php/8.1/cli/conf.d/20-sockets.ini, /etc/php/8.1/cli/conf.d/20-sysvmsg.ini, /etc/php/8.1/cli/conf.d/20-sysvsem.ini, /etc/php/8.1/cli/conf.d/20-sysvshm.ini, /etc/php/8.1/cli/conf.d/20-tokenizer.ini, /etc/php/8.1/cli/conf.d/20-xmlreader.ini, /etc/php/8.1/cli/conf.d/20-xmlwriter.ini, /etc/php/8.1/cli/conf.d/20-xsl.ini, /etc/php/8.1/cli/conf.d/20-zip.ini</additional_php_ini>
-          <configuration_file>/etc/php/8.1/cli/php.ini</configuration_file>
-          <configuration_options>
-            <configuration_option name="include_path" value=".:/usr/share/php" />
-          </configuration_options>
-          <debuggers />
-          <loaded_extensions>
-            <extension name="Core" />
-            <extension name="FFI" />
-            <extension name="PDO" />
-            <extension name="Phar" />
-            <extension name="Reflection" />
-            <extension name="SPL" />
-            <extension name="SimpleXML" />
-            <extension name="Zend OPcache" />
-            <extension name="calendar" />
-            <extension name="ctype" />
-            <extension name="curl" />
-            <extension name="date" />
-            <extension name="dom" />
-            <extension name="exif" />
-            <extension name="fileinfo" />
-            <extension name="filter" />
-            <extension name="ftp" />
-            <extension name="gd" />
-            <extension name="gettext" />
-            <extension name="hash" />
-            <extension name="iconv" />
-            <extension name="json" />
-            <extension name="libxml" />
-            <extension name="mbstring" />
-            <extension name="openssl" />
-            <extension name="pcntl" />
-            <extension name="pcre" />
-            <extension name="posix" />
-            <extension name="readline" />
-            <extension name="session" />
-            <extension name="shmop" />
-            <extension name="sockets" />
-            <extension name="sodium" />
-            <extension name="standard" />
-            <extension name="sysvmsg" />
-            <extension name="sysvsem" />
-            <extension name="sysvshm" />
-            <extension name="tokenizer" />
-            <extension name="xml" />
-            <extension name="xmlreader" />
-            <extension name="xmlwriter" />
-            <extension name="xsl" />
-            <extension name="zip" />
-            <extension name="zlib" />
-          </loaded_extensions>
-        </phpinfo>
-      </interpreter>
-    </phpInfoCache>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.3" />
   <component name="PhpRuntimeConfiguration">
@@ -147,7 +31,6 @@
       <extension name="Ev" enabled="false" />
       <extension name="FFI" enabled="true" />
       <extension name="SQLite" enabled="false" />
-      <extension name="SimpleXML" enabled="false" />
       <extension name="SplType" enabled="false" />
       <extension name="ZendDebugger" enabled="false" />
       <extension name="ZendUtils" enabled="false" />
@@ -160,11 +43,9 @@
       <extension name="cassandra" enabled="false" />
       <extension name="couchbase" enabled="false" />
       <extension name="cubrid" enabled="false" />
-      <extension name="curl" enabled="false" />
       <extension name="dba" enabled="false" />
       <extension name="decimal" enabled="false" />
       <extension name="dio" enabled="false" />
-      <extension name="dom" enabled="false" />
       <extension name="elastic_apm" enabled="false" />
       <extension name="enchant" enabled="false" />
       <extension name="fann" enabled="false" />
@@ -183,20 +64,18 @@
       <extension name="imap" enabled="false" />
       <extension name="inotify" enabled="false" />
       <extension name="interbase" enabled="false" />
-      <extension name="intl" enabled="false" />
       <extension name="judy" enabled="false" />
       <extension name="ldap" enabled="false" />
       <extension name="libevent" enabled="false" />
       <extension name="libsodium" enabled="false" />
       <extension name="mailparse" enabled="false" />
-      <extension name="mbstring" enabled="false" />
-      <extension name="mcrypt" enabled="false" />
       <extension name="memcached" enabled="false" />
       <extension name="ming" enabled="false" />
       <extension name="mongo" enabled="false" />
       <extension name="mongodb" enabled="false" />
       <extension name="mosquitto-php" enabled="false" />
       <extension name="mqseries" enabled="false" />
+      <extension name="msgpack" enabled="true" />
       <extension name="mssql" enabled="false" />
       <extension name="mysql" enabled="false" />
       <extension name="mysql_xdevapi" enabled="false" />
@@ -208,7 +87,6 @@
       <extension name="opentelemetry" enabled="false" />
       <extension name="pdflib" enabled="false" />
       <extension name="pdo_ibm" enabled="false" />
-      <extension name="pdo_mysql" enabled="false" />
       <extension name="pdo_pgsql" enabled="false" />
       <extension name="pdo_sqlite" enabled="false" />
       <extension name="pgsql" enabled="false" />
@@ -232,17 +110,11 @@
       <extension name="wddx" enabled="false" />
       <extension name="win32service" enabled="false" />
       <extension name="wincache" enabled="false" />
-      <extension name="xdebug" enabled="false" />
       <extension name="xhprof" enabled="false" />
       <extension name="xlswriter" enabled="false" />
-      <extension name="xml" enabled="false" />
-      <extension name="xmlreader" enabled="false" />
       <extension name="xmlrpc" enabled="false" />
-      <extension name="xmlwriter" enabled="false" />
-      <extension name="xsl" enabled="false" />
       <extension name="yaml" enabled="false" />
       <extension name="zend" enabled="false" />
-      <extension name="zip" enabled="false" />
       <extension name="zmq" enabled="false" />
     </extensions>
   </component>
@@ -251,7 +123,7 @@
   </component>
   <component name="PhpUnit">
     <phpunit_settings>
-      <phpunit_by_interpreter interpreter_id="ca3a8963-de43-46f5-b440-698923ca9fc3" load_method="PHPUNIT_PHAR" custom_loader_path="" phpunit_phar_path="/phpunit" />
+      <PhpUnitSettings load_method="PHPUNIT_PHAR" bootstrap_file_path="$PROJECT_DIR$/phpunit.xml" custom_loader_path="" phpunit_phar_path="$USER_HOME$/phpunit.phar" />
     </phpunit_settings>
   </component>
   <component name="PsalmOptionsConfiguration">
