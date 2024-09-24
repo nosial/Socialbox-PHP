@@ -3,10 +3,12 @@
     namespace Socialbox;
 
     use ConfigLib\Configuration;
+    use Exception;
     use Socialbox\Classes\RpcHandler;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Exceptions\RpcException;
+    use Socialbox\Exceptions\StandardException;
 
     class Socialbox
     {
@@ -42,7 +44,19 @@
                     }
                 }
 
-                $response = $method->execute($clientRequest, $rpcRequest);
+                try
+                {
+                    $response = $method->execute($clientRequest, $rpcRequest);
+                }
+                catch(StandardException $e)
+                {
+                    $response = $e->produceError($rpcRequest);
+                }
+                catch(Exception $e)
+                {
+                    $response = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, 'An error occurred while processing the request');
+                }
+
                 if($response !== null)
                 {
                     $results[] = $response;
