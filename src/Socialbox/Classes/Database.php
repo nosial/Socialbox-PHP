@@ -13,7 +13,7 @@ class Database
     private static ?PDO $instance = null;
 
     /**
-     * @return mysqli
+     * @return PDO
      * @throws DatabaseOperationException
      */
     public static function getConnection(): PDO
@@ -22,7 +22,7 @@ class Database
         {
             try
             {
-                $dsn = 'mysql:host=172.27.0.1;dbname=socialbox;port=3306;charset=utf8mb4';
+                $dsn = 'mysql:host=127.0.0.1;dbname=socialbox;port=3306;charset=utf8mb4';
                 self::$instance = new PDO($dsn, 'root', 'root');
 
                 // Set some common PDO attributes for better error handling

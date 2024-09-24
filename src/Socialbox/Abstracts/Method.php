@@ -37,11 +37,7 @@ abstract class Method
 
         try
         {
-            if(!SessionManager::sessionExists($request->getSessionUuid()))
-            {
-                throw new StandardException(sprintf("The requested session %s was not found", $request->getSessionUuid()), StandardError::SESSION_NOT_FOUND);
-            }
-
+            // NOTE: If the session UUID was provided, it has already been validated up until this point
             return SessionManager::getSession($request->getSessionUuid());
         }
         catch(DatabaseOperationException $e)

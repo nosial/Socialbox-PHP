@@ -32,12 +32,12 @@
         {
             if($publicKey === '')
             {
-                throw new InvalidArgumentException('The public key cannot be empty', StandardError::RPC_INVALID_ARGUMENTS);
+                throw new InvalidArgumentException('The public key cannot be empty', 400);
             }
 
             if(!Cryptography::validatePublicKey($publicKey))
             {
-                throw new InvalidArgumentException('The given public key is invalid', StandardError::INVALID_PUBLIC_KEY);
+                throw new InvalidArgumentException('The given public key is invalid', 400);
             }
 
             $publicKey = Utilities::base64decode($publicKey);

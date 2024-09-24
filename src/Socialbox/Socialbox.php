@@ -2,6 +2,7 @@
 
     namespace Socialbox;
 
+    use ConfigLib\Configuration;
     use Socialbox\Classes\RpcHandler;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardMethods;
@@ -9,6 +10,11 @@
 
     class Socialbox
     {
+        public static function getConfiguration(): array
+        {
+
+        }
+
         public static function handleRpc(): void
         {
             try
@@ -29,7 +35,7 @@
 
                 if($method === false)
                 {
-                    $response = $rpcRequest->produceError(StandardError::RPC_METHOD_NOT_FOUND, 'The requested method does not exist');;
+                    $response = $rpcRequest->produceError(StandardError::RPC_METHOD_NOT_FOUND, 'The requested method does not exist');
                     if($response !== null)
                     {
                         $results[] = $response;
