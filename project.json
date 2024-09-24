@@ -34,6 +34,16 @@
                 "name": "net.nosial.configlib",
                 "version": "latest",
                 "source": "nosial/libs.config=latest@n64"
+            },
+            {
+                "name": "net.nosial.loglib",
+                "version": "latest",
+                "source": "nosial/libs.log=latest@n64"
+            },
+            {
+                "name": "net.nosial.optslib",
+                "version": "latest",
+                "source": "nosial/libs.opts=latest@n64"
             }
         ],
         "configurations": [
