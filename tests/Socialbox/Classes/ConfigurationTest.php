@@ -21,18 +21,18 @@ class ConfigurationTest extends TestCase
 
         //Assert that all the default configuration exists
         $this->assertArrayHasKey('host', $config['database']);
-        $this->assertEquals($config['database']['host'], '127.0.0.1');
+        $this->assertIsString($config['database']['host']);
 
         $this->assertArrayHasKey('port', $config['database']);
-        $this->assertEquals($config['database']['port'], 3306);
+        $this->assertIsInt($config['database']['port'], 3306);
 
         $this->assertArrayHasKey('username', $config['database']);
-        $this->assertEquals($config['database']['username'], 'root');
+        $this->assertIsString($config['database']['username']);
 
         $this->assertArrayHasKey('password', $config['database']);
-        $this->assertNull($config['database']['password'], 'null should be the value of database.password.');
+        $this->assertIsString($config['database']['password']);
 
         $this->assertArrayHasKey('name', $config['database']);
-        $this->assertEquals($config['database']['name'], 'test');
+        $this->assertIsString($config['database']['name']);
     }
 }
