@@ -4,6 +4,8 @@ namespace Socialbox\Exceptions;
 
 use Exception;
 use Socialbox\Enums\StandardError;
+use Socialbox\Objects\RpcError;
+use Socialbox\Objects\RpcRequest;
 use Throwable;
 
 class StandardException extends Exception
@@ -23,5 +25,10 @@ class StandardException extends Exception
     public function getStandardError(): StandardError
     {
         return StandardError::from($this->code);
+    }
+
+    public function produceError(RpcRequest $request): ?RpcError
+    {
+        return $request->produceError(StandardError::from($this->code), $this->message);
     }
 }
