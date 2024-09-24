@@ -20,7 +20,6 @@ class CreateSession extends Method
      * @param ClientRequest $request The client request object.
      * @param RpcRequest $rpcRequest The RPC request containing parameters for execution.
      * @return SerializableInterface|null Returns a response with the session UUID or an error.
-     * @throws StandardException Thrown if an error occurs during the session creation process.
      */
     public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
     {
