@@ -20,19 +20,19 @@ class ConfigurationTest extends TestCase
         $this->assertIsArray($config, "Configuration should be an array.");
 
         //Assert that all the default configuration exists
-        $this->assertArrayHasKey('database.host', $config);
-        $this->assertEquals($config['database.host'], '127.0.0.1');
+        $this->assertArrayHasKey('host', $config['database']);
+        $this->assertEquals($config['database']['host'], '127.0.0.1');
 
-        $this->assertArrayHasKey('database.port', $config);
-        $this->assertEquals($config['database.port'], 3306);
+        $this->assertArrayHasKey('port', $config['database']);
+        $this->assertEquals($config['database']['port'], 3306);
 
-        $this->assertArrayHasKey('database.username', $config);
-        $this->assertEquals($config['database.username'], 'root');
+        $this->assertArrayHasKey('username', $config['database']);
+        $this->assertEquals($config['database']['username'], 'root');
 
-        $this->assertArrayHasKey('database.password', $config);
-        $this->assertNull($config['database.password'], 'null should be the value of database.password.');
+        $this->assertArrayHasKey('password', $config['database']);
+        $this->assertNull($config['database']['password'], 'null should be the value of database.password.');
 
-        $this->assertArrayHasKey('database.name', $config);
-        $this->assertEquals($config['database.name'], 'test');
+        $this->assertArrayHasKey('name', $config['database']);
+        $this->assertEquals($config['database']['name'], 'test');
     }
 }
