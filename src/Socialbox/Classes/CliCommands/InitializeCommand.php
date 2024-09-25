@@ -13,10 +13,7 @@ use Socialbox\Interfaces\CliCommandInterface;
 class InitializeCommand implements CliCommandInterface
 {
     /**
-     * Executes the command with the given arguments.
-     *
-     * @param array $args An array of arguments to be processed.
-     * @return int The result of the execution as an integer.
+     * @inheritDoc
      */
     public static function execute(array $args): int
     {
@@ -61,9 +58,7 @@ class InitializeCommand implements CliCommandInterface
     }
 
     /**
-     * Returns the help message for the command.
-     *
-     * @return string The help message.
+     * @inheritDoc
      */
     public static function getHelpMessage(): string
     {
@@ -74,9 +69,7 @@ class InitializeCommand implements CliCommandInterface
     }
 
     /**
-     * Returns a short help message for the command.
-     *
-     * @return string
+     * @inheritDoc
      */
     public static function getShortHelpMessage(): string
     {
