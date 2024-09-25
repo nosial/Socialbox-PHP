@@ -6,6 +6,7 @@
         <entryData>
           <resourceRoots>
             <path value="file://$PROJECT_DIR$/examples" />
+            <path value="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources" />
           </resourceRoots>
         </entryData>
       </entry>

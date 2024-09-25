@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/password_authentication.sql" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/registered_peers.sql" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/sessions.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/SessionManager.php" dialect="MariaDB" />
     <file url="file:///var/ncc/packages/net.nosial.socialbox=1.0.0/bin/src/Socialbox/Managers/SessionManager.php" dialect="MariaDB" />
   </component>
