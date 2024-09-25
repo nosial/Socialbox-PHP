@@ -11,9 +11,9 @@ use Socialbox\Interfaces\SerializableInterface;
 
 class RpcRequest implements SerializableInterface
 {
-    protected ?string $id;
-    protected string $method;
-    protected ?array $parameters;
+    private ?string $id;
+    private string $method;
+    private ?array $parameters;
 
     /**
      * Constructs the object from an array of data.
