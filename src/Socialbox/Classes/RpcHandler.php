@@ -31,10 +31,9 @@ class RpcHandler
         try
         {
             $headers = Utilities::getRequestHeaders();
-
             foreach(StandardHeaders::getRequiredHeaders() as $header)
             {
-                if(!isset($headers[$header]))
+                if (!isset($headers[$header]))
                 {
                     throw new RpcException("Missing required header: $header", 400);
                 }
@@ -50,9 +49,9 @@ class RpcHandler
                         break;
 
                     case StandardHeaders::CONTENT_TYPE:
-                        if($headers[$header] !== 'application/json')
+                        if(!str_contains($headers[$header], 'application/json'))
                         {
-                            throw new RpcException("Invalid Content-Type header: Expected application/json", 400);
+                            throw new RpcException(sprintf("Invalid Content-Type header: Expected application/json, got %s", $headers[$header]), 400);
                         }
                         break;
 
@@ -81,7 +80,7 @@ class RpcHandler
             // If no signature is provided, it must be required if the client is providing a Session UUID
             if($clientRequest->getSignature() === null)
             {
-                throw new RpcException(sprintf('Unauthorized request, signature required for session based requests', StandardHeaders::SIGNATURE->value), 401);
+                throw new RpcException(sprintf('Unauthorized request, signature required for session based requests'), 401);
             }
 
             try
