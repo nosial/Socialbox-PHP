@@ -105,4 +105,16 @@ class Utilities
 
         return $headers;
     }
+
+    public static function throwableToString(\Throwable $e): string
+    {
+        return sprintf(
+            "%s: %s in %s:%d\nStack trace:\n%s",
+            get_class($e),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine(),
+            $e->getTraceAsString()
+        );
+    }
 }
