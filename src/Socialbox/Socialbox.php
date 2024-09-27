@@ -2,9 +2,10 @@
 
     namespace Socialbox;
 
-    use ConfigLib\Configuration;
     use Exception;
+    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\RpcHandler;
+    use Socialbox\Classes\Utilities;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Exceptions\RpcException;
@@ -12,11 +13,6 @@
 
     class Socialbox
     {
-        public static function getConfiguration(): array
-        {
-
-        }
-
         public static function handleRpc(): void
         {
             try
@@ -38,37 +34,49 @@
                 if($method === false)
                 {
                     $response = $rpcRequest->produceError(StandardError::RPC_METHOD_NOT_FOUND, 'The requested method does not exist');
-                    if($response !== null)
+                }
+                else
+                {
+                    try
                     {
-                        $results[] = $response;
+                        $response = $method->execute($clientRequest, $rpcRequest);
                     }
-                }
-
-                try
-                {
-                    $response = $method->execute($clientRequest, $rpcRequest);
-                }
-                catch(StandardException $e)
-                {
-                    $response = $e->produceError($rpcRequest);
-                }
-                catch(Exception $e)
-                {
-                    $response = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, 'An error occurred while processing the request');
+                    catch(StandardException $e)
+                    {
+                        $response = $e->produceError($rpcRequest);
+                    }
+                    catch(Exception $e)
+                    {
+                        var_dump($e);
+                        if(Configuration::getConfiguration()['security']['display_internal_exceptions'])
+                        {
+                            $response = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, Utilities::throwableToString($e));
+                        }
+                        else
+                        {
+                            $response = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR);
+                        }
+                    }
                 }
 
                 if($response !== null)
                 {
-                    $results[] = $response;
+                    $results[] = $response->toArray();
                 }
             }
 
-            if(count($results) > 0)
+            if(count($results) == 0)
             {
-                print(json_encode($results));
+                http_response_code(204);
                 return;
             }
 
-            http_response_code(204);
+            if(count($results) == 1)
+            {
+                print(json_encode($results[0]));
+                return;
+            }
+
+            print(json_encode($results));
         }
     }
