@@ -39,8 +39,16 @@ enum StandardHeaders : string
      */
     public static function getRequiredHeaders(): array
     {
-        /** @var StandardHeaders $header */
-        return array_filter(StandardHeaders::toArray(), fn($header) => $header->isRequired());
+        $results = [];
+        foreach(StandardHeaders::cases() as $header)
+        {
+            if($header->isRequired())
+            {
+                $results[] = $header->value;
+            }
+        }
+
+        return $results;
     }
 
     /**
@@ -49,9 +57,9 @@ enum StandardHeaders : string
     public static function toArray(): array
     {
         $results = [];
-        foreach(StandardHeaders::values() as $header)
+        foreach(StandardHeaders::cases() as $header)
         {
-            $results[$header->getValue()] = $header;
+            $results[] = $header->value;
         }
 
         return $results;
