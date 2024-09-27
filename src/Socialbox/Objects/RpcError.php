@@ -8,21 +8,30 @@ use Socialbox\Interfaces\SerializableInterface;
 class RpcError implements SerializableInterface
 {
     private string $id;
-    private string $message;
+    private string $error;
     private StandardError $code;
 
     /**
      * Constructs the RPC error object.
      *
      * @param string $id The ID of the RPC request
-     * @param StandardError $error The error code
-     * @param string $message The error message
+     * @param StandardError $code The error code
+     * @param string $error The error message
      */
-    public function __construct(string $id, StandardError $error, string $message)
+    public function __construct(string $id, StandardError $code, ?string $error)
     {
         $this->id = $id;
-        $this->code = $error;
-        $this->message = $message;
+        $this->code = $code;
+
+        if($error === null)
+        {
+            $this->error = $code->getMessage();
+        }
+        else
+        {
+            $this->error = $error;
+        }
+
     }
 
     /**
@@ -40,9 +49,9 @@ class RpcError implements SerializableInterface
      *
      * @return string The error message.
      */
-    public function getMessage(): string
+    public function getError(): string
     {
-        return $this->message;
+        return $this->error;
     }
 
     /**
@@ -64,7 +73,7 @@ class RpcError implements SerializableInterface
     {
         return [
             'id' => $this->id,
-            'error' => $this->message,
+            'error' => $this->error,
             'code' => $this->code->value
         ];
     }
