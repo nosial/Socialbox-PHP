@@ -10,10 +10,12 @@ class Configuration
     {
         if(self::$configuration === null)
         {
-            $config = new \ConfigLib\Configuration('net.nosial.socialbox');
+            $config = new \ConfigLib\Configuration('socialbox');
 
             // False by default, requires the user to enable it.
             $config->setDefault('instance.enabled', false);
+
+            $config->setDefault('security.display_internal_exceptions', false);
 
             $config->setDefault('database.host', '127.0.0.1');
             $config->setDefault('database.port', 3306);
