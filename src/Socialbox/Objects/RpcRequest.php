@@ -108,6 +108,18 @@ class RpcRequest implements SerializableInterface
         {
             $valid = true;
         }
+        elseif(is_string($result))
+        {
+            $valid = true;
+        }
+        elseif(is_bool($result))
+        {
+            $valid = true;
+        }
+        elseif(is_int($result))
+        {
+            $valid = true;
+        }
         elseif(is_null($result))
         {
             $valid = true;
@@ -115,7 +127,7 @@ class RpcRequest implements SerializableInterface
 
         if(!$valid)
         {
-            throw new InvalidArgumentException('The \'$result\' property must either be array, null or SerializableInterface');
+            throw new InvalidArgumentException('The \'$result\' property must either be string, boolean, integer, array, null or SerializableInterface');
         }
 
         return new RpcResponse($this->id, $result);
