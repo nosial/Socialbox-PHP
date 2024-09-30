@@ -2,7 +2,7 @@
     "project": {
         "compiler": {
             "extension": "php",
-            "minimum_version": "8.2",
+            "minimum_version": "8.3",
             "maximum_version": "8.0"
         },
         "options": {
