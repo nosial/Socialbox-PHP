@@ -13,6 +13,7 @@
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\StandardException;
     use Socialbox\Objects\SessionRecord;
     use Symfony\Component\Uid\Uuid;
 
@@ -88,6 +89,7 @@
          * @param string $uuid The unique identifier of the session.
          * @return SessionRecord The session record corresponding to the given UUID.
          * @throws DatabaseOperationException If the session record cannot be found or if there is an error during retrieval.
+         * @throws StandardException
          */
         public static function getSession(string $uuid): SessionRecord
         {
@@ -100,7 +102,7 @@
 
                 if ($data === false)
                 {
-                    throw new DatabaseOperationException(sprintf('Session record %s not found', $uuid));
+                    throw new StandardException(sprintf("The requested session '%s' does not exist"), StandardError::SESSION_NOT_FOUND);
                 }
 
                 // Convert the timestamp fields to DateTime objects

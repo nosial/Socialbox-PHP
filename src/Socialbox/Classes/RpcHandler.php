@@ -8,6 +8,7 @@ use Socialbox\Enums\StandardHeaders;
 use Socialbox\Exceptions\CryptographyException;
 use Socialbox\Exceptions\DatabaseOperationException;
 use Socialbox\Exceptions\RpcException;
+use Socialbox\Exceptions\StandardException;
 use Socialbox\Managers\SessionManager;
 use Socialbox\Objects\ClientRequest;
 use Socialbox\Objects\RpcRequest;
@@ -85,11 +86,6 @@ class RpcHandler
 
             try
             {
-                if(!SessionManager::sessionExists($clientRequest->getSessionUuid()))
-                {
-                    throw new RpcException('Session UUID not found', 404);
-                }
-
                 $session = SessionManager::getSession($clientRequest->getSessionUuid());
 
                 // Verify the signature of the request
@@ -97,6 +93,10 @@ class RpcHandler
                 {
                     throw new RpcException('Request signature check failed', 400);
                 }
+            }
+            catch(StandardException $e)
+            {
+                throw new RpcException($e->getMessage(), 400);
             }
             catch(CryptographyException $e)
             {

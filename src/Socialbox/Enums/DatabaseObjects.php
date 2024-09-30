@@ -7,6 +7,7 @@ enum DatabaseObjects : string
     case PASSWORD_AUTHENTICATION = 'password_authentication.sql';
     case REGISTERED_PEERS = 'registered_peers.sql';
     case SESSIONS = 'sessions.sql';
+    case VARIABLES = 'variables.sql';
 
     /**
      * Returns the priority of the database object
@@ -17,6 +18,7 @@ enum DatabaseObjects : string
     {
         return match ($this)
         {
+            self::VARIABLES => 0,
             self::REGISTERED_PEERS => 1,
             self::PASSWORD_AUTHENTICATION, self::SESSIONS => 2,
         };

@@ -2,7 +2,14 @@
 
 namespace Socialbox\Objects;
 
+use RuntimeException;
+use Socialbox\Classes\Cryptography;
+use Socialbox\Enums\StandardError;
 use Socialbox\Enums\StandardHeaders;
+use Socialbox\Exceptions\CryptographyException;
+use Socialbox\Exceptions\DatabaseOperationException;
+use Socialbox\Exceptions\StandardException;
+use Socialbox\Managers\SessionManager;
 
 class ClientRequest
 {
@@ -95,15 +102,41 @@ class ClientRequest
         return $this->headers[StandardHeaders::SIGNATURE->value];
     }
 
+    /**
+     * @return bool
+     * @throws DatabaseOperationException
+     */
     public function verifySignature(): bool
     {
         $signature = $this->getSignature();
+        $sessionUuid = $this->getSessionUuid();
 
-        if($signature == null)
+        if($signature == null || $sessionUuid == null)
         {
             return false;
         }
 
+        try
+        {
+            $session = SessionManager::getSession($sessionUuid);
+        }
+        catch(StandardException $e)
+        {
+            if($e->getStandardError() == StandardError::SESSION_NOT_FOUND)
+            {
+                return false;
+            }
 
+            throw new RuntimeException($e);
+        }
+
+        try
+        {
+            return Cryptography::verifyContent($this->getHash(), $signature, $session->getPublicKey());
+        }
+        catch(CryptographyException $e)
+        {
+            return false;
+        }
     }
 }

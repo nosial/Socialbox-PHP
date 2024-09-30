@@ -20,6 +20,8 @@ class CryptographyTest extends TestCase
         $this->assertObjectHasProperty('privateKey', $keyPair);
         $this->assertIsString($keyPair->getPublicKey());
         $this->assertIsString($keyPair->getPrivateKey());
+
+        print_r($keyPair);
     }
 
     /**

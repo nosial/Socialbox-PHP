@@ -2,8 +2,15 @@
 
 namespace Socialbox\Abstracts;
 
+use RuntimeException;
+use Socialbox\Classes\CacheLayer\MemcachedCacheLayer;
+use Socialbox\Classes\CacheLayer\RedisCacheLayer;
+use Socialbox\Classes\Configuration;
+
 abstract class CacheLayer
 {
+    private static ?CacheLayer $instance = null;
+
     /**
      * Stores a value in the cache with an associated key and an optional time-to-live (TTL).
      *
@@ -39,9 +46,45 @@ abstract class CacheLayer
     public abstract function exists(string $key): bool;
 
     /**
+     * Counts the number of items that start with the given prefix.
+     *
+     * @param string $prefix The prefix to search for.
+     * @return int The count of items starting with the provided prefix.
+     */
+    public abstract function getPrefixCount(string $prefix): int;
+
+    /**
      * Clears all values from the cache.
      *
      * @return bool Returns true if the cache was successfully cleared, false otherwise.
      */
     public abstract function clear(): bool;
+
+    /**
+     * Retrieves the singleton instance of the cache layer.
+     *
+     * @return CacheLayer The singleton instance of the cache layer.
+     */
+    public static function getInstance(): CacheLayer
+    {
+        if (self::$instance === null)
+        {
+            $engine = Configuration::getConfiguration()['cache']['engine'];
+
+            if ($engine === 'redis')
+            {
+                self::$instance = new RedisCacheLayer();
+            }
+            else if ($engine === 'memcached')
+            {
+                self::$instance = new MemcachedCacheLayer();
+            }
+            else
+            {
+                throw new RuntimeException('Invalid cache engine specified in the configuration, must be either "redis" or "memcached".');
+            }
+        }
+
+        return self::$instance;
+    }
 }

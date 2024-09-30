@@ -6,7 +6,6 @@ use InvalidArgumentException;
 use Socialbox\Abstracts\Method;
 use Socialbox\Enums\StandardError;
 use Socialbox\Exceptions\DatabaseOperationException;
-use Socialbox\Exceptions\StandardException;
 use Socialbox\Interfaces\SerializableInterface;
 use Socialbox\Managers\SessionManager;
 use Socialbox\Objects\ClientRequest;

@@ -5,6 +5,7 @@ namespace Socialbox\Classes\CacheLayer;
 use Memcached;
 use RuntimeException;
 use Socialbox\Abstracts\CacheLayer;
+use Socialbox\Classes\Configuration;
 
 class MemcachedCacheLayer extends CacheLayer
 {
@@ -12,11 +13,8 @@ class MemcachedCacheLayer extends CacheLayer
 
     /**
      * Memcached cache layer constructor.
-     *
-     * @param string $host The Memcached server host.
-     * @param int $port The Memcached server port.
      */
-    public function __construct(string $host, int $port)
+    public function __construct()
     {
         if (!extension_loaded('memcached'))
         {
@@ -24,9 +22,10 @@ class MemcachedCacheLayer extends CacheLayer
         }
 
         $this->memcached = new Memcached();
-        if (!$this->memcached->addServer($host, $port))
+        $this->memcached->addServer(Configuration::getConfiguration()['cache']['host'], (int)Configuration::getConfiguration()['cache']['port']);
+        if(Configuration::getConfiguration()['cache']['username'] !== null || Configuration::getConfiguration()['cache']['password'] !== null)
         {
-            throw new RuntimeException('Failed to connect to the Memcached server.');
+            $this->memcached->setSaslAuthData(Configuration::getConfiguration()['cache']['username'], Configuration::getConfiguration()['cache']['password']);
         }
     }
 
@@ -78,6 +77,25 @@ class MemcachedCacheLayer extends CacheLayer
     {
         $this->memcached->get($key);
         return $this->memcached->getResultCode() === Memcached::RES_SUCCESS;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPrefixCount(string $prefix): int
+    {
+        $stats = $this->memcached->getStats();
+        $count = 0;
+
+        foreach ($stats as $server => $data)
+        {
+            if (str_starts_with($server, $prefix))
+            {
+                $count += $data['curr_items'];
+            }
+        }
+
+        return $count;
     }
 
     /**

@@ -6,6 +6,7 @@ use Redis;
 use RedisException;
 use RuntimeException;
 use Socialbox\Abstracts\CacheLayer;
+use Socialbox\Classes\Configuration;
 
 class RedisCacheLayer extends CacheLayer
 {
@@ -13,12 +14,8 @@ class RedisCacheLayer extends CacheLayer
 
     /**
      * Redis cache layer constructor.
-     *
-     * @param string $host The Redis server host.
-     * @param int $port The Redis server port.
-     * @param string|null $password Optional. The Redis server password.
      */
-    public function __construct(string $host, int $port, ?string $password=null)
+    public function __construct()
     {
         if (!extension_loaded('redis'))
         {
@@ -29,10 +26,15 @@ class RedisCacheLayer extends CacheLayer
 
         try
         {
-            $this->redis->connect($host, $port);
-            if ($password !== null)
+            $this->redis->connect(Configuration::getConfiguration()['cache']['host'], (int)Configuration::getConfiguration()['cache']['port']);
+            if (Configuration::getConfiguration()['cache']['password'] !== null)
             {
-                $this->redis->auth($password);
+                $this->redis->auth(Configuration::getConfiguration()['cache']['password']);
+            }
+
+            if (Configuration::getConfiguration()['cache']['database'] !== 0)
+            {
+                $this->redis->select((int)Configuration::getConfiguration()['cache']['database']);
             }
         }
         catch (RedisException $e)
@@ -98,6 +100,21 @@ class RedisCacheLayer extends CacheLayer
         catch (RedisException $e)
         {
             throw new RuntimeException('Failed to check if the key exists in the Redis cache.', 0, $e);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPrefixCount(string $prefix): int
+    {
+        try
+        {
+            return count($this->redis->keys($prefix . '*'));
+        }
+        catch (RedisException $e)
+        {
+            throw new RuntimeException('Failed to get the count of keys with the specified prefix in the Redis cache.', 0, $e);
         }
     }
 

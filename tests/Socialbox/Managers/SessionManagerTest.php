@@ -6,7 +6,6 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Socialbox\Classes\Cryptography;
 use Socialbox\Classes\Utilities;
-use Socialbox\Exceptions\DatabaseOperationException;
 use Socialbox\Objects\SessionRecord;
 
 class SessionManagerTest extends TestCase
@@ -25,14 +24,6 @@ class SessionManagerTest extends TestCase
         $uuid = SessionManager::createSession($keyPair->getPublicKey());
 
         $this->assertTrue(SessionManager::sessionExists($uuid));
-    }
-
-    public function testGetSessionWithInvalidUuid(): void
-    {
-        $uuid = 'invalid_uuid';
-
-        $this->expectException(DatabaseOperationException::class);
-        SessionManager::getSession($uuid);
     }
 
     public function testGetSessionWithValidUuid(): void

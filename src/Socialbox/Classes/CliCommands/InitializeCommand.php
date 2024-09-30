@@ -2,13 +2,18 @@
 
 namespace Socialbox\Classes\CliCommands;
 
+use Exception;
 use LogLib\Log;
 use PDOException;
+use Socialbox\Abstracts\CacheLayer;
 use Socialbox\Classes\Configuration;
+use Socialbox\Classes\Cryptography;
 use Socialbox\Classes\Database;
 use Socialbox\Classes\Resources;
 use Socialbox\Enums\DatabaseObjects;
+use Socialbox\Exceptions\DatabaseOperationException;
 use Socialbox\Interfaces\CliCommandInterface;
+use Socialbox\Managers\VariableManager;
 
 class InitializeCommand implements CliCommandInterface
 {
@@ -23,7 +28,14 @@ class InitializeCommand implements CliCommandInterface
             return 1;
         }
 
-        print("Initializing Socialbox...\n");
+        Log::info('net.nosial.socialbox', 'Initializing Socialbox...');
+
+        if(Configuration::getConfiguration()['cache']['enabled'])
+        {
+            Log::verbose('net.nosial.socialbox', 'Clearing cache layer...');
+            CacheLayer::getInstance()->clear();
+        }
+
         foreach(DatabaseObjects::casesOrdered() as $object)
         {
             Log::verbose('net.nosial.socialbox', "Initializing database object {$object->value}");
@@ -46,11 +58,32 @@ class InitializeCommand implements CliCommandInterface
                     return 1;
                 }
             }
-            catch(\Exception $e)
+            catch(Exception $e)
             {
                 Log::error('net.nosial.socialbox', "Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
                 return 1;
             }
+        }
+
+        try
+        {
+
+            if(!VariableManager::variableExists('PUBLIC_KEY') || !VariableManager::variableExists('PRIVATE_KEY'))
+            {
+                Log::info('net.nosial.socialbox', 'Generating new key pair...');
+
+                $keyPair = Cryptography::generateKeyPair();
+                VariableManager::setVariable('PUBLIC_KEY', $keyPair->getPublicKey());
+                VariableManager::setVariable('PRIVATE_KEY', $keyPair->getPrivateKey());
+
+                Log::info('net.nosial.socialbox', 'Set the DNS TXT record for the public key to the following value:');
+                Log::info('net.nosial.socialbox', "socialbox-key={$keyPair->getPublicKey()}");
+            }
+        }
+        catch(DatabaseOperationException $e)
+        {
+            Log::error('net.nosial.socialbox', "Failed to generate key pair: {$e->getMessage()}", $e);
+            return 1;
         }
 
         Log::info('net.nosial.socialbox', 'Socialbox has been initialized successfully');

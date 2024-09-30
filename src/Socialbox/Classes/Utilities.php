@@ -4,6 +4,7 @@ namespace Socialbox\Classes;
 
 use InvalidArgumentException;
 use RuntimeException;
+use Socialbox\Enums\StandardHeaders;
 
 class Utilities
 {
@@ -32,6 +33,18 @@ class Utilities
         }
 
         return $decoded;
+    }
+
+    public static function jsonEncode(mixed $data): string
+    {
+        try
+        {
+            return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        }
+        catch(\JsonException $e)
+        {
+            throw new \RuntimeException("Failed to encode json input", $e);
+        }
     }
 
     /**
@@ -116,5 +129,10 @@ class Utilities
             $e->getLine(),
             $e->getTraceAsString()
         );
+    }
+
+    public static function generateHeader(StandardHeaders $header, string $value): string
+    {
+        return $header->value . ': ' . $value;
     }
 }

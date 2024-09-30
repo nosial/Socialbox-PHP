@@ -13,6 +13,7 @@ enum StandardHeaders : string
     case SESSION_UUID = 'Session-UUID';
     case FROM_PEER = 'From-Peer';
     case SIGNATURE = 'Signature';
+    case PUBLIC_KEY = 'Public-Key';
 
     /**
      * Determines if the current instance is required based on its type.

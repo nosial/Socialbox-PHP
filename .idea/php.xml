@@ -69,7 +69,7 @@
       <extension name="libevent" enabled="false" />
       <extension name="libsodium" enabled="false" />
       <extension name="mailparse" enabled="false" />
-      <extension name="memcached" enabled="false" />
+      <extension name="memcache" enabled="false" />
       <extension name="ming" enabled="false" />
       <extension name="mongo" enabled="false" />
       <extension name="mongodb" enabled="false" />

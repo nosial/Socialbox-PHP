@@ -55,13 +55,6 @@ class RpcResponse implements SerializableInterface
             return $data->toArray();
         }
 
-        // If the data is an array, recursively apply this method to each element
-        if (is_array($data))
-        {
-            return array_map([$this, 'convertToArray'], $data);
-        }
-
-        // Otherwise, return the data as-is (e.g., for scalar values)
         return $data;
     }
 
