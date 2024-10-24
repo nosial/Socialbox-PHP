@@ -12,6 +12,8 @@
   </component>
   <component name="PhpIncludePathManager">
     <include_path>
+      <path value="/var/ncc/packages/com.symfony.finder=2.0.7" />
+      <path value="/var/ncc/packages/com.gregwar.captcha=v1.2.1" />
       <path value="/var/ncc/packages/com.symfony.filesystem=v7.1.5" />
       <path value="/var/ncc/packages/com.symfony.polyfill_ctype=v1.31.0" />
       <path value="/var/ncc/packages/com.symfony.polyfill_mbstring=v1.31.0" />

@@ -44,6 +44,11 @@
                 "name": "net.nosial.optslib",
                 "version": "latest",
                 "source": "nosial/libs.opts=latest@n64"
+            },
+            {
+                "name": "com.gregwar.captcha",
+                "version": "latest",
+                "source": "gregwar/captcha=latest@packagist"
             }
         ],
         "configurations": [
