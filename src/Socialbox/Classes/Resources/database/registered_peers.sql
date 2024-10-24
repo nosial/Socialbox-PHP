@@ -15,6 +15,6 @@ create table registered_peers
     comment 'Table for housing registered peers under this network';
 
 create index registered_peers_registered_index
-    on registered_peers (registered)
+    on registered_peers (created)
     comment 'The Index for the reigstered column of the peer';
 

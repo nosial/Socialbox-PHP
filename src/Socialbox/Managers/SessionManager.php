@@ -7,6 +7,7 @@
     use InvalidArgumentException;
     use PDO;
     use PDOException;
+    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Enums\SessionState;
@@ -107,7 +108,8 @@
                 $data['created'] = new DateTime($data['created']);
                 $data['last_request'] = new DateTime($data['last_request']);
 
-                return SessionRecord::fromArray($data);
+                $sessionRecord = SessionRecord::fromArray($data);
+
             }
             catch (PDOException | DateMalformedStringException $e)
             {
@@ -120,6 +122,7 @@
          *
          * @param string $uuid The UUID of the session to update.
          * @return void
+         * @throws DatabaseOperationException
          */
         public static function updateAuthenticatedPeer(string $uuid): void
         {
@@ -141,6 +144,7 @@
          *
          * @param string $uuid The UUID of the session to be updated.
          * @return void
+         * @throws DatabaseOperationException
          */
         public static function updateLastRequest(string $uuid): void
         {
@@ -164,6 +168,7 @@
          * @param string $uuid The unique identifier of the session to update.
          * @param SessionState $state The new state to be set for the session.
          * @return void No return value.
+         * @throws DatabaseOperationException
          */
         public static function updateState(string $uuid, SessionState $state): void
         {

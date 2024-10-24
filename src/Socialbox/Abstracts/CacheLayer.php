@@ -69,7 +69,7 @@ abstract class CacheLayer
     {
         if (self::$instance === null)
         {
-            $engine = Configuration::getConfiguration()['cache']['engine'];
+            $engine = Configuration::getCacheConfiguration()->getEngine();
 
             if ($engine === 'redis')
             {

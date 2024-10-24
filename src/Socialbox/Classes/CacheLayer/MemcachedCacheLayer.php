@@ -22,10 +22,10 @@ class MemcachedCacheLayer extends CacheLayer
         }
 
         $this->memcached = new Memcached();
-        $this->memcached->addServer(Configuration::getConfiguration()['cache']['host'], (int)Configuration::getConfiguration()['cache']['port']);
-        if(Configuration::getConfiguration()['cache']['username'] !== null || Configuration::getConfiguration()['cache']['password'] !== null)
+        $this->memcached->addServer(Configuration::getCacheConfiguration()->getHost(), Configuration::getCacheConfiguration()->getPort());
+        if(Configuration::getCacheConfiguration()->getUsername() !== null || Configuration::getCacheConfiguration()->getPassword() !== null)
         {
-            $this->memcached->setSaslAuthData(Configuration::getConfiguration()['cache']['username'], Configuration::getConfiguration()['cache']['password']);
+            $this->memcached->setSaslAuthData(Configuration::getCacheConfiguration()->getUsername(), Configuration::getCacheConfiguration()->getPassword());
         }
     }
 

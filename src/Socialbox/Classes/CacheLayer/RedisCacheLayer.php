@@ -26,15 +26,15 @@ class RedisCacheLayer extends CacheLayer
 
         try
         {
-            $this->redis->connect(Configuration::getConfiguration()['cache']['host'], (int)Configuration::getConfiguration()['cache']['port']);
-            if (Configuration::getConfiguration()['cache']['password'] !== null)
+            $this->redis->connect(Configuration::getCacheConfiguration()->getHost(), Configuration::getCacheConfiguration()->getPort());
+            if (Configuration::getCacheConfiguration()->getPassword() !== null)
             {
-                $this->redis->auth(Configuration::getConfiguration()['cache']['password']);
+                $this->redis->auth(Configuration::getCacheConfiguration()->getPassword());
             }
 
-            if (Configuration::getConfiguration()['cache']['database'] !== 0)
+            if (Configuration::getCacheConfiguration()->getDatabase() !== null)
             {
-                $this->redis->select((int)Configuration::getConfiguration()['cache']['database']);
+                $this->redis->select(Configuration::getCacheConfiguration()->getDatabase());
             }
         }
         catch (RedisException $e)

@@ -30,7 +30,7 @@ class InitializeCommand implements CliCommandInterface
 
         Log::info('net.nosial.socialbox', 'Initializing Socialbox...');
 
-        if(Configuration::getConfiguration()['cache']['enabled'])
+        if(Configuration::getCacheConfiguration()->isEnabled())
         {
             Log::verbose('net.nosial.socialbox', 'Clearing cache layer...');
             CacheLayer::getInstance()->clear();
