@@ -1,6 +1,6 @@
 <?php
 
-namespace Socialbox\Objects;
+namespace Socialbox\Objects\Database;
 
 use DateTime;
 use Socialbox\Enums\SessionState;

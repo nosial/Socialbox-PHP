@@ -8,8 +8,8 @@ use Socialbox\Exceptions\StandardException;
 use Socialbox\Interfaces\SerializableInterface;
 use Socialbox\Managers\SessionManager;
 use Socialbox\Objects\ClientRequest;
+use Socialbox\Objects\Database\SessionRecord;
 use Socialbox\Objects\RpcRequest;
-use Socialbox\Objects\SessionRecord;
 
 abstract class Method
 {

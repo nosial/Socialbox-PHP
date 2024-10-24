@@ -43,7 +43,7 @@ class Utilities
         }
         catch(\JsonException $e)
         {
-            throw new \RuntimeException("Failed to encode json input", $e);
+            throw new InvalidArgumentException("Failed to encode json input", $e);
         }
     }
 

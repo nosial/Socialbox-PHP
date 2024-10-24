@@ -6,7 +6,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Socialbox\Classes\Cryptography;
 use Socialbox\Classes\Utilities;
-use Socialbox\Objects\SessionRecord;
+use Socialbox\Objects\Database\SessionRecord;
 
 class SessionManagerTest extends TestCase
 {

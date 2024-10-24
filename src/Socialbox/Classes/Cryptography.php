@@ -108,14 +108,28 @@ class Cryptography
      */
     public static function verifyContent(string $content, string $signature, string $publicKey): bool
     {
-        $publicKey = openssl_pkey_get_public(self::derToPem(Utilities::base64decode($publicKey), self::PEM_PUBLIC_HEADER));
-        
+        try
+        {
+            $publicKey = openssl_pkey_get_public(self::derToPem(Utilities::base64decode($publicKey), self::PEM_PUBLIC_HEADER));
+        }
+        catch(InvalidArgumentException $e)
+        {
+            throw new CryptographyException('Failed to decode public key: ' . $e->getMessage());
+        }
+
         if (!$publicKey)
         {
             throw new CryptographyException('Invalid public key: ' . openssl_error_string());
         }
 
-        return openssl_verify($content, base64_decode($signature), $publicKey, self::HASH_ALGORITHM) === 1;
+        try
+        {
+            return openssl_verify($content, Utilities::base64decode($signature), $publicKey, self::HASH_ALGORITHM) === 1;
+        }
+        catch(InvalidArgumentException $e)
+        {
+            throw new CryptographyException('Failed to verify content: ' . $e->getMessage());
+        }
     }
 
     /**

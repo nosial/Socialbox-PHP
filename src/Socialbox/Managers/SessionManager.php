@@ -9,12 +9,11 @@
     use PDOException;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
-    use Socialbox\Classes\Utilities;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\StandardException;
-    use Socialbox\Objects\SessionRecord;
+    use Socialbox\Objects\Database\SessionRecord;
     use Symfony\Component\Uid\Uuid;
 
     class SessionManager
@@ -41,7 +40,6 @@
                 throw new InvalidArgumentException('The given public key is invalid', 400);
             }
 
-            $publicKey = Utilities::base64decode($publicKey);
             $uuid = Uuid::v4()->toRfc4122();
 
             try

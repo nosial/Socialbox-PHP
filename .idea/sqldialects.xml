@@ -7,6 +7,5 @@
     <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/variables.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/SessionManager.php" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/VariableManager.php" dialect="MariaDB" />
-    <file url="file:///var/ncc/packages/net.nosial.socialbox=1.0.0/bin/src/Socialbox/Managers/VariableManager.php" dialect="MariaDB" />
   </component>
 </project>

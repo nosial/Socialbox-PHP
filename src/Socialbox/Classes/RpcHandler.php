@@ -2,10 +2,10 @@
 
 namespace Socialbox\Classes;
 
+use Exception;
 use InvalidArgumentException;
 use RuntimeException;
 use Socialbox\Enums\StandardHeaders;
-use Socialbox\Exceptions\CryptographyException;
 use Socialbox\Exceptions\DatabaseOperationException;
 use Socialbox\Exceptions\RpcException;
 use Socialbox\Exceptions\StandardException;
@@ -87,24 +87,30 @@ class RpcHandler
             try
             {
                 $session = SessionManager::getSession($clientRequest->getSessionUuid());
-
-                // Verify the signature of the request
-                if(!Cryptography::verifyContent($clientRequest->getHash(), $clientRequest->getSignature(), $session->getPublicKey()))
-                {
-                    throw new RpcException('Request signature check failed', 400);
-                }
             }
             catch(StandardException $e)
             {
                 throw new RpcException($e->getMessage(), 400);
             }
-            catch(CryptographyException $e)
-            {
-                throw new RpcException('Request signature check failed (Cryptography Error)', 400, $e);
-            }
             catch(DatabaseOperationException $e)
             {
                 throw new RpcException('Failed to verify session', 500, $e);
+            }
+
+            try
+            {
+                if(!Cryptography::verifyContent($clientRequest->getHash(), $clientRequest->getSignature(), $session->getPublicKey()))
+                {
+                    throw new RpcException('Request signature check failed', 400);
+                }
+            }
+            catch(RpcException $e)
+            {
+                throw $e;
+            }
+            catch(Exception $e)
+            {
+                throw new RpcException('Request signature check failed (Cryptography Error): ' . $e->getMessage(), 400, $e);
             }
         }
 

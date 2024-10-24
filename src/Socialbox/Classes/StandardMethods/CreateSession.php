@@ -40,8 +40,6 @@ class CreateSession extends Method
             return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, $e->getMessage());
         }
 
-        return $rpcRequest->produceResponse([
-            'uuid' => $uuid
-        ]);
+        return $rpcRequest->produceResponse($uuid);
     }
 }

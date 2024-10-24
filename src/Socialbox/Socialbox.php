@@ -47,7 +47,6 @@
                     }
                     catch(Exception $e)
                     {
-                        var_dump($e);
                         if(Configuration::getConfiguration()['security']['display_internal_exceptions'])
                         {
                             $response = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, Utilities::throwableToString($e));
