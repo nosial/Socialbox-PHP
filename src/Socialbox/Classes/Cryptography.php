@@ -54,7 +54,7 @@ class Cryptography
     private static function pemToDer(string $pemKey): string
     {
         $pemKey = preg_replace('/-----(BEGIN|END) [A-Z ]+-----/', '', $pemKey);
-        return base64_decode(str_replace(["\n", "\r", " "], '', $pemKey));
+        return Utilities::base64decode(str_replace(["\n", "\r", " "], '', $pemKey));
     }
 
     /**
@@ -66,7 +66,7 @@ class Cryptography
      */
     private static function derToPem(string $derKey, string $type): string
     {
-        $formattedKey = chunk_split(base64_encode($derKey), 64);
+        $formattedKey = chunk_split(Utilities::base64encode($derKey), 64);
         $headerFooter = strtoupper($type) === self::PEM_PUBLIC_HEADER
             ? "PUBLIC KEY" : "PRIVATE KEY";
 
@@ -78,15 +78,21 @@ class Cryptography
      *
      * @param string $content The content to be signed.
      * @param string $privateKey The private key used to sign the content.
+     * @param bool $hashContent Whether to hash the content using SHA1 before signing it. Default is false.
      * @return string The Base64 encoded signature of the content.
      * @throws CryptographyException If the private key is invalid or if the content signing fails.
      */
-    public static function signContent(string $content, string $privateKey): string
+    public static function signContent(string $content, string $privateKey, bool $hashContent=false): string
     {
         $privateKey = openssl_pkey_get_private(self::derToPem(Utilities::base64decode($privateKey), self::PEM_PRIVATE_HEADER));
         if (!$privateKey)
         {
             throw new CryptographyException('Invalid private key: ' . openssl_error_string());
+        }
+
+        if($hashContent)
+        {
+            $content = hash('sha1', $content);
         }
 
         if (!openssl_sign($content, $signature, $privateKey, self::HASH_ALGORITHM))
@@ -103,10 +109,11 @@ class Cryptography
      * @param string $content The content to be verified.
      * @param string $signature The digital signature to verify against.
      * @param string $publicKey The public key to use for verification.
+     * @param bool $hashContent Whether to hash the content using SHA1 before verifying it. Default is false.
      * @return bool Returns true if the content verification is successful, false otherwise.
      * @throws CryptographyException If the public key is invalid or if the signature verification fails.
      */
-    public static function verifyContent(string $content, string $signature, string $publicKey): bool
+    public static function verifyContent(string $content, string $signature, string $publicKey, bool $hashContent=false): bool
     {
         try
         {
@@ -120,6 +127,11 @@ class Cryptography
         if (!$publicKey)
         {
             throw new CryptographyException('Invalid public key: ' . openssl_error_string());
+        }
+
+        if($hashContent)
+        {
+            $content = hash('sha1', $content);
         }
 
         try
