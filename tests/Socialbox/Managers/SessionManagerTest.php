@@ -35,6 +35,6 @@ class SessionManagerTest extends TestCase
 
         $this->assertInstanceOf(SessionRecord::class, $session);
         $this->assertEquals($uuid, $session->getUuid());
-        $this->assertEquals($keyPair->getPublicKey(), Utilities::base64encode($session->getPublicKey()));
+        $this->assertEquals($keyPair->getPublicKey(), $session->getPublicKey());
     }
 }

@@ -60,9 +60,9 @@ class Configuration
         $config->save();
 
         self::$configuration = $config->getConfiguration();
-        self::$databaseConfiguration = self::$configuration['database'];
-        self::$cacheConfiguration = self::$configuration['cache'];
-        self::$registrationConfiguration = self::$configuration['registration'];
+        self::$databaseConfiguration = new DatabaseConfiguration(self::$configuration['database']);
+        self::$cacheConfiguration = new CacheConfiguration(self::$configuration['cache']);
+        self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration['registration']);
     }
 
     /**
