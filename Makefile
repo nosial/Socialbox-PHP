@@ -1,23 +1,29 @@
 # Variables
-CONFIG ?= release
+DEFAULT_CONFIGURATION ?= release
 LOG_LEVEL = debug
-OUTDIR = build/$(CONFIG)
-PACKAGE = $(OUTDIR)/net.nosial.socialbox.ncc
 
 # Default Target
-all: build
+all: release debug release_executable debug_executable
 
 # Build Steps
-build:
-	ncc build --config=$(CONFIG) --log-level $(LOG_LEVEL)
+release:
+	ncc build --config=release --log-level $(LOG_LEVEL)
+debug:
+	ncc build --config=debug --log-level $(LOG_LEVEL)
+release_executable:
+	ncc build --config=release_executable --log-level $(LOG_LEVEL)
+debug_executable:
+	ncc build --config=debug_executable --log-level $(LOG_LEVEL)
 
-install: build
-	ncc package install --package=$(PACKAGE) --skip-dependencies --build-source --reinstall -y --log-level $(LOG_LEVEL)
 
-test: build
+install: release
+	ncc package install --package=build/release/net.nosial.socialbox.ncc --skip-dependencies --build-source --reinstall -y --log-level $(LOG_LEVEL)
+
+test: release
+	[ -f phpunit.xml ] || { echo "phpunit.xml not found"; exit 1; }
 	phpunit
 
 clean:
 	rm -rf build
 
-.PHONY: all build install test clean
+.PHONY: all install test clean release debug release_executable debug_executable
