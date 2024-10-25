@@ -14,6 +14,10 @@ enum PeerFlags : string
     // Verification Flags
     case VER_SET_PASSWORD = 'VER_SET_PASSWORD';
     case VER_SET_OTP = 'VER_SET_OTP';
+    case VER_SET_DISPLAY_NAME = 'VER_SET_DISPLAY_NAME';
+    case VER_EMAIL = 'VER_EMAIL';
+    case VER_SMS = 'VER_SMS';
+    case VER_PHONE_CALL = 'VER_PHONE_CALL';
     case VER_SOLVE_IMAGE_CAPTCHA = 'VER_SOLVE_IMAGE_CAPTCHA';
 
     /**
