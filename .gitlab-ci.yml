@@ -1,46 +1,170 @@
-image: php:8.1
+# Global config
+default:
+  image: php:8.3
 
-before_script:
-  # Install some stuff that the image doesn't come with
-  - apt update -yqq
-  - apt install git libpq-dev libzip-dev zip make wget gnupg -yqq
+variables:
+  GIT_STRATEGY: clone
 
-  # Install phive
-  - wget -O phive.phar https://phar.io/releases/phive.phar
-  - wget -O phive.phar.asc https://phar.io/releases/phive.phar.asc
-  - gpg --keyserver hkps://keys.openpgp.org --recv-keys 0x9D8A98B29B2D5D79
-  - gpg --verify phive.phar.asc phive.phar
-  - chmod +x phive.phar
-  - mv phive.phar /usr/local/bin/phive
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_TAG
 
-  # Install phab
-  - phive install phpab --global --trust-gpg-keys 0x2A8299CE842DD38C
+# Reusable template for installing common dependencies
+.setup_template: &setup_definition
+  before_script:
+    - apt update -yqq
+    - apt install git libpq-dev libzip-dev zip make wget gnupg -yqq
+    # Install phive
+    - wget -O phive.phar https://phar.io/releases/phive.phar
+    - wget -O phive.phar.asc https://phar.io/releases/phive.phar.asc
+    - gpg --keyserver hkps://keys.openpgp.org --recv-keys 0x9D8A98B29B2D5D79
+    - gpg --verify phive.phar.asc phive.phar
+    - chmod +x phive.phar
+    - mv phive.phar /usr/local/bin/phive
+    # Install phab
+    - phive install phpab --global --trust-gpg-keys 0x2A8299CE842DD38C
+    # Install NCC
+    - git clone https://git.n64.cc/nosial/ncc.git
+    - cd ncc
+    - make redist
+    - NCC_DIR=$(find build/ -type d -name "ncc_*" | head -n 1)
+    - if [ -z "$NCC_DIR" ]; then echo "NCC build directory not found"; exit 1; fi
+    - php "$NCC_DIR/INSTALL" --auto
+    - cd ..
+    - rm -rf ncc
 
-  # Install the latest version of ncc (Nosial Code Compiler)
-  - git clone https://git.n64.cc/nosial/ncc.git
-  - cd ncc
-  - make redist
-  - php build/src/INSTALL --auto --install-composer
-  - cd .. && rm -rf ncc
-
-build:
+# Build jobs
+release:
+  <<: *setup_definition
   stage: build
   script:
-    - ncc build --config release --log-level debug
+    - ncc build --config release --build-source --log-level debug
   artifacts:
     paths:
-      - build/
-  rules:
-    - if: $CI_COMMIT_BRANCH
+      - build/release/net.nosial.socialbox.ncc
+    expire_in: 1 week
 
-release:
-  stage: deploy
+debug:
+  <<: *setup_definition
+  stage: build
   script:
-    - ncc build --config release --log-level debug
-    - >
-      curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file build/release/net.nosial.socialbox.ncc "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/net.nosial.socialbox/$CI_COMMIT_REF_NAME/net.nosial.socialbox.ncc"
+    - ncc build --config debug --build-source --log-level debug
   artifacts:
     paths:
-      - build/
+      - build/debug/net.nosial.socialbox.ncc
+    expire_in: 1 week
+
+release_executable:
+  <<: *setup_definition
+  stage: build
+  script:
+    - ncc build --config release_executable --build-source --log-level debug
+  artifacts:
+    paths:
+      - build/release/Socialbox
+    expire_in: 1 week
+
+debug_executable:
+  <<: *setup_definition
+  stage: build
+  script:
+    - ncc build --config debug_executable --build-source --log-level debug
+  artifacts:
+    paths:
+      - build/debug/Socialbox
+    expire_in: 1 week
+
+# Check for configuration files
+check_configs:
+  stage: .pre
+  script:
+    - |
+      if [ -f phpunit.xml ]; then
+        echo "PHPUNIT_EXISTS=true" >> build.env
+      else
+        echo "PHPUNIT_EXISTS=false" >> build.env
+      fi
+      if [ -f phpdoc.dist.xml ]; then
+        echo "PHPDOC_EXISTS=true" >> build.env
+      else
+        echo "PHPDOC_EXISTS=false" >> build.env
+      fi
+  artifacts:
+    reports:
+      dotenv: build.env
+
+# Documentation generation
+generate-phpdoc:
+  <<: *setup_definition
+  stage: build
+  needs: ["check_configs"]
+  rules:
+    - if: $PHPDOC_EXISTS == "true"
+  script:
+    - wget https://phpdoc.org/phpDocumentor.phar
+    - chmod +x phpDocumentor.phar
+    - php phpDocumentor.phar -d src -t docs
+    - zip -r docs.zip docs
+  artifacts:
+    paths:
+      - docs.zip
+    expire_in: 1 week
+
+# Testing
+test:
+  <<: *setup_definition
+  stage: test
+  needs:
+    - job: release
+    - job: check_configs
+  rules:
+    - if: $PHPUNIT_EXISTS == "true"
+  script:
+    - curl -sSLf -o /usr/local/bin/install-php-extensions https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions
+    - chmod +x /usr/local/bin/install-php-extensions
+    - install-php-extensions zip
+    - ncc package install --package="build/release/net.nosial.socialbox.ncc" --build-source --reinstall -y --log-level debug
+    - wget https://phar.phpunit.de/phpunit-11.3.phar
+    - php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
+  artifacts:
+    reports:
+      junit: reports/junit.xml
+    paths:
+      - reports/
+    expire_in: 1 week
+
+# Release jobs
+release_upload:
+  stage: deploy
   rules:
     - if: $CI_COMMIT_TAG
+  needs:
+    - job: release
+    - job: debug
+    - job: release_executable
+    - job: debug_executable
+    - job: generate-phpdoc
+      optional: true
+  script:
+    - |
+      if [ -f "docs.zip" ]; then
+        echo "Releasing documentation..."
+        curl --request POST \
+          --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+          --form "file=@docs.zip" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/uploads"
+      fi
+      
+      # Upload release artifacts
+      for artifact in build/release/net.nosial.socialbox.ncc build/debug/net.nosial.socialbox.ncc build/release/Socialbox build/debug/Socialbox; do
+        if [ -f "$artifact" ]; then
+          echo "Uploading $artifact..."
+          curl --request POST \
+            --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+            --form "file=@${artifact}" \
+            "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/uploads"
+        fi
+      done
+  environment: production
