@@ -108,7 +108,7 @@
                 $data['created'] = new DateTime($data['created']);
                 $data['last_request'] = new DateTime($data['last_request']);
 
-                $sessionRecord = SessionRecord::fromArray($data);
+                return SessionRecord::fromArray($data);
 
             }
             catch (PDOException | DateMalformedStringException $e)
