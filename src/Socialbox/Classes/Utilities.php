@@ -3,8 +3,10 @@
 namespace Socialbox\Classes;
 
 use InvalidArgumentException;
+use JsonException;
 use RuntimeException;
 use Socialbox\Enums\StandardHeaders;
+use Throwable;
 
 class Utilities
 {
@@ -41,7 +43,7 @@ class Utilities
         {
             return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         }
-        catch(\JsonException $e)
+        catch(JsonException $e)
         {
             throw new InvalidArgumentException("Failed to encode json input", $e);
         }
@@ -119,7 +121,13 @@ class Utilities
         return $headers;
     }
 
-    public static function throwableToString(\Throwable $e): string
+    /**
+     * Converts a Throwable object into a formatted string.
+     *
+     * @param Throwable $e The throwable to be converted into a string.
+     * @return string The formatted string representation of the throwable, including the exception class, message, file, line, and stack trace.
+     */
+    public static function throwableToString(Throwable $e): string
     {
         return sprintf(
             "%s: %s in %s:%d\nStack trace:\n%s",
@@ -131,8 +139,35 @@ class Utilities
         );
     }
 
+    /**
+     * Generates a formatted header string.
+     *
+     * @param StandardHeaders $header The standard header object.
+     * @param string $value The header value to be associated with the standard header.
+     * @return string The formatted header string.
+     */
     public static function generateHeader(StandardHeaders $header, string $value): string
     {
         return $header->value . ': ' . $value;
+    }
+
+    /**
+     * Generates a random string of specified length using the provided character set.
+     *
+     * @param int $int The length of the random string to be generated.
+     * @param string $string The character set to use for generating the random string.
+     * @return string The generated random string.
+     */
+    public static function randomString(int $int, string $string): string
+    {
+        $characters = str_split($string);
+        $randomString = '';
+
+        for ($i = 0; $i < $int; $i++)
+        {
+            $randomString .= $characters[array_rand($characters)];
+        }
+
+        return $randomString;
     }
 }
