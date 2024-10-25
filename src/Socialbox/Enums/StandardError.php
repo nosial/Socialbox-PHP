@@ -20,6 +20,9 @@ enum StandardError : int
     case SESSION_NOT_FOUND = -3001;
     case UNSUPPORTED_AUTHENTICATION_TYPE = -3002;
 
+    // General Error Messages
+    case PEER_NOT_FOUND = -4000;
+
     /**
      * Returns the default generic message for the error
      *
