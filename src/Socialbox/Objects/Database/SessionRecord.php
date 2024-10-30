@@ -13,7 +13,7 @@ class SessionRecord implements SerializableInterface
     private string $publicKey;
     private SessionState $state;
     private DateTime $created;
-    private DateTime $lastRequest;
+    private ?DateTime $lastRequest;
 
     public function __construct(array $data)
     {
@@ -53,12 +53,12 @@ class SessionRecord implements SerializableInterface
         return $this->state;
     }
 
-    public function getCreated(): int
+    public function getCreated(): DateTime
     {
         return $this->created;
     }
 
-    public function getLastRequest(): int
+    public function getLastRequest(): ?DateTime
     {
         return $this->lastRequest;
     }
