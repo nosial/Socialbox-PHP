@@ -138,7 +138,7 @@
          * @return void
          * @throws DatabaseOperationException
          */
-        public static function updateAuthenticatedPeer(string $uuid, RegisteredPeerRecord|string $registeredPeerUuid): void
+        public static function updatePeer(string $uuid, RegisteredPeerRecord|string $registeredPeerUuid): void
         {
             if($registeredPeerUuid instanceof RegisteredPeerRecord)
             {
@@ -149,8 +149,25 @@
 
             try
             {
-                $statement = Database::getConnection()->prepare("UPDATE sessions SET authenticated_peer_uuid=? WHERE uuid=?");
+                $statement = Database::getConnection()->prepare("UPDATE sessions SET peer_uuid=? WHERE uuid=?");
                 $statement->bindParam(1, $registeredPeerUuid);
+                $statement->bindParam(2, $uuid);
+                $statement->execute();
+            }
+            catch (PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to update authenticated peer', $e);
+            }
+        }
+
+        public static function updateAuthentication(string $uuid, bool $authenticated): void
+        {
+            Logger::getLogger()->verbose(sprintf("Marking session %s as authenticated: %s", $uuid, $authenticated ? 'true' : 'false'));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare("UPDATE sessions SET authenticated=? WHERE uuid=?");
+                $statement->bindParam(1, $authenticated);
                 $statement->bindParam(2, $uuid);
                 $statement->execute();
             }

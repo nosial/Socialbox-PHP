@@ -31,13 +31,13 @@ class GetMe extends Method
         {
             // Get the session and check if it's already authenticated
             $session = SessionManager::getSession($request->getSessionUuid());
-            if($session->getAuthenticatedPeerUuid() === null)
+            if($session->getPeerUuid() === null)
             {
                 return $rpcRequest->produceError(StandardError::AUTHENTICATION_REQUIRED);
             }
 
             // Get the peer and return it
-            return $rpcRequest->produceResponse(RegisteredPeerManager::getPeer($session->getAuthenticatedPeerUuid())->toSelfUser());
+            return $rpcRequest->produceResponse(RegisteredPeerManager::getPeer($session->getPeerUuid())->toSelfUser());
         }
         catch(DatabaseOperationException $e)
         {

@@ -61,13 +61,13 @@ class Register extends Method
         {
             // Get the session and check if it's already authenticated
             $session = SessionManager::getSession($request->getSessionUuid());
-            if($session->getAuthenticatedPeerUuid() !== null)
+            if($session->getPeerUuid() !== null)
             {
                 return $rpcRequest->produceError(StandardError::ALREADY_AUTHENTICATED);
             }
 
             // Create the peer & set the current's session authenticated peer as the newly created peer
-            SessionManager::updateAuthenticatedPeer($session->getUuid(), RegisteredPeerManager::createPeer($rpcRequest->getParameter('username')));
+            SessionManager::updatePeer($session->getUuid(), RegisteredPeerManager::createPeer($rpcRequest->getParameter('username')));
         }
         catch(DatabaseOperationException $e)
         {

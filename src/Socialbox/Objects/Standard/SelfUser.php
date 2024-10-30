@@ -10,6 +10,7 @@ use Socialbox\Objects\Database\RegisteredPeerRecord;
 class SelfUser implements SerializableInterface
 {
     private string $uuid;
+    private bool $enabled;
     private string $address;
     private string $username;
     private ?string $displayName;
@@ -29,8 +30,9 @@ class SelfUser implements SerializableInterface
         if($data instanceof RegisteredPeerRecord)
         {
             $this->uuid = $data->getUuid();
+            $this->enabled = $data->isEnabled();
             $this->username = $data->getUsername();
-            $this->address =
+            $this->address = $data->getAddress();
             $this->displayName = $data->getDisplayName();
             $this->flags = $data->getFlags();
             $this->created = $data->getCreated()->getTimestamp();
@@ -39,7 +41,9 @@ class SelfUser implements SerializableInterface
         }
 
         $this->uuid = $data['uuid'];
+        $this->enabled = $data['enabled'];
         $this->username = $data['username'];
+        $this->address = $data['address'];
         $this->displayName = $data['display_name'] ?? null;
 
         if(is_string($data['flags']))
@@ -77,6 +81,11 @@ class SelfUser implements SerializableInterface
         return $this->uuid;
     }
 
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
     /**
      *
      * @return string The username of the user.
@@ -84,6 +93,11 @@ class SelfUser implements SerializableInterface
     public function getUsername(): string
     {
         return $this->username;
+    }
+
+    public function getAddress(): string
+    {
+        return $this->address;
     }
 
     /**
@@ -102,15 +116,6 @@ class SelfUser implements SerializableInterface
     public function getFlags(): array
     {
         return $this->flags;
-    }
-
-    /**
-     *
-     * @return bool
-     */
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
     }
 
     /**
@@ -143,7 +148,9 @@ class SelfUser implements SerializableInterface
 
         return [
             'uuid' => $this->uuid,
+            'enabled' => $this->enabled,
             'username' => $this->username,
+            'address' => $this->address,
             'display_name' => $this->displayName,
             'flags' => $flags,
             'created' => $this->created

@@ -9,7 +9,8 @@ use Socialbox\Interfaces\SerializableInterface;
 class SessionRecord implements SerializableInterface
 {
     private string $uuid;
-    private ?string $authenticatedPeerUuid;
+    private ?string $peerUuid;
+    private bool $authenticated;
     private string $publicKey;
     private SessionState $state;
     private DateTime $created;
@@ -18,7 +19,8 @@ class SessionRecord implements SerializableInterface
     public function __construct(array $data)
     {
         $this->uuid = $data['uuid'];
-        $this->authenticatedPeerUuid = $data['authenticated_peer_uuid'] ?? null;
+        $this->peerUuid = $data['peer_uuid'] ?? null;
+        $this->authenticated = $data['authenticated'] ?? false;
         $this->publicKey = $data['public_key'];
         $this->created = $data['created'];
         $this->lastRequest = $data['last_request'];
@@ -38,9 +40,19 @@ class SessionRecord implements SerializableInterface
         return $this->uuid;
     }
 
-    public function getAuthenticatedPeerUuid(): ?string
+    public function getPeerUuid(): ?string
     {
-        return $this->authenticatedPeerUuid;
+        return $this->peerUuid;
+    }
+
+    public function isAuthenticated(): bool
+    {
+        if($this->peerUuid === null)
+        {
+            return false;
+        }
+
+        return $this->authenticated;
     }
 
     public function getPublicKey(): string
@@ -72,7 +84,8 @@ class SessionRecord implements SerializableInterface
     {
         return [
             'uuid' => $this->uuid,
-            'authenticated_peer_uuid' => $this->authenticatedPeerUuid,
+            'peer_uuid' => $this->peerUuid,
+            'authenticated' => $this->authenticated,
             'public_key' => $this->publicKey,
             'state' => $this->state->value,
             'created' => $this->created,
