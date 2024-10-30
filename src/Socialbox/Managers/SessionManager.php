@@ -5,15 +5,18 @@
     use DateMalformedStringException;
     use DateTime;
     use InvalidArgumentException;
+    use LogLib\Log;
     use PDO;
     use PDOException;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
+    use Socialbox\Classes\Logger;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\StandardException;
+    use Socialbox\Objects\Database\RegisteredPeerRecord;
     use Socialbox\Objects\Database\SessionRecord;
     use Symfony\Component\Uid\Uuid;
 
@@ -92,6 +95,8 @@
          */
         public static function getSession(string $uuid): SessionRecord
         {
+            Logger::getLogger()->verbose(sprintf("Retrieving session %s from the database", $uuid));
+
             try
             {
                 $statement = Database::getConnection()->prepare("SELECT * FROM sessions WHERE uuid=?");
@@ -106,7 +111,15 @@
 
                 // Convert the timestamp fields to DateTime objects
                 $data['created'] = new DateTime($data['created']);
-                $data['last_request'] = new DateTime($data['last_request']);
+
+                if(isset($data['last_request']) && $data['last_request'] !== null)
+                {
+                    $data['last_request'] = new DateTime($data['last_request']);
+                }
+                else
+                {
+                    $data['last_request'] = null;
+                }
 
                 return SessionRecord::fromArray($data);
 
@@ -121,15 +134,23 @@
          * Update the authenticated peer associated with the given session UUID.
          *
          * @param string $uuid The UUID of the session to update.
+         * @param RegisteredPeerRecord|string $registeredPeerUuid
          * @return void
          * @throws DatabaseOperationException
          */
-        public static function updateAuthenticatedPeer(string $uuid): void
+        public static function updateAuthenticatedPeer(string $uuid, RegisteredPeerRecord|string $registeredPeerUuid): void
         {
+            if($registeredPeerUuid instanceof RegisteredPeerRecord)
+            {
+                $registeredPeerUuid = $registeredPeerUuid->getUuid();
+            }
+
+            Logger::getLogger()->verbose(sprintf("Assigning peer %s to session %s", $registeredPeerUuid, $uuid));
+
             try
             {
                 $statement = Database::getConnection()->prepare("UPDATE sessions SET authenticated_peer_uuid=? WHERE uuid=?");
-                $statement->bindParam(1, $uuid);
+                $statement->bindParam(1, $registeredPeerUuid);
                 $statement->bindParam(2, $uuid);
                 $statement->execute();
             }
@@ -148,6 +169,8 @@
          */
         public static function updateLastRequest(string $uuid): void
         {
+            Logger::getLogger()->verbose(sprintf("Updating last request timestamp for session %s", $uuid));
+
             try
             {
                 $formattedTime = (new DateTime('@' . time()))->format('Y-m-d H:i:s');
@@ -172,6 +195,8 @@
          */
         public static function updateState(string $uuid, SessionState $state): void
         {
+            Logger::getLogger()->verbose(sprintf("Updating state of session %s to %s", $uuid, $state->value));
+
             try
             {
                 $state_value = $state->value;
