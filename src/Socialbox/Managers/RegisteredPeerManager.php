@@ -6,6 +6,7 @@ use PDO;
 use PDOException;
 use Socialbox\Classes\Configuration;
 use Socialbox\Classes\Database;
+use Socialbox\Classes\Logger;
 use Socialbox\Enums\Flags\PeerFlags;
 use Socialbox\Enums\StandardError;
 use Socialbox\Exceptions\DatabaseOperationException;
@@ -24,6 +25,8 @@ class RegisteredPeerManager
      */
     public static function usernameExists(string $username): bool
     {
+        Logger::getLogger()->verbose(sprintf("Checking if username %s already exists", $username));
+
         try
         {
             $statement = Database::getConnection()->prepare('SELECT COUNT(*) FROM `registered_peers` WHERE username=?');
@@ -49,11 +52,7 @@ class RegisteredPeerManager
      */
     public static function createPeer(string $username, bool $enabled=false): string
     {
-        if(self::usernameExists($username))
-        {
-            throw new DatabaseOperationException('The username already exists');
-        }
-
+        Logger::getLogger()->verbose(sprintf("Creating a new peer with username %s", $username));
         $uuid = Uuid::v4()->toRfc4122();
 
         // If `enabled` is True, we insert the peer into the database as an activated account.
@@ -77,11 +76,6 @@ class RegisteredPeerManager
 
         // Otherwise, we insert the peer into the database as a disabled account & the required verification flags.
         $flags = [];
-
-        if(Configuration::getRegistrationConfiguration()->isRegistrationEnabled())
-        {
-            $flags[] = PeerFlags::VER_EMAIL;
-        }
 
         if(Configuration::getRegistrationConfiguration()->isPasswordRequired())
         {
@@ -120,7 +114,7 @@ class RegisteredPeerManager
 
         try
         {
-            $implodedFlags = implode(',', $flags);
+            $implodedFlags = implode(',', array_map(fn($flag) => $flag->name, $flags));
             $statement = Database::getConnection()->prepare('INSERT INTO `registered_peers` (uuid, username, enabled, flags) VALUES (?, ?, ?, ?)');
             $statement->bindParam(1, $uuid);
             $statement->bindParam(2, $username);
@@ -151,6 +145,8 @@ class RegisteredPeerManager
             $uuid = $uuid->getUuid();
         }
 
+        Logger::getLogger()->verbose(sprintf("Deleting peer %s", $uuid));
+
         try
         {
             $statement = Database::getConnection()->prepare('DELETE FROM `registered_peers` WHERE uuid=?');
@@ -168,7 +164,6 @@ class RegisteredPeerManager
      *
      * @param string|RegisteredPeerRecord $uuid The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
      * @return RegisteredPeerRecord Returns a RegisteredPeerRecord object containing the peer's information.
-     * @throws StandardException If the requested peer does not exist.
      * @throws DatabaseOperationException If there is an error during the database operation.
      */
     public static function getPeer(string|RegisteredPeerRecord $uuid): RegisteredPeerRecord
@@ -177,6 +172,8 @@ class RegisteredPeerManager
         {
             $uuid = $uuid->getUuid();
         }
+
+        Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $uuid));
 
         try
         {
@@ -188,12 +185,12 @@ class RegisteredPeerManager
 
             if($result === false)
             {
-                throw new StandardException(sprintf("The requested peer '%s' does not exist", $uuid), StandardError::PEER_NOT_FOUND);
+                throw new DatabaseOperationException(sprintf("The requested peer '%s' does not exist", $uuid));
             }
 
             return new RegisteredPeerRecord($result);
         }
-        catch(PDOException $e)
+        catch(PDOException | \DateMalformedStringException $e)
         {
             throw new DatabaseOperationException('Failed to get the peer from the database', $e);
         }
@@ -209,6 +206,8 @@ class RegisteredPeerManager
      */
     public static function getPeerByUsername(string $username): RegisteredPeerRecord
     {
+        Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $username));
+
         try
         {
             $statement = Database::getConnection()->prepare('SELECT * FROM `registered_peers` WHERE username=?');
@@ -224,7 +223,7 @@ class RegisteredPeerManager
 
             return new RegisteredPeerRecord($result);
         }
-        catch(PDOException $e)
+        catch(PDOException | \DateMalformedStringException $e)
         {
             throw new DatabaseOperationException('Failed to get the peer from the database', $e);
         }
@@ -243,6 +242,8 @@ class RegisteredPeerManager
         {
             $uuid = $uuid->getUuid();
         }
+
+        Logger::getLogger()->verbose(sprintf("Enabling peer %s", $uuid));
 
         try
         {
@@ -270,6 +271,8 @@ class RegisteredPeerManager
             $uuid = $uuid->getUuid();
         }
 
+        Logger::getLogger()->verbose(sprintf("Disabling peer %s", $uuid));
+
         try
         {
             $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET enabled=0 WHERE uuid=?');
@@ -289,7 +292,6 @@ class RegisteredPeerManager
      * @param PeerFlags|array $flags The flag or array of flags to be added to the peer.
      * @return void
      * @throws DatabaseOperationException If there is an error while updating the database.
-     * @throws StandardException If the peer does not exist.
      */
     public static function addFlag(string|RegisteredPeerRecord $uuid, PeerFlags|array $flags): void
     {
@@ -297,6 +299,8 @@ class RegisteredPeerManager
         {
             $uuid = $uuid->getUuid();
         }
+
+        Logger::getLogger()->verbose(sprintf("Adding flag(s) %s to peer %s", implode(',', $flags), $uuid));
 
         $peer = self::getPeer($uuid);
         $existingFlags = $peer->getFlags();
@@ -331,7 +335,6 @@ class RegisteredPeerManager
      * @param PeerFlags $flag The flag to be removed from the peer.
      * @return void
      * @throws DatabaseOperationException If there is an error while updating the database.
-     * @throws StandardException If the peer does not exist.
      */
     public static function removeFlag(string|RegisteredPeerRecord $uuid, PeerFlags $flag): void
     {
@@ -339,6 +342,8 @@ class RegisteredPeerManager
         {
             $uuid = $uuid->getUuid();
         }
+
+        Logger::getLogger()->verbose(sprintf("Removing flag %s from peer %s", $flag->value, $uuid));
 
         $peer = self::getPeer($uuid);
         if(!$peer->flagExists($flag))
