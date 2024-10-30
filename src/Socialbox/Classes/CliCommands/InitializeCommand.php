@@ -9,11 +9,11 @@ use Socialbox\Abstracts\CacheLayer;
 use Socialbox\Classes\Configuration;
 use Socialbox\Classes\Cryptography;
 use Socialbox\Classes\Database;
+use Socialbox\Classes\Logger;
 use Socialbox\Classes\Resources;
 use Socialbox\Enums\DatabaseObjects;
-use Socialbox\Exceptions\DatabaseOperationException;
+use Socialbox\Exceptions\CryptographyException;
 use Socialbox\Interfaces\CliCommandInterface;
-use Socialbox\Managers\VariableManager;
 
 class InitializeCommand implements CliCommandInterface
 {
@@ -22,23 +22,55 @@ class InitializeCommand implements CliCommandInterface
      */
     public static function execute(array $args): int
     {
-        if(Configuration::getConfiguration()['instance']['enabled'] === false && !isset($args['force']))
+        if(Configuration::getInstanceConfiguration()->isEnabled() === false && !isset($args['force']))
         {
-            Log::info('net.nosial.socialbox', 'Socialbox is disabled. Use --force to initialize the instance or set `instance.enabled` to True in the configuration');
+            $required_configurations = [
+                'database.host', 'database.port', 'database.username', 'database.password', 'database.name',
+                'instance.enabled', 'instance.domain', 'registration.*'
+            ];
+
+            Logger::getLogger()->error('Socialbox is disabled. Use --force to initialize the instance or set `instance.enabled` to True in the configuration');
+            Logger::getLogger()->info('The reason you are required to do this is to allow you to configure the instance before enabling it');
+            Logger::getLogger()->info('The following configurations are required to be set before enabling the instance:');
+            foreach($required_configurations as $config)
+            {
+                Logger::getLogger()->info(sprintf('  - %s', $config));
+            }
+
+            Logger::getLogger()->info('instance.private_key & instance.public_key are automatically generated if not set');
+            Logger::getLogger()->info('instance.domain is required to be set to the domain name of the instance');
+            Logger::getLogger()->info('instance.rpc_endpoint is required to be set to the publicly accessible http rpc endpoint of this server');
+            Logger::getLogger()->info('registration.* are required to be set to allow users to register to the instance');
+            Logger::getLogger()->info('You will be given a DNS TXT record to set for the public key after the initialization process');
+            Logger::getLogger()->info('The configuration file can be edited using ConfigLib:');
+            Logger::getLogger()->info('  configlib --conf socialbox -e nano');
+            Logger::getLogger()->info('Or manually at:');
+            Logger::getLogger()->info(sprintf('  %s', Configuration::getConfigurationLib()->getPath()));
             return 1;
         }
 
-        Log::info('net.nosial.socialbox', 'Initializing Socialbox...');
+        if(Configuration::getInstanceConfiguration()->getDomain() === null)
+        {
+            Logger::getLogger()->error('instance.domain is required but was not set');
+            return 1;
+        }
 
+        if(Configuration::getInstanceConfiguration()->getRpcEndpoint() === null)
+        {
+            Logger::getLogger()->error('instance.rpc_endpoint is required but was not set');
+            return 1;
+        }
+
+        Logger::getLogger()->info('Initializing Socialbox...');
         if(Configuration::getCacheConfiguration()->isEnabled())
         {
-            Log::verbose('net.nosial.socialbox', 'Clearing cache layer...');
+            Logger::getLogger()->verbose('Clearing cache layer...');
             CacheLayer::getInstance()->clear();
         }
 
         foreach(DatabaseObjects::casesOrdered() as $object)
         {
-            Log::verbose('net.nosial.socialbox', "Initializing database object {$object->value}");
+            Logger::getLogger()->verbose("Initializing database object {$object->value}");
 
             try
             {
@@ -49,44 +81,48 @@ class InitializeCommand implements CliCommandInterface
                 // Check if the error code is for "table already exists"
                 if ($e->getCode() === '42S01')
                 {
-                    Log::warning('net.nosial.socialbox', "Database object {$object->value} already exists, skipping...");
+                    Logger::getLogger()->warning("Database object {$object->value} already exists, skipping...");
                     continue;
                 }
                 else
                 {
-                    Log::error('net.nosial.socialbox', "Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
+                    Logger::getLogger()->error("Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
                     return 1;
                 }
             }
             catch(Exception $e)
             {
-                Log::error('net.nosial.socialbox', "Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
+                Logger::getLogger()->error("Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
                 return 1;
             }
         }
 
-        try
+        if(!Configuration::getInstanceConfiguration()->getPublicKey() || !Configuration::getInstanceConfiguration()->getPrivateKey())
         {
-
-            if(!VariableManager::variableExists('PUBLIC_KEY') || !VariableManager::variableExists('PRIVATE_KEY'))
+            try
             {
-                Log::info('net.nosial.socialbox', 'Generating new key pair...');
-
+                Logger::getLogger()->info('Generating new key pair...');
                 $keyPair = Cryptography::generateKeyPair();
-                VariableManager::setVariable('PUBLIC_KEY', $keyPair->getPublicKey());
-                VariableManager::setVariable('PRIVATE_KEY', $keyPair->getPrivateKey());
-
-                Log::info('net.nosial.socialbox', 'Set the DNS TXT record for the public key to the following value:');
-                Log::info('net.nosial.socialbox', "socialbox-key={$keyPair->getPublicKey()}");
             }
-        }
-        catch(DatabaseOperationException $e)
-        {
-            Log::error('net.nosial.socialbox', "Failed to generate key pair: {$e->getMessage()}", $e);
-            return 1;
+            catch (CryptographyException $e)
+            {
+                Logger::getLogger()->error('Failed to generate keypair', $e);
+                return 1;
+            }
+
+            Logger::getLogger()->info('Updating configuration...');
+            Configuration::getConfigurationLib()->set('instance.private_key', $keyPair->getPrivateKey());
+            Configuration::getConfigurationLib()->set('instance.public_key', $keyPair->getPublicKey());
+            Configuration::getConfigurationLib()->save();
+
+            Logger::getLogger()->info(sprintf('Set the DNS TXT record for the domain %s to the following value:', Configuration::getInstanceConfiguration()->getDomain()));
+            Logger::getLogger()->info(sprintf("v=socialbox;sb-rpc=%s;sb-key=%s;",
+                Configuration::getInstanceConfiguration()->getRpcEndpoint(), $keyPair->getPublicKey()
+            ));
         }
 
-        Log::info('net.nosial.socialbox', 'Socialbox has been initialized successfully');
+        // TODO: Create a host peer here?
+        Logger::getLogger()->info('Socialbox has been initialized successfully');
         return 0;
     }
 
