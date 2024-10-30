@@ -2,14 +2,19 @@
 
 namespace Socialbox\Classes;
 
+use League\Flysystem\Config;
 use Socialbox\Classes\Configuration\CacheConfiguration;
 use Socialbox\Classes\Configuration\DatabaseConfiguration;
+use Socialbox\Classes\Configuration\InstanceConfiguration;
+use Socialbox\Classes\Configuration\LoggingConfiguration;
 use Socialbox\Classes\Configuration\RegistrationConfiguration;
 
 class Configuration
 {
-    private static ?array $configuration = null;
+    private static ?\ConfigLib\Configuration $configuration = null;
     private static ?DatabaseConfiguration $databaseConfiguration = null;
+    private static ?InstanceConfiguration $instanceConfiguration = null;
+    private static ?LoggingConfiguration $loggingConfiguration = null;
     private static ?CacheConfiguration $cacheConfiguration = null;
     private static ?RegistrationConfiguration $registrationConfiguration = null;
 
@@ -23,10 +28,16 @@ class Configuration
     {
         $config = new \ConfigLib\Configuration('socialbox');
 
-        // False by default, requires the user to enable it.
-        $config->setDefault('instance.enabled', false);
+        // Instance configuration
+        $config->setDefault('instance.enabled', false); // False by default, requires the user to enable it.
+        $config->setDefault('instance.domain', null);
+        $config->setDefault('instance.rpc_endpoint', null);
+        $config->setDefault('instance.private_key', null);
+        $config->setDefault('instance.public_key', null);
 
+        // Security Configuration
         $config->setDefault('security.display_internal_exceptions', false);
+        $config->setDefault('security.resolved_servers_ttl', 600);
 
         // Database configuration
         $config->setDefault('database.host', '127.0.0.1');
@@ -34,6 +45,12 @@ class Configuration
         $config->setDefault('database.username', 'root');
         $config->setDefault('database.password', 'root');
         $config->setDefault('database.name', 'test');
+
+        // Logging configuration
+        $config->setDefault('logging.console_logging_enabled', true);
+        $config->setDefault('logging.console_logging_level', 'info');
+        $config->setDefault('logging.file_logging_enabled', true);
+        $config->setDefault('logging.file_logging_level', 'error');
 
         // Cache layer configuration
         $config->setDefault('cache.enabled', false);
@@ -56,13 +73,14 @@ class Configuration
         $config->setDefault('registration.sms_verification_required', false);
         $config->setDefault('registration.phone_call_verification_required', false);
         $config->setDefault('registration.image_captcha_verification_required', true);
-
         $config->save();
 
-        self::$configuration = $config->getConfiguration();
-        self::$databaseConfiguration = new DatabaseConfiguration(self::$configuration['database']);
-        self::$cacheConfiguration = new CacheConfiguration(self::$configuration['cache']);
-        self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration['registration']);
+        self::$configuration = $config;
+        self::$databaseConfiguration = new DatabaseConfiguration(self::$configuration->getConfiguration()['database']);
+        self::$instanceConfiguration = new InstanceConfiguration(self::$configuration->getConfiguration()['instance']);
+        self::$loggingConfiguration = new LoggingConfiguration(self::$configuration->getConfiguration()['logging']);
+        self::$cacheConfiguration = new CacheConfiguration(self::$configuration->getConfiguration()['cache']);
+        self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration->getConfiguration()['registration']);
     }
 
     /**
@@ -72,6 +90,16 @@ class Configuration
      * @return array The current configuration array.
      */
     public static function getConfiguration(): array
+    {
+        if(self::$configuration === null)
+        {
+            self::initializeConfiguration();
+        }
+
+        return self::$configuration->getConfiguration();
+    }
+
+    public static function getConfigurationLib(): \ConfigLib\Configuration
     {
         if(self::$configuration === null)
         {
@@ -94,6 +122,36 @@ class Configuration
         }
 
         return self::$databaseConfiguration;
+    }
+
+    /**
+     * Retrieves the current instance configuration.
+     *
+     * @return InstanceConfiguration The current instance configuration instance.
+     */
+    public static function getInstanceConfiguration(): InstanceConfiguration
+    {
+        if(self::$instanceConfiguration === null)
+        {
+            self::initializeConfiguration();
+        }
+
+        return self::$instanceConfiguration;
+    }
+
+    /**
+     * Retrieves the current logging configuration.
+     *
+     * @return LoggingConfiguration The current logging configuration instance.
+     */
+    public static function getLoggingConfiguration(): LoggingConfiguration
+    {
+        if(self::$loggingConfiguration === null)
+        {
+            self::initializeConfiguration();
+        }
+
+        return self::$loggingConfiguration;
     }
 
     /**

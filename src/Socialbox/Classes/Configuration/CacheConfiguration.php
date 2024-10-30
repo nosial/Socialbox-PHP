@@ -26,9 +26,9 @@ class CacheConfiguration
         $this->password = $data['password'] ? (string)$data['password'] : null;
         $this->database = $data['database'] ? (int)$data['database'] : null;
 
-        $this->sessionsEnabled = (bool)$data['sessions.enabled'];
-        $this->sessionsTtl = (int)$data['sessions.ttl'];
-        $this->sessionsMax = (int)$data['sessions.max'];
+        $this->sessionsEnabled = (bool)$data['sessions']['enabled'];
+        $this->sessionsTtl = (int)$data['sessions']['ttl'];
+        $this->sessionsMax = (int)$data['sessions']['max'];
     }
 
     public function isEnabled(): bool

@@ -30,7 +30,7 @@ class RegistrationConfiguration
      */
     public function __construct(array $data)
     {
-        $this->registrationEnabled = (bool)$data['registration_enabled'];
+        $this->registrationEnabled = (bool)$data['enabled'];
         $this->passwordRequired = (bool)$data['password_required'];
         $this->otpRequired = (bool)$data['otp_required'];
         $this->displayNameRequired = (bool)$data['display_name_required'];
