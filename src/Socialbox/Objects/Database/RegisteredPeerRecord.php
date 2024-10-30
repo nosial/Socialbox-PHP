@@ -3,8 +3,11 @@
 namespace Socialbox\Objects\Database;
 
 use DateTime;
+use Socialbox\Classes\Configuration;
+use Socialbox\Classes\Logger;
 use Socialbox\Enums\Flags\PeerFlags;
 use Socialbox\Interfaces\SerializableInterface;
+use Socialbox\Objects\Standard\SelfUser;
 
 class RegisteredPeerRecord implements SerializableInterface
 {
@@ -22,7 +25,7 @@ class RegisteredPeerRecord implements SerializableInterface
      * Constructor for initializing class properties from provided data.
      *
      * @param array $data Array containing initialization data.
-     * @return void
+     * @throws \DateMalformedStringException
      */
     public function __construct(array $data)
     {
@@ -32,15 +35,7 @@ class RegisteredPeerRecord implements SerializableInterface
 
         if($data['flags'])
         {
-            if(is_array($data['flags']))
-            {
-                $this->flags = array_map(fn($flag) => PeerFlags::from($flag), $data['flags']);
-            }
-            elseif(is_string($data['flags']))
-            {
-                $flags = explode(',', $data['flags']);
-                $this->flags = array_map(fn($flag) => PeerFlags::from($flag), $flags);
-            }
+            $this->flags = PeerFlags::fromString($data['flags']);
         }
         else
         {
@@ -77,6 +72,16 @@ class RegisteredPeerRecord implements SerializableInterface
     public function getUsername(): string
     {
         return $this->username;
+    }
+
+    /**
+     * Constructs and retrieves the peer address using the current instance's username and the domain from the configuration.
+     *
+     * @return string The constructed peer address.
+     */
+    public function getAddress(): string
+    {
+        return sprintf("%s@%s", $this->username, Configuration::getInstanceConfiguration()->getDomain());
     }
 
     /**
@@ -120,6 +125,16 @@ class RegisteredPeerRecord implements SerializableInterface
     }
 
     /**
+     * Converts the current instance to a SelfUser object.
+     *
+     * @return SelfUser The SelfUser object.
+     */
+    public function toSelfUser(): SelfUser
+    {
+        return new SelfUser($this);
+    }
+
+    /**
      * @inheritDoc
      */
     public static function fromArray(array $data): object
@@ -136,7 +151,7 @@ class RegisteredPeerRecord implements SerializableInterface
             'uuid' => $this->uuid,
             'username' => $this->username,
             'display_name' => $this->displayName,
-            'flags' => implode(',', array_map(fn($flag) => $flag->name, $this->flags)),
+            'flags' => PeerFlags::toString($this->flags),
             'enabled' => $this->enabled,
             'created' => $this->created
         ];
