@@ -23,6 +23,9 @@ enum StandardError : int
     case SESSION_NOT_FOUND = -3004;
     case SESSION_REQUIRED = -3005;
     case REGISTRATION_DISABLED = -3006;
+    case CAPTCHA_NOT_AVAILABLE = -3007;
+    case INCORRECT_CAPTCHA_ANSWER = -3008;
+    case CAPTCHA_EXPIRED = -3009;
 
     // General Error Messages
     case PEER_NOT_FOUND = -4000;
@@ -52,6 +55,10 @@ enum StandardError : int
             self::AUTHENTICATION_REQUIRED => 'Authentication is required to preform this action',
             self::SESSION_NOT_FOUND => 'The requested session UUID was not found',
             self::SESSION_REQUIRED => 'A session is required to preform this action',
+            self::REGISTRATION_DISABLED => 'Registration is disabled on the server',
+            self::CAPTCHA_NOT_AVAILABLE => 'Captcha is not available',
+            self::INCORRECT_CAPTCHA_ANSWER => 'The Captcha answer is incorrect',
+            self::CAPTCHA_EXPIRED => 'The captcha has expired and a new captcha needs to be requested',
 
             self::PEER_NOT_FOUND => 'The requested peer was not found',
             self::INVALID_USERNAME => 'The given username is invalid, it must be Alphanumeric with a minimum of 3 character but no greater than 255 characters',

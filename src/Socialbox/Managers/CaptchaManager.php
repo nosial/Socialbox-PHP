@@ -6,6 +6,7 @@ use DateTime;
 use DateTimeInterface;
 use PDOException;
 use Socialbox\Classes\Database;
+use Socialbox\Classes\Logger;
 use Socialbox\Classes\Utilities;
 use Socialbox\Enums\Status\CaptchaStatus;
 use Socialbox\Exceptions\DatabaseOperationException;
@@ -21,7 +22,7 @@ class CaptchaManager
      * @return string The answer to the captcha.
      * @throws DatabaseOperationException If the operation fails.
      */
-    private static function createCaptcha(string|RegisteredPeerRecord $peer_uuid): string
+    public static function createCaptcha(string|RegisteredPeerRecord $peer_uuid): string
     {
         // If the peer_uuid is a RegisteredPeerRecord, get the UUID
         if($peer_uuid instanceof RegisteredPeerRecord)
@@ -33,6 +34,7 @@ class CaptchaManager
 
         if(!self::captchaExists($peer_uuid))
         {
+            Logger::getLogger()->debug('Creating a new captcha record for peer ' . $peer_uuid);
             $statement = Database::getConnection()->prepare("INSERT INTO captcha_images (peer_uuid, answer) VALUES (?, ?)");
             $statement->bindParam(1, $peer_uuid);
             $statement->bindParam(2, $answer);
@@ -49,6 +51,7 @@ class CaptchaManager
             return $answer;
         }
 
+        Logger::getLogger()->debug('Updating an existing captcha record for peer ' . $peer_uuid);
         $statement = Database::getConnection()->prepare("UPDATE captcha_images SET answer=?, status='UNSOLVED', created=NOW() WHERE peer_uuid=?");
         $statement->bindParam(1, $answer);
         $statement->bindParam(2, $peer_uuid);
@@ -83,6 +86,7 @@ class CaptchaManager
         // Return false if the captcha does not exist
         if(!self::captchaExists($peer_uuid))
         {
+            Logger::getLogger()->warning(sprintf("The requested captcha does not exist for the peer %s", $peer_uuid));
             return false;
         }
 
@@ -91,21 +95,25 @@ class CaptchaManager
         // Return false if the captcha has already been solved
         if($captcha->getStatus() === CaptchaStatus::SOLVED)
         {
+            Logger::getLogger()->warning(sprintf("The requested captcha has already been solved for the peer %s", $peer_uuid));
             return false;
         }
 
         // Return false if the captcha is older than 5 minutes
-        if ($captcha->getCreated() instanceof DateTimeInterface && $captcha->getCreated()->diff(new DateTime())->i > 5)
+        if ($captcha->isExpired())
         {
+            Logger::getLogger()->warning(sprintf("The requested captcha is older than 5 minutes for the peer %s", $peer_uuid));
             return false;
         }
 
         // Verify the answer
         if($captcha->getAnswer() !== $answer)
         {
+            Logger::getLogger()->warning(sprintf("The answer to the requested captcha is incorrect for the peer %s", $peer_uuid));
             return false;
         }
 
+        Logger::getLogger()->debug(sprintf("The answer to the requested captcha is correct for the peer %s", $peer_uuid));
         $statement = Database::getConnection()->prepare("UPDATE captcha_images SET status='SOLVED', answered=NOW() WHERE peer_uuid=?");
         $statement->bindParam(1, $peer_uuid);
 
@@ -135,6 +143,8 @@ class CaptchaManager
         {
             $peer_uuid = $peer_uuid->getUuid();
         }
+
+        Logger::getLogger()->debug('Getting the captcha record for peer ' . $peer_uuid);
 
         try
         {
@@ -170,6 +180,8 @@ class CaptchaManager
         {
             $peer_uuid = $peer_uuid->getUuid();
         }
+
+        Logger::getLogger()->debug('Checking if a captcha exists for peer ' . $peer_uuid);
 
         try
         {

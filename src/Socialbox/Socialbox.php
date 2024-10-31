@@ -52,6 +52,7 @@
                     {
                         Logger::getLogger()->debug(sprintf('Processing RPC request for method %s', $rpcRequest->getMethod()));
                         $response = $method->execute($clientRequest, $rpcRequest);
+                        Logger::getLogger()->debug(sprintf('%s method executed successfully', $rpcRequest->getMethod()));
                     }
                     catch(StandardException $e)
                     {

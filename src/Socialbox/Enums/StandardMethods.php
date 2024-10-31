@@ -3,6 +3,7 @@
 namespace Socialbox\Enums;
 
 use Socialbox\Classes\StandardMethods\CreateSession;
+use Socialbox\Classes\StandardMethods\GetCaptcha;
 use Socialbox\Classes\StandardMethods\GetMe;
 use Socialbox\Classes\StandardMethods\Ping;
 use Socialbox\Classes\StandardMethods\Register;
@@ -17,6 +18,7 @@ enum StandardMethods : string
     case CREATE_SESSION = 'createSession';
     case REGISTER = 'register';
     case GET_ME = 'getMe';
+    case GET_CAPTCHA = 'getCaptcha';
 
     /**
      * @param ClientRequest $request
@@ -32,6 +34,7 @@ enum StandardMethods : string
             self::CREATE_SESSION => CreateSession::execute($request, $rpcRequest),
             self::REGISTER => Register::execute($request, $rpcRequest),
             self::GET_ME => GetMe::execute($request, $rpcRequest),
+            self::GET_CAPTCHA => GetCaptcha::execute($request, $rpcRequest),
         };
     }
 }

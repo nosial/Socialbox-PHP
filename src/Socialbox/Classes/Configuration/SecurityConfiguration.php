@@ -4,7 +4,7 @@ namespace Socialbox\Classes\Configuration;
 
 class SecurityConfiguration
 {
-    private bool $displayInternalErrors;
+    private bool $displayInternalExceptions;
     private int $resolvedServersTtl;
     private int $captchaTtl;
 
@@ -17,7 +17,7 @@ class SecurityConfiguration
      */
     public function __construct(array $data)
     {
-        $this->displayInternalErrors = $data['display_internal_errors'];
+        $this->displayInternalExceptions = $data['display_internal_exceptions'];
         $this->resolvedServersTtl = $data['resolved_servers_ttl'];
         $this->captchaTtl = $data['captcha_ttl'];
     }
@@ -27,9 +27,9 @@ class SecurityConfiguration
      *
      * @return bool True if the display of internal errors is enabled, false otherwise.
      */
-    public function isDisplayInternalErrors(): bool
+    public function isDisplayInternalExceptions(): bool
     {
-        return $this->displayInternalErrors;
+        return $this->displayInternalExceptions;
     }
 
     /**
