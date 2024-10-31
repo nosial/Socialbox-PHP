@@ -331,35 +331,33 @@ class RegisteredPeerManager
     /**
      * Removes a specific flag from the peer identified by the given UUID or RegisteredPeerRecord.
      *
-     * @param string|RegisteredPeerRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer.
+     * @param string|RegisteredPeerRecord $peer
      * @param PeerFlags $flag The flag to be removed from the peer.
      * @return void
      * @throws DatabaseOperationException If there is an error while updating the database.
      */
-    public static function removeFlag(string|RegisteredPeerRecord $uuid, PeerFlags $flag): void
+    public static function removeFlag(string|RegisteredPeerRecord $peer, PeerFlags $flag): void
     {
-        if($uuid instanceof RegisteredPeerRecord)
+        if(is_string($peer))
         {
-            $uuid = $uuid->getUuid();
+            $peer = self::getPeer($peer);
         }
 
-        Logger::getLogger()->verbose(sprintf("Removing flag %s from peer %s", $flag->value, $uuid));
+        Logger::getLogger()->verbose(sprintf("Removing flag %s from peer %s", $flag->value, $peer->getUuid()));
 
-        $peer = self::getPeer($uuid);
         if(!$peer->flagExists($flag))
         {
             return;
         }
 
-        $flags = $peer->getFlags();
-        unset($flags[array_search($flag, $flags)]);
+        $peer->removeFlag($flag);
 
         try
         {
-            $implodedFlags = implode(',', $flags);
+            $implodedFlags = PeerFlags::toString($peer->getFlags());
             $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET flags=? WHERE uuid=?');
             $statement->bindParam(1, $implodedFlags);
-            $statement->bindParam(2, $uuid);
+            $statement->bindParam(2, $registeredPeer);
             $statement->execute();
         }
         catch(PDOException $e)

@@ -104,6 +104,15 @@ class RegisteredPeerRecord implements SerializableInterface
         return in_array($flag, $this->flags, true);
     }
 
+    public function removeFlag(PeerFlags $flag): void
+    {
+        $key = array_search($flag, $this->flags, true);
+        if($key !== false)
+        {
+            unset($this->flags[$key]);
+        }
+    }
+
     /**
      * Checks if the current instance is enabled.
      *
