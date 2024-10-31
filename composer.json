@@ -13,6 +13,7 @@
     "ext-pdo": "*",
     "ext-openssl": "*",
     "ext-redis": "*",
-    "ext-memcached": "*"
+    "ext-memcached": "*",
+    "ext-curl": "*"
   }
 }
