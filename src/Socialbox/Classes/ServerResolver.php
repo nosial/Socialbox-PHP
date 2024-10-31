@@ -19,18 +19,17 @@ class ServerResolver
      * @throws ResolutionException If the DNS TXT records cannot be resolved or if required information is missing.
      * @throws DatabaseOperationException
      */
-    public static function resolveDomain(string $domain): ResolvedServer
+    public static function resolveDomain(string $domain, bool $useDatabase=true): ResolvedServer
     {
         // First query the database to check if the domain is already resolved
-        if(ResolvedServersManager::resolvedServerExists($domain))
+        if($useDatabase)
         {
-            // If the resolved server was updated in the last 30 minutes, return it
-            if(ResolvedServersManager::getResolvedServerUpdated($domain) > (time() - 1800))
+            $resolvedServer = ResolvedServersManager::getResolvedServer($domain);
+            if($resolvedServer !== null)
             {
-                return ResolvedServersManager::getResolvedServer($domain)->toResolvedServer();
+                return $resolvedServer->toResolvedServer();
             }
         }
-
 
         $txtRecords = self::dnsGetTxtRecords($domain);
         if ($txtRecords === false)
