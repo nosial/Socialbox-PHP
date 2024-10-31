@@ -2,9 +2,7 @@
 
 namespace Socialbox\Classes\StandardMethods;
 
-use Gregwar\Captcha\CaptchaBuilder;
 use Socialbox\Abstracts\Method;
-use Socialbox\Classes\Logger;
 use Socialbox\Enums\Flags\PeerFlags;
 use Socialbox\Enums\StandardError;
 use Socialbox\Exceptions\DatabaseOperationException;
@@ -15,10 +13,10 @@ use Socialbox\Managers\RegisteredPeerManager;
 use Socialbox\Managers\SessionManager;
 use Socialbox\Objects\ClientRequest;
 use Socialbox\Objects\RpcRequest;
-use Socialbox\Objects\Standard\ImageCaptcha;
 
-class VerificationGetCaptcha extends Method
+class VerificationAnswerImageCaptcha extends Method
 {
+
     /**
      * @inheritDoc
      */
@@ -62,21 +60,37 @@ class VerificationGetCaptcha extends Method
             return $rpcRequest->produceError(StandardError::CAPTCHA_NOT_AVAILABLE, 'You are not required to complete a captcha at this time');
         }
 
+        if(!$rpcRequest->containsParameter('answer'))
+        {
+            return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The answer parameter is required');
+        }
+
         try
         {
-            Logger::getLogger()->debug('Creating a new captcha for peer ' . $peer->getUuid());
-            $answer = CaptchaManager::createCaptcha($peer);
-            $captchaRecord = CaptchaManager::getCaptcha($peer);
+            if(CaptchaManager::getCaptcha($session->getPeerUuid())->isExpired())
+            {
+                return $rpcRequest->produceError(StandardError::CAPTCHA_EXPIRED, 'The captcha has expired');
+            }
+        }
+        catch(DatabaseOperationException $e)
+        {
+            throw new StandardException("There was an unexpected error while trying to get the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
+        }
+
+        try
+        {
+            $result = CaptchaManager::answerCaptcha($session->getPeerUuid(), $rpcRequest->getParameter('answer'));
+
+            if($result)
+            {
+                RegisteredPeerManager::removeFlag($session->getPeerUuid(), PeerFlags::VER_SOLVE_IMAGE_CAPTCHA);
+            }
+
+            return $rpcRequest->produceResponse($result);
         }
         catch (DatabaseOperationException $e)
         {
-            throw new StandardException("There was an unexpected error while trying create the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
+            throw new StandardException("There was an unexpected error while trying to answer the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
         }
-
-        // Build the captcha
-        return $rpcRequest->produceResponse(new ImageCaptcha([
-            'expires' => $captchaRecord->getExpires()->getTimestamp(),
-            'image' => (new CaptchaBuilder($answer))->build()->inline()] // Returns HTML base64 encoded image of the captcha
-        ));
     }
 }
