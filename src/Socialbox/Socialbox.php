@@ -3,7 +3,6 @@
     namespace Socialbox;
 
     use Exception;
-    use LogLib\Log;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Logger;
     use Socialbox\Classes\RpcHandler;
@@ -15,6 +14,12 @@
 
     class Socialbox
     {
+        /**
+         * Handles the RPC (Remote Procedure Call) requests by parsing the client request,
+         * executing the appropriate methods, and returning the responses.
+         *
+         * @return void
+         */
         public static function handleRpc(): void
         {
             try
