@@ -16,7 +16,7 @@ class RpcError implements SerializableInterface
      *
      * @param string $id The ID of the RPC request
      * @param StandardError $code The error code
-     * @param string $error The error message
+     * @param string|null $error The error message
      */
     public function __construct(string $id, StandardError $code, ?string $error)
     {
