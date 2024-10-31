@@ -17,7 +17,7 @@ use Socialbox\Objects\ClientRequest;
 use Socialbox\Objects\RpcRequest;
 use Socialbox\Objects\Standard\ImageCaptcha;
 
-class GetCaptcha extends Method
+class VerificationGetCaptcha extends Method
 {
     /**
      * @inheritDoc
@@ -74,7 +74,6 @@ class GetCaptcha extends Method
         }
 
         // Build the captcha
-        Logger::getLogger()->debug('Building captcha for peer ' . $peer->getUuid());
         return $rpcRequest->produceResponse(new ImageCaptcha([
             'expires' => $captchaRecord->getExpires()->getTimestamp(),
             'image' => (new CaptchaBuilder($answer))->build()->inline()] // Returns HTML base64 encoded image of the captcha
