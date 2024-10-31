@@ -8,12 +8,14 @@ use Socialbox\Classes\Configuration\DatabaseConfiguration;
 use Socialbox\Classes\Configuration\InstanceConfiguration;
 use Socialbox\Classes\Configuration\LoggingConfiguration;
 use Socialbox\Classes\Configuration\RegistrationConfiguration;
+use Socialbox\Classes\Configuration\SecurityConfiguration;
 
 class Configuration
 {
     private static ?\ConfigLib\Configuration $configuration = null;
-    private static ?DatabaseConfiguration $databaseConfiguration = null;
     private static ?InstanceConfiguration $instanceConfiguration = null;
+    private static ?SecurityConfiguration $securityConfiguration = null;
+    private static ?DatabaseConfiguration $databaseConfiguration = null;
     private static ?LoggingConfiguration $loggingConfiguration = null;
     private static ?CacheConfiguration $cacheConfiguration = null;
     private static ?RegistrationConfiguration $registrationConfiguration = null;
@@ -38,6 +40,7 @@ class Configuration
         // Security Configuration
         $config->setDefault('security.display_internal_exceptions', false);
         $config->setDefault('security.resolved_servers_ttl', 600);
+        $config->setDefault('security.captcha_ttl', 200);
 
         // Database configuration
         $config->setDefault('database.host', '127.0.0.1');
@@ -73,11 +76,13 @@ class Configuration
         $config->setDefault('registration.sms_verification_required', false);
         $config->setDefault('registration.phone_call_verification_required', false);
         $config->setDefault('registration.image_captcha_verification_required', true);
+
         $config->save();
 
         self::$configuration = $config;
-        self::$databaseConfiguration = new DatabaseConfiguration(self::$configuration->getConfiguration()['database']);
         self::$instanceConfiguration = new InstanceConfiguration(self::$configuration->getConfiguration()['instance']);
+        self::$securityConfiguration = new SecurityConfiguration(self::$configuration->getConfiguration()['security']);
+        self::$databaseConfiguration = new DatabaseConfiguration(self::$configuration->getConfiguration()['database']);
         self::$loggingConfiguration = new LoggingConfiguration(self::$configuration->getConfiguration()['logging']);
         self::$cacheConfiguration = new CacheConfiguration(self::$configuration->getConfiguration()['cache']);
         self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration->getConfiguration()['registration']);
@@ -110,21 +115,6 @@ class Configuration
     }
 
     /**
-     * Retrieves the current database configuration.
-     *
-     * @return DatabaseConfiguration The configuration settings for the database.
-     */
-    public static function getDatabaseConfiguration(): DatabaseConfiguration
-    {
-        if(self::$databaseConfiguration === null)
-        {
-            self::initializeConfiguration();
-        }
-
-        return self::$databaseConfiguration;
-    }
-
-    /**
      * Retrieves the current instance configuration.
      *
      * @return InstanceConfiguration The current instance configuration instance.
@@ -137,6 +127,36 @@ class Configuration
         }
 
         return self::$instanceConfiguration;
+    }
+
+    /**
+     * Retrieves the current security configuration.
+     *
+     * @return SecurityConfiguration The current security configuration instance.
+     */
+    public static function getSecurityConfiguration(): SecurityConfiguration
+    {
+        if(self::$securityConfiguration === null)
+        {
+            self::initializeConfiguration();
+        }
+
+        return self::$securityConfiguration;
+    }
+
+    /**
+     * Retrieves the current database configuration.
+     *
+     * @return DatabaseConfiguration The configuration settings for the database.
+     */
+    public static function getDatabaseConfiguration(): DatabaseConfiguration
+    {
+        if(self::$databaseConfiguration === null)
+        {
+            self::initializeConfiguration();
+        }
+
+        return self::$databaseConfiguration;
     }
 
     /**
