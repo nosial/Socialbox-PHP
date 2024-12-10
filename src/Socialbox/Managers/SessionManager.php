@@ -10,6 +10,7 @@
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Logger;
+    use Socialbox\Classes\Utilities;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -222,6 +223,100 @@
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to update session state', $e);
+            }
+        }
+
+        /**
+         * Retrieves the flags associated with a specific session.
+         *
+         * @param string $uuid The UUID of the session to retrieve flags for.
+         * @return array An array of flags associated with the specified session.
+         * @throws StandardException If the specified session does not exist.
+         * @throws DatabaseOperationException If there
+         */
+        private static function getFlags(string $uuid): array
+        {
+            Logger::getLogger()->verbose(sprintf("Retrieving flags for session %s", $uuid));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare("SELECT flags FROM sessions WHERE uuid=?");
+                $statement->bindParam(1, $uuid);
+                $statement->execute();
+                $data = $statement->fetch(PDO::FETCH_ASSOC);
+
+                if ($data === false)
+                {
+                    throw new StandardException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
+                }
+
+                return Utilities::unserializeList($data['flags']);
+            }
+            catch (PDOException $e)
+            {
+                throw new DatabaseOperationException(sprintf('Failed to retrieve flags for session %s', $uuid), $e);
+            }
+        }
+
+        /**
+         * Adds the specified flags to the session identified by the given UUID.
+         *
+         * @param string $uuid The unique identifier of the session to which the flags will be added.
+         * @param array $flags The flags to add to the session.
+         * @return void
+         * @throws DatabaseOperationException|StandardException If there is an error while updating the session in the database.
+         */
+        public static function addFlags(string $uuid, array $flags): void
+        {
+            Logger::getLogger()->verbose(sprintf("Adding flags to session %s", $uuid));
+
+            // First get the existing flags
+            $existingFlags = self::getFlags($uuid);
+
+            // Merge the new flags with the existing ones
+            $flags = array_unique(array_merge($existingFlags, $flags));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare("UPDATE sessions SET flags=? WHERE uuid=?");
+                $statement->bindValue(1, Utilities::serializeList($flags));
+                $statement->bindParam(2, $uuid);
+                $statement->execute();
+            }
+            catch (PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to add flags to session', $e);
+            }
+        }
+
+        /**
+         * Removes specified flags from the session associated with the given UUID.
+         *
+         * @param string $uuid The UUID of the session from which the flags will be removed.
+         * @param array $flags An array of flags to be removed from the session.
+         * @return void
+         * @throws DatabaseOperationException|StandardException If there is an error while updating the session in the database.
+         */
+        public static function removeFlags(string $uuid, array $flags): void
+        {
+            Logger::getLogger()->verbose(sprintf("Removing flags from session %s", $uuid));
+
+            // First get the existing flags
+            $existingFlags = self::getFlags($uuid);
+
+            // Remove the specified flags
+            $flags = array_diff($existingFlags, $flags);
+
+            try
+            {
+                $statement = Database::getConnection()->prepare("UPDATE sessions SET flags=? WHERE uuid=?");
+                $statement->bindValue(1, Utilities::serializeList($flags));
+                $statement->bindParam(2, $uuid);
+                $statement->execute();
+            }
+            catch (PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to remove flags from session', $e);
             }
         }
     }

@@ -31,6 +31,7 @@ enum StandardError : int
     case PEER_NOT_FOUND = -4000;
     case INVALID_USERNAME = -4001;
     case USERNAME_ALREADY_EXISTS = -4002;
+    case NOT_REGISTERED = -4003;
 
     /**
      * Returns the default generic message for the error
@@ -62,7 +63,8 @@ enum StandardError : int
 
             self::PEER_NOT_FOUND => 'The requested peer was not found',
             self::INVALID_USERNAME => 'The given username is invalid, it must be Alphanumeric with a minimum of 3 character but no greater than 255 characters',
-            self::USERNAME_ALREADY_EXISTS => 'The given username already exists on the network'
+            self::USERNAME_ALREADY_EXISTS => 'The given username already exists on the network',
+            self::NOT_REGISTERED => 'The given username is not registered on the server',
         };
 
     }

@@ -3,6 +3,7 @@
 namespace Socialbox\Enums;
 
 use Socialbox\Classes\StandardMethods\CreateSession;
+use Socialbox\Classes\StandardMethods\Identify;
 use Socialbox\Classes\StandardMethods\VerificationAnswerImageCaptcha;
 use Socialbox\Classes\StandardMethods\VerificationGetImageCaptcha;
 use Socialbox\Classes\StandardMethods\GetMe;
@@ -18,6 +19,7 @@ enum StandardMethods : string
     case PING = 'ping';
     case CREATE_SESSION = 'createSession';
     case REGISTER = 'register';
+    case IDENTIFY = 'identify';
     case GET_ME = 'getMe';
     case VERIFICATION_GET_IMAGE_CAPTCHA = 'verificationGetImageCaptcha';
     case VERIFICATION_ANSWER_IMAGE_CAPTCHA = 'verificationAnswerImageCaptcha';
@@ -35,6 +37,7 @@ enum StandardMethods : string
             self::PING => Ping::execute($request, $rpcRequest),
             self::CREATE_SESSION => CreateSession::execute($request, $rpcRequest),
             self::REGISTER => Register::execute($request, $rpcRequest),
+            self::IDENTIFY => Identify::execute($request, $rpcRequest),
             self::GET_ME => GetMe::execute($request, $rpcRequest),
             self::VERIFICATION_GET_IMAGE_CAPTCHA => VerificationGetImageCaptcha::execute($request, $rpcRequest),
             self::VERIFICATION_ANSWER_IMAGE_CAPTCHA => VerificationAnswerImageCaptcha::execute($request, $rpcRequest),

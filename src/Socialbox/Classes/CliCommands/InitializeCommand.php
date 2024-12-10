@@ -3,7 +3,6 @@
 namespace Socialbox\Classes\CliCommands;
 
 use Exception;
-use LogLib\Log;
 use PDOException;
 use Socialbox\Abstracts\CacheLayer;
 use Socialbox\Classes\Configuration;
@@ -97,22 +96,28 @@ class InitializeCommand implements CliCommandInterface
             }
         }
 
-        if(!Configuration::getInstanceConfiguration()->getPublicKey() || !Configuration::getInstanceConfiguration()->getPrivateKey())
+        if(
+            !Configuration::getInstanceConfiguration()->getPublicKey() ||
+            !Configuration::getInstanceConfiguration()->getPrivateKey() ||
+            !Configuration::getInstanceConfiguration()->getEncryptionKey()
+        )
         {
             try
             {
                 Logger::getLogger()->info('Generating new key pair...');
                 $keyPair = Cryptography::generateKeyPair();
+                $encryptionKey = Cryptography::randomBytes(230, 314);
             }
             catch (CryptographyException $e)
             {
-                Logger::getLogger()->error('Failed to generate keypair', $e);
+                Logger::getLogger()->error('Failed to generate cryptography values', $e);
                 return 1;
             }
 
             Logger::getLogger()->info('Updating configuration...');
             Configuration::getConfigurationLib()->set('instance.private_key', $keyPair->getPrivateKey());
             Configuration::getConfigurationLib()->set('instance.public_key', $keyPair->getPublicKey());
+            Configuration::getConfigurationLib()->set('instance.encryption_key', $encryptionKey);
             Configuration::getConfigurationLib()->save();
 
             Logger::getLogger()->info(sprintf('Set the DNS TXT record for the domain %s to the following value:', Configuration::getInstanceConfiguration()->getDomain()));

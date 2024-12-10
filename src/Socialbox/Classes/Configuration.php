@@ -36,6 +36,7 @@ class Configuration
         $config->setDefault('instance.rpc_endpoint', null);
         $config->setDefault('instance.private_key', null);
         $config->setDefault('instance.public_key', null);
+        $config->setDefault('instance.encryption_key', null);
 
         // Security Configuration
         $config->setDefault('security.display_internal_exceptions', false);

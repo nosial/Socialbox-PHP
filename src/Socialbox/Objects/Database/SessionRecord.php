@@ -85,11 +85,6 @@
                 return false;
             }
 
-            if(in_array(SessionFlags::AUTHENTICATED, $this->flags))
-            {
-                return true;
-            }
-
             return $this->authenticated;
         }
 
