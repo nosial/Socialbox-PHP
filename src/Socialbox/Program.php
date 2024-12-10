@@ -33,13 +33,18 @@
                     return 0;
                 }
 
-                print($command->getHelpMessage());
+                print($command->getHelpMessage() . "\n");
                 return 0;
             }
 
             if(isset($args[CliCommands::INITIALIZE->value]))
             {
                 return CliCommands::INITIALIZE->handle($args);
+            }
+
+            if(isset($args[CliCommands::DNS_RECORD->value]))
+            {
+                return CliCommands::DNS_RECORD->handle($args);
             }
 
             return self::displayHelp();

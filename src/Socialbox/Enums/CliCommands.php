@@ -2,13 +2,13 @@
 
 namespace Socialbox\Enums;
 
-use Socialbox\Classes\CliCommands\HelpCommand;
+use Socialbox\Classes\CliCommands\DnsRecordCommand;
 use Socialbox\Classes\CliCommands\InitializeCommand;
 
 enum CliCommands : string
 {
     case INITIALIZE = 'init';
-    case CLIENT = 'client';
+    case DNS_RECORD = 'dns-record';
 
     /**
      * Handles the command execution, returns the exit code.
@@ -21,14 +21,15 @@ enum CliCommands : string
         return match ($this)
         {
             self::INITIALIZE => InitializeCommand::execute($args),
-            self::CLIENT => ClientCommand::execute($args)
+            self::DNS_RECORD => DnsRecordCommand::execute($args)
         };
     }
     public function getHelpMessage(): string
     {
         return match ($this)
         {
-            self::INITIALIZE => InitializeCommand::getHelpMessage()
+            self::INITIALIZE => InitializeCommand::getHelpMessage(),
+            self::DNS_RECORD => DnsRecordCommand::getHelpMessage()
         };
     }
 
@@ -36,7 +37,8 @@ enum CliCommands : string
     {
         return match ($this)
         {
-            self::INITIALIZE => InitializeCommand::getShortHelpMessage()
+            self::INITIALIZE => InitializeCommand::getShortHelpMessage(),
+            self::DNS_RECORD => DnsRecordCommand::getShortHelpMessage()
         };
     }
 }

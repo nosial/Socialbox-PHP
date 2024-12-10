@@ -3,7 +3,6 @@
 namespace Socialbox\Classes;
 
 use LogLib\Log;
-use function Symfony\Component\String\s;
 
 class Logger
 {
