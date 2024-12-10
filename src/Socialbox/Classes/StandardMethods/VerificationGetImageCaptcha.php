@@ -75,8 +75,8 @@ class VerificationGetImageCaptcha extends Method
 
         // Build the captcha
         return $rpcRequest->produceResponse(new ImageCaptcha([
-            'expires' => $captchaRecord->getExpires()->getTimestamp(),
-            'image' => (new CaptchaBuilder($answer))->build()->inline()] // Returns HTML base64 encoded image of the captcha
-        ));
+            'expires' => $captchaRecord->getExpires(),
+            'image' => (new CaptchaBuilder($answer))->build()->inline()
+        ])); // Returns HTML base64 encoded image of the captcha
     }
 }

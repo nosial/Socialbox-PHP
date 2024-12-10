@@ -3,7 +3,6 @@
 namespace Socialbox\Managers;
 
 use DateTime;
-use DateTimeInterface;
 use PDOException;
 use Socialbox\Classes\Database;
 use Socialbox\Classes\Logger;
@@ -31,13 +30,15 @@ class CaptchaManager
         }
 
         $answer = Utilities::randomString(6, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
+        $current_time = (new DateTime())->setTimestamp(time());
 
         if(!self::captchaExists($peer_uuid))
         {
             Logger::getLogger()->debug('Creating a new captcha record for peer ' . $peer_uuid);
-            $statement = Database::getConnection()->prepare("INSERT INTO captcha_images (peer_uuid, answer) VALUES (?, ?)");
+            $statement = Database::getConnection()->prepare("INSERT INTO captcha_images (peer_uuid, created, answer) VALUES (?, ?, ?)");
             $statement->bindParam(1, $peer_uuid);
-            $statement->bindParam(2, $answer);
+            $statement->bindParam(2, $current_time);
+            $statement->bindParam(3, $answer);
 
             try
             {
@@ -52,9 +53,10 @@ class CaptchaManager
         }
 
         Logger::getLogger()->debug('Updating an existing captcha record for peer ' . $peer_uuid);
-        $statement = Database::getConnection()->prepare("UPDATE captcha_images SET answer=?, status='UNSOLVED', created=NOW() WHERE peer_uuid=?");
+        $statement = Database::getConnection()->prepare("UPDATE captcha_images SET answer=?, status='UNSOLVED', created=? WHERE peer_uuid=?");
         $statement->bindParam(1, $answer);
-        $statement->bindParam(2, $peer_uuid);
+        $statement->bindParam(2, $current_time);
+        $statement->bindParam(3, $peer_uuid);
 
         try
         {

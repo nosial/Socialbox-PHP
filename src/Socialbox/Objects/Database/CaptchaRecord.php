@@ -4,6 +4,7 @@ namespace Socialbox\Objects\Database;
 
 use DateTime;
 use Socialbox\Classes\Configuration;
+use Socialbox\Classes\Logger;
 use Socialbox\Enums\Status\CaptchaStatus;
 use Socialbox\Interfaces\SerializableInterface;
 
@@ -56,14 +57,14 @@ class CaptchaRecord implements SerializableInterface
         return $this->created;
     }
 
-    public function getExpires(): DateTime
+    public function getExpires(): int
     {
-        return $this->created->modify(sprintf("+%s seconds", Configuration::getSecurityConfiguration()->getCaptchaTtl()));
+        return $this->created->getTimestamp() + Configuration::getSecurityConfiguration()->getCaptchaTtl();
     }
 
     public function isExpired(): bool
     {
-        return $this->getExpires() < new DateTime();
+        return time() > $this->getExpires();
     }
 
     /**

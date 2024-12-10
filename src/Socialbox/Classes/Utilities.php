@@ -2,6 +2,7 @@
 
 namespace Socialbox\Classes;
 
+use DateTime;
 use InvalidArgumentException;
 use JsonException;
 use RuntimeException;
@@ -169,5 +170,26 @@ class Utilities
         }
 
         return $randomString;
+    }
+
+    /**
+     * Generates a random CRC32 hash.
+     *
+     * @return string The generated CRC32 hash as a string.
+     */
+    public static function randomCrc32(): string
+    {
+        return hash('crc32b', uniqid());
+    }
+
+    /**
+     * Sanitizes a file name by removing any characters that are not alphanumeric, hyphen, or underscore.
+     *
+     * @param string $name The file name to be sanitized.
+     * @return string The sanitized file name.
+     */
+    public static function sanitizeFileName(string $name): string
+    {
+        return preg_replace('/[^a-zA-Z0-9-_]/', '', $name);
     }
 }

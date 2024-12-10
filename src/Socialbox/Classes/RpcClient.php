@@ -27,8 +27,8 @@
          * Constructor for initializing the server connection with a given domain.
          *
          * @param string $domain The domain used to resolve the server's endpoint and public key.
-         * @throws DatabaseOperationException
          * @throws ResolutionException
+         * @noinspection PhpUnhandledExceptionInspection
          */
         public function __construct(string $domain)
         {
