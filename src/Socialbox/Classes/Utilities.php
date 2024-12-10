@@ -192,4 +192,26 @@ class Utilities
     {
         return preg_replace('/[^a-zA-Z0-9-_]/', '', $name);
     }
+
+    /**
+     * Converts an array into a serialized string by joining the elements with a comma.
+     *
+     * @param array $list An array of elements that need to be converted to a comma-separated string.
+     * @return string A string representation of the array elements, joined by commas.
+     */
+    public static function serializeList(array $list): string
+    {
+        return implode(',', $list);
+    }
+
+    /**
+     * Converts a serialized string into an array by splitting the string at each comma.
+     *
+     * @param string $list A comma-separated string that needs to be converted to an array.
+     * @return array An array of string values obtained by splitting the input string.
+     */
+    public static function unserializeList(string $list): array
+    {
+        return explode(',', $list);
+    }
 }

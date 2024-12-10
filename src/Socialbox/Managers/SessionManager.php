@@ -5,10 +5,8 @@
     use DateMalformedStringException;
     use DateTime;
     use InvalidArgumentException;
-    use LogLib\Log;
     use PDO;
     use PDOException;
-    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Logger;
@@ -106,7 +104,7 @@
 
                 if ($data === false)
                 {
-                    throw new StandardException(sprintf("The requested session '%s' does not exist"), StandardError::SESSION_NOT_FOUND);
+                    throw new StandardException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
                 }
 
                 // Convert the timestamp fields to DateTime objects
