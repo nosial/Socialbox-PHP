@@ -30,7 +30,7 @@ class CaptchaManager
         }
 
         $answer = Utilities::randomString(6, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
-        $current_time = (new DateTime())->setTimestamp(time());
+        $current_time = (new DateTime())->setTimestamp(time())->format('Y-m-d H:i:s');
 
         if(!self::captchaExists($peer_uuid))
         {

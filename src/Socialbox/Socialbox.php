@@ -30,7 +30,6 @@
             {
                 Logger::getLogger()->error('Failed to parse the client request', $e);
                 http_response_code($e->getCode());
-                print($e->getMessage());
                 return;
             }
 
