@@ -276,7 +276,7 @@ class Cryptography
      * @return string A hexadecimal string representing the random byte sequence.
      * @throws CryptographyException If the random byte generation fails.
      */
-    public static function randomBytes(int $minLength, int $maxLength): string
+    public static function randomKey(int $minLength, int $maxLength): string
     {
         try
         {
@@ -286,5 +286,25 @@ class Cryptography
         {
             throw new CryptographyException('Failed to generate random bytes: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Generates an array of random keys, each with a length within the specified range.
+     *
+     * @param int $minLength The minimum length for each random key.
+     * @param int $maxLength The maximum length for each random key.
+     * @param int $amount The number of random keys to generate.
+     * @return array An array of randomly generated keys.
+     * @throws CryptographyException If the random key generation fails.
+     */
+    public static function randomKeys(int $minLength, int $maxLength, int $amount): array
+    {
+        $keys = [];
+        for($i = 0; $i < $amount; $i++)
+        {
+            $keys[] = self::randomKey($minLength, $maxLength);
+        }
+
+        return $keys;
     }
 }

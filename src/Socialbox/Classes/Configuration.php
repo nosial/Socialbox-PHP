@@ -34,9 +34,11 @@ class Configuration
         $config->setDefault('instance.enabled', false); // False by default, requires the user to enable it.
         $config->setDefault('instance.domain', null);
         $config->setDefault('instance.rpc_endpoint', null);
+        $config->setDefault('instance.encryption_keys_count', 5);
+        $config->setDefault('instance.encryption_record_count', 5);
         $config->setDefault('instance.private_key', null);
         $config->setDefault('instance.public_key', null);
-        $config->setDefault('instance.encryption_key', null);
+        $config->setDefault('instance.encryption_keys', null);
 
         // Security Configuration
         $config->setDefault('security.display_internal_exceptions', false);
@@ -87,6 +89,25 @@ class Configuration
         self::$loggingConfiguration = new LoggingConfiguration(self::$configuration->getConfiguration()['logging']);
         self::$cacheConfiguration = new CacheConfiguration(self::$configuration->getConfiguration()['cache']);
         self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration->getConfiguration()['registration']);
+    }
+
+    /**
+     * Resets all configuration instances by setting them to null and then
+     * reinitializes the configurations.
+     *
+     * @return void
+     */
+    public static function reload(): void
+    {
+        self::$configuration = null;
+        self::$instanceConfiguration = null;
+        self::$securityConfiguration = null;
+        self::$databaseConfiguration = null;
+        self::$loggingConfiguration = null;
+        self::$cacheConfiguration = null;
+        self::$registrationConfiguration = null;
+
+        self::initializeConfiguration();
     }
 
     /**
