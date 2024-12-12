@@ -73,12 +73,12 @@
             return $this->requestBody;
         }
 
-        public function getClientName(): string
+        public function getClientName(): ?string
         {
             return $this->clientName;
         }
 
-        public function getClientVersion(): string
+        public function getClientVersion(): ?string
         {
             return $this->clientVersion;
         }

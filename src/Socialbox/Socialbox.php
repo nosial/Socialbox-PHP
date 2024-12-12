@@ -81,14 +81,14 @@
         private static function handleInitiateSession(ClientRequest $clientRequest): void
         {
 
-            if(!isset($requestHeaders[StandardHeaders::CLIENT_NAME->value]))
+            if(!$clientRequest->getClientName())
             {
                 http_response_code(400);
                 print('Missing required header: ' . StandardHeaders::CLIENT_NAME->value);
                 return;
             }
 
-            if(!isset($requestHeaders[StandardHeaders::CLIENT_VERSION->value]))
+            if(!$clientRequest->getClientVersion())
             {
                 http_response_code(400);
                 print('Missing required header: ' . StandardHeaders::CLIENT_VERSION->value);
