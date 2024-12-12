@@ -43,20 +43,6 @@
                 return;
             }
 
-            if(!isset($requestHeaders[StandardHeaders::CLIENT_NAME->value]))
-            {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::CLIENT_NAME->value);
-                return;
-            }
-
-            if(!isset($requestHeaders[StandardHeaders::CLIENT_VERSION->value]))
-            {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::CLIENT_VERSION->value);
-                return;
-            }
-
             $clientRequest = new ClientRequest($requestHeaders, file_get_contents('php://input') ?? null);
 
            // Handle the request type, only `init` and `dhe` are not encrypted using the session's encrypted key
@@ -94,6 +80,21 @@
          */
         private static function handleInitiateSession(ClientRequest $clientRequest): void
         {
+
+            if(!isset($requestHeaders[StandardHeaders::CLIENT_NAME->value]))
+            {
+                http_response_code(400);
+                print('Missing required header: ' . StandardHeaders::CLIENT_NAME->value);
+                return;
+            }
+
+            if(!isset($requestHeaders[StandardHeaders::CLIENT_VERSION->value]))
+            {
+                http_response_code(400);
+                print('Missing required header: ' . StandardHeaders::CLIENT_VERSION->value);
+                return;
+            }
+
             if(!$clientRequest->headerExists(StandardHeaders::PUBLIC_KEY))
             {
                 http_response_code(400);
@@ -148,6 +149,7 @@
                 }
 
                 // Create the session UUID
+                // TODO: Save client name and version to the database
                 $sessionUuid = SessionManager::createSession($clientRequest->getHeader(StandardHeaders::PUBLIC_KEY), $registeredPeer);
                 http_response_code(201); // Created
                 print($sessionUuid); // Return the session UUID
@@ -265,6 +267,15 @@
          */
         private static function handleRpc(ClientRequest $clientRequest): void
         {
+            if(!$clientRequest->headerExists(StandardHeaders::SESSION_UUID))
+            {
+                Logger::getLogger()->verbose('Missing required header: ' . StandardHeaders::SESSION_UUID->value);
+
+                http_response_code(412);
+                print('Missing required header: ' . StandardHeaders::SESSION_UUID->value);
+                return;
+            }
+
             try
             {
                 $clientRequests = $clientRequest->getRpcRequests();

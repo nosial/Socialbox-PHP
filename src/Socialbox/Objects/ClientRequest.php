@@ -19,8 +19,8 @@
         private RequestType $requestType;
         private ?string $requestBody;
 
-        private string $clientName;
-        private string $clientVersion;
+        private ?string $clientName;
+        private ?string $clientVersion;
         private ?string $identifyAs;
         private ?string $sessionUuid;
         private ?string $signature;
@@ -30,8 +30,8 @@
             $this->headers = $headers;
             $this->requestBody = $requestBody;
 
-            $this->clientName = $headers[StandardHeaders::CLIENT_NAME->value];
-            $this->clientVersion = $headers[StandardHeaders::CLIENT_VERSION->value];
+            $this->clientName = $headers[StandardHeaders::CLIENT_NAME->value] ?? null;
+            $this->clientVersion = $headers[StandardHeaders::CLIENT_VERSION->value] ?? null;
             $this->requestType = RequestType::from($headers[StandardHeaders::REQUEST_TYPE->value]);
             $this->identifyAs = $headers[StandardHeaders::IDENTIFY_AS->value] ?? null;
             $this->sessionUuid = $headers[StandardHeaders::SESSION_UUID->value] ?? null;
