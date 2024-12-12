@@ -35,7 +35,7 @@ class Configuration
         $config->setDefault('instance.domain', null);
         $config->setDefault('instance.rpc_endpoint', null);
         $config->setDefault('instance.encryption_keys_count', 5);
-        $config->setDefault('instance.encryption_record_count', 5);
+        $config->setDefault('instance.encryption_records_count', 5);
         $config->setDefault('instance.private_key', null);
         $config->setDefault('instance.public_key', null);
         $config->setDefault('instance.encryption_keys', null);

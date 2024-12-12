@@ -11,7 +11,7 @@ use Socialbox\Interfaces\SerializableInterface;
 use Socialbox\Managers\CaptchaManager;
 use Socialbox\Managers\RegisteredPeerManager;
 use Socialbox\Managers\SessionManager;
-use Socialbox\Objects\ClientRequest;
+use Socialbox\Objects\ClientRequestOld;
 use Socialbox\Objects\RpcRequest;
 
 class VerificationAnswerImageCaptcha extends Method
@@ -20,7 +20,7 @@ class VerificationAnswerImageCaptcha extends Method
     /**
      * @inheritDoc
      */
-    public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
+    public static function execute(ClientRequestOld $request, RpcRequest $rpcRequest): ?SerializableInterface
     {
         // Check if the request has a Session UUID
         if($request->getSessionUuid() === null)

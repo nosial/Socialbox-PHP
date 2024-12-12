@@ -7,10 +7,12 @@
     use InvalidArgumentException;
     use PDO;
     use PDOException;
+    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Logger;
     use Socialbox\Classes\Utilities;
+    use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -31,25 +33,89 @@
          * @throws InvalidArgumentException If the public key is empty or invalid.
          * @throws DatabaseOperationException If there is an error while creating the session in the database.
          */
-        public static function createSession(string $publicKey): string
+        public static function createSession(string $publicKey, RegisteredPeerRecord $peer): string
         {
             if($publicKey === '')
             {
-                throw new InvalidArgumentException('The public key cannot be empty', 400);
+                throw new InvalidArgumentException('The public key cannot be empty');
             }
 
             if(!Cryptography::validatePublicKey($publicKey))
             {
-                throw new InvalidArgumentException('The given public key is invalid', 400);
+                throw new InvalidArgumentException('The given public key is invalid');
             }
 
             $uuid = Uuid::v4()->toRfc4122();
+            $flags = [];
+
+            if($peer->isEnabled())
+            {
+                if(RegisteredPeerManager::getPasswordAuthentication($peer))
+                {
+                    $flags[] = SessionFlags::VER_PASSWORD;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isImageCaptchaVerificationRequired())
+                {
+                    $flags[] = SessionFlags::VER_IMAGE_CAPTCHA;
+                }
+            }
+            else
+            {
+                if(Configuration::getRegistrationConfiguration()->isDisplayNameRequired())
+                {
+                    $flags[] = SessionFlags::SET_DISPLAY_NAME;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isEmailVerificationRequired())
+                {
+                    $flags[] = SessionFlags::VER_EMAIL;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isSmsVerificationRequired())
+                {
+                    $flags[] = SessionFlags::VER_SMS;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isPhoneCallVerificationRequired())
+                {
+                    $flags[] = SessionFlags::VER_PHONE_CALL;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isImageCaptchaVerificationRequired())
+                {
+                    $flags[] = SessionFlags::VER_IMAGE_CAPTCHA;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isPasswordRequired())
+                {
+                    $flags[] = SessionFlags::SET_PASSWORD;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isOtpRequired())
+                {
+                    $flags[] = SessionFlags::SET_OTP;
+                }
+            }
+
+            if(count($flags) > 0)
+            {
+                $implodedFlags = SessionFlags::toString($flags);
+            }
+            else
+            {
+                $implodedFlags = null;
+            }
+
+            $peerUuid = $peer->getUuid();
 
             try
             {
-                $statement = Database::getConnection()->prepare("INSERT INTO sessions (uuid, public_key) VALUES (?, ?)");
+                $statement = Database::getConnection()->prepare("INSERT INTO sessions (uuid, peer_uuid, public_key, flags) VALUES (?, ?, ?, ?)");
                 $statement->bindParam(1, $uuid);
-                $statement->bindParam(2, $publicKey);
+                $statement->bindParam(2, $peerUuid);
+                $statement->bindParam(3, $publicKey);
+                $statement->bindParam(4, $implodedFlags);
                 $statement->execute();
             }
             catch(PDOException $e)
@@ -219,10 +285,40 @@
                 $statement = Database::getConnection()->prepare('UPDATE sessions SET state=? WHERE uuid=?');
                 $statement->bindParam(1, $state_value);
                 $statement->bindParam(2, $uuid);
+
+                $statement->execute();
             }
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to update session state', $e);
+            }
+        }
+
+        /**
+         * Updates the encryption key for the specified session.
+         *
+         * @param string $uuid The unique identifier of the session for which the encryption key is to be set.
+         * @param string $encryptionKey The new encryption key to be assigned.
+         * @return void
+         * @throws DatabaseOperationException If the database operation fails.
+         */
+        public static function setEncryptionKey(string $uuid, string $encryptionKey): void
+        {
+            Logger::getLogger()->verbose(sprintf('Setting the encryption key for %s', $uuid));
+
+            try
+            {
+                $state_value = SessionState::ACTIVE->value;
+                $statement = Database::getConnection()->prepare('UPDATE sessions SET state=?, encryption_key=? WHERE uuid=?');
+                $statement->bindParam(1, $state_value);
+                $statement->bindParam(2, $encryptionKey);
+                $statement->bindParam(3, $uuid);
+
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to set the encryption key', $e);
             }
         }
 

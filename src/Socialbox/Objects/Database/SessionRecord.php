@@ -3,7 +3,6 @@
     namespace Socialbox\Objects\Database;
 
     use DateTime;
-    use Socialbox\Classes\Utilities;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\SessionState;
     use Socialbox\Interfaces\SerializableInterface;
@@ -15,6 +14,7 @@
         private bool $authenticated;
         private string $publicKey;
         private SessionState $state;
+        private ?string $encryptionKey;
         /**
          * @var SessionFlags[]
          */
@@ -40,7 +40,8 @@
             $this->publicKey = $data['public_key'];
             $this->created = $data['created'];
             $this->lastRequest = $data['last_request'];
-            $this->flags = Utilities::unserializeList($data['flags']);
+            $this->encryptionKey = $data['encryption_key'] ?? null;
+            $this->flags = SessionFlags::fromString($data['flags']);
 
             if(SessionState::tryFrom($data['state']) == null)
             {
@@ -109,6 +110,16 @@
         }
 
         /**
+         * Retrieves the encryption key associated with the instance.
+         *
+         * @return string|null Returns the encryption key as a string.
+         */
+        public function getEncryptionKey(): ?string
+        {
+            return $this->encryptionKey;
+        }
+
+        /**
          * Retrieves the creation date and time of the object.
          *
          * @return DateTime Returns a DateTime object representing when the object was created.
@@ -163,7 +174,7 @@
                 'authenticated' => $this->authenticated,
                 'public_key' => $this->publicKey,
                 'state' => $this->state->value,
-                'flags' => Utilities::serializeList($this->flags),
+                'flags' => SessionFlags::toString($this->flags),
                 'created' => $this->created,
                 'last_request' => $this->lastRequest,
             ];

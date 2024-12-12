@@ -12,6 +12,7 @@ use Socialbox\Enums\StandardError;
 use Socialbox\Exceptions\DatabaseOperationException;
 use Socialbox\Exceptions\StandardException;
 use Socialbox\Objects\Database\RegisteredPeerRecord;
+use Socialbox\Objects\Database\SecurePasswordRecord;
 use Symfony\Component\Uid\Uuid;
 
 class RegisteredPeerManager
@@ -55,71 +56,12 @@ class RegisteredPeerManager
         Logger::getLogger()->verbose(sprintf("Creating a new peer with username %s", $username));
         $uuid = Uuid::v4()->toRfc4122();
 
-        // If `enabled` is True, we insert the peer into the database as an activated account.
-        if($enabled)
-        {
-            try
-            {
-                $statement = Database::getConnection()->prepare('INSERT INTO `registered_peers` (uuid, username, enabled) VALUES (?, ?, ?)');
-                $statement->bindParam(1, $uuid);
-                $statement->bindParam(2, $username);
-                $statement->bindParam(3, $enabled, PDO::PARAM_BOOL);
-                $statement->execute();
-            }
-            catch(PDOException $e)
-            {
-                throw new DatabaseOperationException('Failed to create the peer in the database', $e);
-            }
-
-            return $uuid;
-        }
-
-        // Otherwise, we insert the peer into the database as a disabled account & the required verification flags.
-        $flags = [];
-
-        if(Configuration::getRegistrationConfiguration()->isPasswordRequired())
-        {
-            $flags[] = PeerFlags::VER_SET_PASSWORD;
-        }
-
-        if(Configuration::getRegistrationConfiguration()->isOtpRequired())
-        {
-            $flags[] = PeerFlags::VER_SET_OTP;
-        }
-
-        if(Configuration::getRegistrationConfiguration()->isDisplayNameRequired())
-        {
-            $flags[] = PeerFlags::VER_SET_DISPLAY_NAME;
-        }
-
-        if(Configuration::getRegistrationConfiguration()->isEmailVerificationRequired())
-        {
-            $flags[] = PeerFlags::VER_EMAIL;
-        }
-
-        if(Configuration::getRegistrationConfiguration()->isSmsVerificationRequired())
-        {
-            $flags[] = PeerFlags::VER_SMS;
-        }
-
-        if(Configuration::getRegistrationConfiguration()->isPhoneCallVerificationRequired())
-        {
-            $flags[] = PeerFlags::VER_PHONE_CALL;
-        }
-
-        if(Configuration::getRegistrationConfiguration()->isImageCaptchaVerificationRequired())
-        {
-            $flags[] = PeerFlags::VER_SOLVE_IMAGE_CAPTCHA;
-        }
-
         try
         {
-            $implodedFlags = implode(',', array_map(fn($flag) => $flag->name, $flags));
-            $statement = Database::getConnection()->prepare('INSERT INTO `registered_peers` (uuid, username, enabled, flags) VALUES (?, ?, ?, ?)');
+            $statement = Database::getConnection()->prepare('INSERT INTO `registered_peers` (uuid, username, enabled) VALUES (?, ?, ?)');
             $statement->bindParam(1, $uuid);
             $statement->bindParam(2, $username);
             $statement->bindParam(3, $enabled, PDO::PARAM_BOOL);
-            $statement->bindParam(4, $implodedFlags);
             $statement->execute();
         }
         catch(PDOException $e)
@@ -200,11 +142,10 @@ class RegisteredPeerManager
      * Retrieves a peer record by the given username.
      *
      * @param string $username The username of the peer to be retrieved.
-     * @return RegisteredPeerRecord The record of the peer associated with the given username.
+     * @return RegisteredPeerRecord|null The record of the peer associated with the given username.
      * @throws DatabaseOperationException If there is an error while querying the database.
-     * @throws StandardException If the peer does not exist.
      */
-    public static function getPeerByUsername(string $username): RegisteredPeerRecord
+    public static function getPeerByUsername(string $username): ?RegisteredPeerRecord
     {
         Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $username));
 
@@ -218,7 +159,7 @@ class RegisteredPeerManager
 
             if($result === false)
             {
-                throw new StandardException(sprintf("The requested peer '%s' does not exist", $username), StandardError::PEER_NOT_FOUND);
+                return null;
             }
 
             return new RegisteredPeerRecord($result);
@@ -363,6 +304,37 @@ class RegisteredPeerManager
         catch(PDOException $e)
         {
             throw new DatabaseOperationException('Failed to remove the flag from the peer in the database', $e);
+        }
+    }
+
+    /**
+     *
+     */
+    public static function getPasswordAuthentication(string|RegisteredPeerRecord $peerUuid): ?SecurePasswordRecord
+    {
+        if($peerUuid instanceof RegisteredPeerRecord)
+        {
+            $peerUuid = $peerUuid->getUuid();
+        }
+
+        try
+        {
+            $statement = Database::getConnection()->prepare('SELECT * FROM `authentication_passwords` WHERE peer_uuid=?');
+            $statement->bindParam(1, $peerUuid);
+            $statement->execute();
+
+            $result = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if($result === false)
+            {
+                return null;
+            }
+
+            return new SecurePasswordRecord($result);
+        }
+        catch(PDOException | \DateMalformedStringException $e)
+        {
+            throw new DatabaseOperationException('Failed to get the secure password record from the database', $e);
         }
     }
 }

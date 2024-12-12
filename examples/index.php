@@ -5,7 +5,7 @@
 
     try
     {
-        \Socialbox\Socialbox::handleRpc();
+        \Socialbox\Socialbox::handleRequest();
     }
     catch(Exception $e)
     {

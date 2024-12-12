@@ -1,68 +1,32 @@
 <?php
 
-namespace Socialbox\Enums;
-
-/**
- * Enumeration of standard header names used in HTTP communication.
- */
-enum StandardHeaders : string
-{
-    case CONTENT_TYPE = 'Content-Type';
-    case CLIENT_NAME = 'Client-Name';
-    case CLIENT_VERSION = 'Client-Version';
-    case SESSION_UUID = 'Session-UUID';
-    case FROM_PEER = 'From-Peer';
-    case SIGNATURE = 'Signature';
-    case PUBLIC_KEY = 'Public-Key';
+    namespace Socialbox\Enums;
 
     /**
-     * Determines if the current instance is required based on its type.
-     *
-     * @return bool Returns true if the instance is of type CONTENT_TYPE, CLIENT_VERSION, or CLIENT_NAME; otherwise, false.
+     * Enumeration of standard header names used in HTTP communication.
      */
-    public function isRequired(): bool
+    enum StandardHeaders : string
     {
-        return match($this)
-        {
-            self::CONTENT_TYPE,
-            self::CLIENT_VERSION,
-            self::CLIENT_NAME
-                => true,
+        case REQUEST_TYPE = 'Request-Type';
+        case IDENTIFY_AS = 'Identify-As';
+        case CLIENT_NAME = 'Client-Name';
+        case CLIENT_VERSION = 'Client-Version';
+        case PUBLIC_KEY = 'Public-Key';
 
-            default => false,
-        };
-    }
+        case SESSION_UUID = 'Session-UUID';
+        case SIGNATURE = 'Signature';
 
-    /**
-     * Retrieves an array of required headers.
-     *
-     * @return array An array containing only the headers that are marked as required.
-     */
-    public static function getRequiredHeaders(): array
-    {
-        $results = [];
-        foreach(StandardHeaders::cases() as $header)
+        /**
+         * @return array
+         */
+        public static function toArray(): array
         {
-            if($header->isRequired())
+            $results = [];
+            foreach(StandardHeaders::cases() as $header)
             {
                 $results[] = $header->value;
             }
+
+            return $results;
         }
-
-        return $results;
     }
-
-    /**
-     * @return array
-     */
-    public static function toArray(): array
-    {
-        $results = [];
-        foreach(StandardHeaders::cases() as $header)
-        {
-            $results[] = $header->value;
-        }
-
-        return $results;
-    }
-}

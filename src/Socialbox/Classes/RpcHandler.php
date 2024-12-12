@@ -7,10 +7,11 @@ use InvalidArgumentException;
 use RuntimeException;
 use Socialbox\Enums\StandardHeaders;
 use Socialbox\Exceptions\DatabaseOperationException;
+use Socialbox\Exceptions\RequestException;
 use Socialbox\Exceptions\RpcException;
 use Socialbox\Exceptions\StandardException;
 use Socialbox\Managers\SessionManager;
-use Socialbox\Objects\ClientRequest;
+use Socialbox\Objects\ClientRequestOld;
 use Socialbox\Objects\RpcRequest;
 
 class RpcHandler
@@ -19,16 +20,12 @@ class RpcHandler
      * Gets the incoming ClientRequest object, validates if the request is valid & if a session UUID is provided
      * checks if the request signature matches the client's provided public key.
      *
-     * @return ClientRequest The parsed ClientRequest object
+     * @return ClientRequestOld The parsed ClientRequest object
+     * @throws RequestException
      * @throws RpcException Thrown if the request is invalid
      */
-    public static function getClientRequest(): ClientRequest
+    public static function getClientRequest(): ClientRequestOld
     {
-        if($_SERVER['REQUEST_METHOD'] !== 'POST')
-        {
-            throw new RpcException('Invalid Request Method, expected POST', 400);
-        }
-
         try
         {
             $headers = Utilities::getRequestHeaders();
@@ -36,7 +33,7 @@ class RpcHandler
             {
                 if (!isset($headers[$header]))
                 {
-                    throw new RpcException("Missing required header: $header", 400);
+                    throw new RequestException("Missing required header: $header", 400);
                 }
 
                 // Validate the headers
@@ -73,7 +70,7 @@ class RpcHandler
             throw new RpcException("Failed to parse request: " . $e->getMessage(), 400, $e);
         }
 
-        $clientRequest = new ClientRequest($headers, self::getRpcRequests(), self::getRequestHash());
+        $clientRequest = new ClientRequestOld($headers, self::getRpcRequests(), self::getRequestHash());
 
         // Verify the session & request signature
         if($clientRequest->getSessionUuid() !== null)

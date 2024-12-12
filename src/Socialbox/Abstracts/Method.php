@@ -8,6 +8,7 @@ use Socialbox\Exceptions\StandardException;
 use Socialbox\Interfaces\SerializableInterface;
 use Socialbox\Managers\SessionManager;
 use Socialbox\Objects\ClientRequest;
+use Socialbox\Objects\ClientRequestOld;
 use Socialbox\Objects\Database\SessionRecord;
 use Socialbox\Objects\RpcRequest;
 
@@ -22,27 +23,4 @@ abstract class Method
      * @throws StandardException If a standard exception is thrown, it will be handled by the engine.
      */
     public static abstract function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface;
-
-    /**
-     * @param ClientRequest $request The client request object
-     * @return SessionRecord|null Returns null if the client has not provided a Session UUID
-     * @throws StandardException Thrown if standard exceptions are to be thrown regarding this
-     */
-    protected static function getSession(ClientRequest $request): ?SessionRecord
-    {
-        if($request->getSessionUuid() === null)
-        {
-            return null;
-        }
-
-        try
-        {
-            // NOTE: If the session UUID was provided, it has already been validated up until this point
-            return SessionManager::getSession($request->getSessionUuid());
-        }
-        catch(DatabaseOperationException $e)
-        {
-            throw new StandardException("There was an error while retrieving the session from the server", StandardError::INTERNAL_SERVER_ERROR);
-        }
-    }
 }

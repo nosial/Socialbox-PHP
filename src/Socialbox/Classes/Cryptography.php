@@ -16,6 +16,7 @@ class Cryptography
     private const int PADDING = OPENSSL_PKCS1_OAEP_PADDING;
     private const string PEM_PRIVATE_HEADER = 'PRIVATE';
     private const string PEM_PUBLIC_HEADER = 'PUBLIC';
+    private const string TRANSPORT_ENCRYPTION = 'aes-256-cbc';
 
     /**
      * Generates a new public-private key pair.
@@ -306,5 +307,75 @@ class Cryptography
         }
 
         return $keys;
+    }
+
+    public static function generateEncryptionKey(): string
+    {
+        try
+        {
+            return base64_encode(random_bytes(32));
+        }
+        catch (RandomException $e)
+        {
+            throw new CryptographyException('Failed to generate encryption key: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Encrypts the given content for transport using the provided encryption key.
+     *
+     * @param string $content The content to be encrypted.
+     * @param string $encryptionKey The encryption key used for encrypting the content.
+     * @return string The Base64 encoded string containing the IV and the encrypted content.
+     * @throws CryptographyException If the IV generation or encryption process fails.
+     */
+    public static function encryptTransport(string $content, string $encryptionKey): string
+    {
+        try
+        {
+            $iv = random_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+        }
+        catch (RandomException $e)
+        {
+            throw new CryptographyException('Failed to generate IV: ' . $e->getMessage());
+        }
+
+        $encrypted = openssl_encrypt($content, self::TRANSPORT_ENCRYPTION, base64_decode($encryptionKey), OPENSSL_RAW_DATA, $iv);
+
+        if($encrypted === false)
+        {
+            throw new CryptographyException('Failed to encrypt transport content: ' . openssl_error_string());
+        }
+
+        return base64_encode($iv . $encrypted);
+    }
+
+    /**
+     * Decrypts the given encrypted transport content using the provided encryption key.
+     *
+     * @param string $encryptedContent The Base64 encoded encrypted content to be decrypted.
+     * @param string $encryptionKey The Base64 encoded encryption key used for decryption.
+     * @return string The decrypted content as a string.
+     * @throws CryptographyException If the decryption process fails.
+     */
+    public static function decryptTransport(string $encryptedContent, string $encryptionKey): string
+    {
+        $decodedData = base64_decode($encryptedContent);
+        $ivLength = openssl_cipher_iv_length(self::TRANSPORT_ENCRYPTION);
+
+        // Perform decryption
+        $decryption = openssl_decrypt(substr($decodedData, $ivLength),
+            self::TRANSPORT_ENCRYPTION,
+            base64_decode($encryptionKey),
+            OPENSSL_RAW_DATA,
+            substr($decodedData, 0, $ivLength)
+        );
+
+        if($decryption === false)
+        {
+            throw new CryptographyException('Failed to decrypt transport content: ' . openssl_error_string());
+        }
+
+        return $decryption;
     }
 }

@@ -5,6 +5,11 @@ namespace Socialbox\Enums;
 enum SessionState : string
 {
     /**
+     * The session is awaiting a Diffie-Hellman exchange to be completed
+     */
+    case AWAITING_DHE = 'AWAITING_DHE';
+
+    /**
      * The session is currently active and usable
      */
     case ACTIVE = 'ACTIVE';
