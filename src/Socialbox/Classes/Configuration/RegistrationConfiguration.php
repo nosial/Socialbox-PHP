@@ -9,6 +9,10 @@ namespace Socialbox\Classes\Configuration;
 class RegistrationConfiguration
 {
     private bool $registrationEnabled;
+    private ?string $privacyPolicyDocument;
+    private bool $acceptPrivacyPolicy;
+    private ?string $termsOfServiceDocument;
+    private bool $acceptTermsOfService;
     private bool $passwordRequired;
     private bool $otpRequired;
     private bool $displayNameRequired;
@@ -31,6 +35,10 @@ class RegistrationConfiguration
     public function __construct(array $data)
     {
         $this->registrationEnabled = (bool)$data['enabled'];
+        $this->privacyPolicyDocument = $data['privacy_policy_document'] ?? null;
+        $this->acceptPrivacyPolicy = $data['accept_privacy_policy'] ?? true;
+        $this->termsOfServiceDocument = $data['terms_of_service_document'] ?? null;
+        $this->acceptTermsOfService = $data['accept_terms_of_service'] ?? true;
         $this->passwordRequired = (bool)$data['password_required'];
         $this->otpRequired = (bool)$data['otp_required'];
         $this->displayNameRequired = (bool)$data['display_name_required'];
@@ -48,6 +56,47 @@ class RegistrationConfiguration
     public function isRegistrationEnabled(): bool
     {
         return $this->registrationEnabled;
+    }
+
+
+    /**
+     * Retrieves the privacy policy document.
+     *
+     * @return ?string Returns the privacy policy document or null if not set.
+     */
+    public function getPrivacyPolicyDocument(): ?string
+    {
+        return $this->privacyPolicyDocument;
+    }
+
+    /**
+     * Checks if accepting the privacy policy is required.
+     *
+     * @return bool Returns true if the privacy policy must be accepted, false otherwise.
+     */
+    public function isAcceptPrivacyPolicyRequired(): bool
+    {
+        return $this->acceptPrivacyPolicy;
+    }
+
+    /**
+     * Retrieves the terms of service document.
+     *
+     * @return ?string Returns the terms of service document or null if not set.
+     */
+    public function getTermsOfServiceDocument(): ?string
+    {
+        return $this->termsOfServiceDocument;
+    }
+
+    /**
+     * Checks if accepting the terms of service is required.
+     *
+     * @return bool Returns true if the terms of service must be accepted, false otherwise.
+     */
+    public function isAcceptTermsOfServiceRequired(): bool
+    {
+        return $this->acceptTermsOfService;
     }
 
     /**

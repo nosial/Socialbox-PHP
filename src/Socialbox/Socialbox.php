@@ -149,8 +149,7 @@
                 }
 
                 // Create the session UUID
-                // TODO: Save client name and version to the database
-                $sessionUuid = SessionManager::createSession($clientRequest->getHeader(StandardHeaders::PUBLIC_KEY), $registeredPeer);
+                $sessionUuid = SessionManager::createSession($clientRequest->getHeader(StandardHeaders::PUBLIC_KEY), $registeredPeer, $clientRequest->getClientName(), $clientRequest->getClientVersion());
                 http_response_code(201); // Created
                 print($sessionUuid); // Return the session UUID
             }

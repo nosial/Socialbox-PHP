@@ -1,35 +1,31 @@
 <?php
 
-namespace Socialbox\Enums;
+    namespace Socialbox\Enums;
 
-use Socialbox\Classes\StandardMethods\CreateSession;
-use Socialbox\Classes\StandardMethods\Identify;
-use Socialbox\Classes\StandardMethods\VerificationAnswerImageCaptcha;
-use Socialbox\Classes\StandardMethods\VerificationGetImageCaptcha;
-use Socialbox\Classes\StandardMethods\GetMe;
-use Socialbox\Classes\StandardMethods\Ping;
-use Socialbox\Classes\StandardMethods\Register;
-use Socialbox\Exceptions\StandardException;
-use Socialbox\Interfaces\SerializableInterface;
-use Socialbox\Objects\ClientRequest;
-use Socialbox\Objects\ClientRequestOld;
-use Socialbox\Objects\RpcRequest;
+    use Socialbox\Classes\StandardMethods\GetSessionState;
+    use Socialbox\Classes\StandardMethods\Ping;
+    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Objects\ClientRequest;
+    use Socialbox\Objects\RpcRequest;
 
-enum StandardMethods : string
-{
-    case PING = 'ping';
-
-    /**
-     * @param ClientRequest $request
-     * @param RpcRequest $rpcRequest
-     * @return SerializableInterface|null
-     * @throws StandardException
-     */
-    public function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
+    enum StandardMethods : string
     {
-        return match ($this)
+        case PING = 'ping';
+        case GET_SESSION_STATE = 'getSessionState';
+
+        /**
+         * @param ClientRequest $request
+         * @param RpcRequest $rpcRequest
+         * @return SerializableInterface|null
+         * @throws StandardException
+         */
+        public function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-            self::PING => Ping::execute($request, $rpcRequest),
-        };
+            return match ($this)
+            {
+                self::PING => Ping::execute($request, $rpcRequest),
+                self::GET_SESSION_STATE => GetSessionState::execute($request, $rpcRequest),
+            };
+        }
     }
-}

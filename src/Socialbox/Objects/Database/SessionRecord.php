@@ -6,11 +6,14 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\SessionState;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Managers\RegisteredPeerManager;
 
     class SessionRecord implements SerializableInterface
     {
         private string $uuid;
         private ?string $peerUuid;
+        private string $clientName;
+        private string $clientVersion;
         private bool $authenticated;
         private string $publicKey;
         private SessionState $state;
@@ -36,6 +39,8 @@
         {
             $this->uuid = $data['uuid'];
             $this->peerUuid = $data['peer_uuid'] ?? null;
+            $this->clientName = $data['client_name'];
+            $this->clientVersion = $data['client_version'];
             $this->authenticated = $data['authenticated'] ?? false;
             $this->publicKey = $data['public_key'];
             $this->created = $data['created'];
@@ -149,6 +154,38 @@
             return $this->lastRequest;
         }
 
+        /**
+         * Retrieves the client name.
+         *
+         * @return string Returns the client name.
+         */
+        public function getClientName(): string
+        {
+            return $this->clientName;
+        }
+
+        /**
+         * Retrieves the client version.
+         *
+         * @return string Returns the client version.
+         */
+        public function getClientVersion(): string
+        {
+            return $this->clientVersion;
+        }
+
+        public function toStandardSessionState(): \Socialbox\Objects\Standard\SessionState
+        {
+            return new \Socialbox\Objects\Standard\SessionState([
+                'uuid' => $this->uuid,
+                'identified_as' => RegisteredPeerManager::getPeer($this->peerUuid)->getAddress(),
+                'authenticated' => $this->authenticated,
+                'flags' => $this->flags,
+                'created' => $this->created
+            ]);
+        }
+        
+        
         /**
          * Creates a new instance of the class using the provided array data.
          *

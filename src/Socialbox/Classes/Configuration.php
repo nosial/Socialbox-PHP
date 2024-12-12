@@ -72,6 +72,10 @@ class Configuration
 
         // Registration configuration
         $config->setDefault('registration.enabled', true);
+        $config->setDefault('registration.privacy_policy_document', null);
+        $config->setDefault('registration.accept_privacy_policy', true);
+        $config->setDefault('registration.terms_of_service_document', null);
+        $config->setDefault('registration.accept_terms_of_service', null);
         $config->setDefault('registration.password_required', true);
         $config->setDefault('registration.otp_required', false);
         $config->setDefault('registration.display_name_required', false);

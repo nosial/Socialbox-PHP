@@ -4,12 +4,18 @@
 
     enum SessionFlags : string
     {
+        // Session states
+        case REGISTRATION_REQUIRED = 'REGISTRATION_REQUIRED'; // Peer has to register
+        case AUTHENTICATION_REQUIRED = 'AUTHENTICATION_REQUIRED'; // Peer has to authenticate
+
         // Verification, require fields
         case SET_PASSWORD = 'SET_PASSWORD'; // Peer has to set a password
         case SET_OTP = 'SET_OTP'; // Peer has to set an OTP
         case SET_DISPLAY_NAME = 'SET_DISPLAY_NAME'; // Peer has to set a display name
 
         // Verification, verification requirements
+        case VER_PRIVACY_POLICY = 'VER_PRIVACY_POLICY'; // Peer has to accept the privacy policy
+        case VER_TERMS_OF_SERVICE = 'VER_TERMS_OF_SERVICE'; // Peer has to accept the terms of service
         case VER_EMAIL = 'VER_EMAIL'; // Peer has to verify their email
         case VER_SMS = 'VER_SMS'; // Peer has to verify their phone number
         case VER_PHONE_CALL = 'VER_PHONE_CALL'; // Peer has to verify their phone number via a phone call

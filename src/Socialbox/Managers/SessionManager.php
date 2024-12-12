@@ -27,13 +27,12 @@
          * Creates a new session with the given public key.
          *
          * @param string $publicKey The public key to associate with the new session.
-         *
-         * @return string The UUID of the newly created session.
+         * @param RegisteredPeerRecord $peer
          *
          * @throws InvalidArgumentException If the public key is empty or invalid.
          * @throws DatabaseOperationException If there is an error while creating the session in the database.
          */
-        public static function createSession(string $publicKey, RegisteredPeerRecord $peer): string
+        public static function createSession(string $publicKey, RegisteredPeerRecord $peer, string $clientName, string $clientVersion): string
         {
             if($publicKey === '')
             {
@@ -50,6 +49,8 @@
 
             if($peer->isEnabled())
             {
+                $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
+
                 if(RegisteredPeerManager::getPasswordAuthentication($peer))
                 {
                     $flags[] = SessionFlags::VER_PASSWORD;
@@ -62,6 +63,8 @@
             }
             else
             {
+                $flags[] = SessionFlags::REGISTRATION_REQUIRED;
+
                 if(Configuration::getRegistrationConfiguration()->isDisplayNameRequired())
                 {
                     $flags[] = SessionFlags::SET_DISPLAY_NAME;
@@ -96,6 +99,16 @@
                 {
                     $flags[] = SessionFlags::SET_OTP;
                 }
+
+                if(Configuration::getRegistrationConfiguration()->isAcceptPrivacyPolicyRequired())
+                {
+                    $flags[] = SessionFlags::VER_PRIVACY_POLICY;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isAcceptTermsOfServiceRequired())
+                {
+                    $flags[] = SessionFlags::VER_TERMS_OF_SERVICE;
+                }
             }
 
             if(count($flags) > 0)
@@ -111,11 +124,13 @@
 
             try
             {
-                $statement = Database::getConnection()->prepare("INSERT INTO sessions (uuid, peer_uuid, public_key, flags) VALUES (?, ?, ?, ?)");
+                $statement = Database::getConnection()->prepare("INSERT INTO sessions (uuid, peer_uuid, client_name, client_version, public_key, flags) VALUES (?, ?, ?, ?, ?, ?)");
                 $statement->bindParam(1, $uuid);
                 $statement->bindParam(2, $peerUuid);
-                $statement->bindParam(3, $publicKey);
-                $statement->bindParam(4, $implodedFlags);
+                $statement->bindParam(3, $clientName);
+                $statement->bindParam(4, $clientVersion);
+                $statement->bindParam(5, $publicKey);
+                $statement->bindParam(6, $implodedFlags);
                 $statement->execute();
             }
             catch(PDOException $e)
