@@ -36,6 +36,7 @@ enum StandardError : int
     case INVALID_USERNAME = -4001;
     case USERNAME_ALREADY_EXISTS = -4002;
     case NOT_REGISTERED = -4003;
+    case METHOD_NOT_ALLOWED = -4004;
 
     /**
      * Returns the default generic message for the error
@@ -69,6 +70,9 @@ enum StandardError : int
             self::INVALID_USERNAME => 'The given username is invalid, it must be Alphanumeric with a minimum of 3 character but no greater than 255 characters',
             self::USERNAME_ALREADY_EXISTS => 'The given username already exists on the network',
             self::NOT_REGISTERED => 'The given username is not registered on the server',
+            self::METHOD_NOT_ALLOWED => 'The requested method is not allowed',
+            self::SESSION_EXPIRED => 'The session has expired',
+            self::SESSION_DHE_REQUIRED => 'The session requires DHE to be established',
         };
 
     }

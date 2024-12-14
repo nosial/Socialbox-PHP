@@ -145,6 +145,26 @@
         }
 
         /**
+         * Checks if a given flag exists in the list of session flags.
+         *
+         * @param string|SessionFlags $flag The flag to check, either as a string or a SessionFlags object.
+         * @return bool True if the flag exists, false otherwise.
+         */
+        public function flagExists(string|SessionFlags $flag): bool
+        {
+            if(is_string($flag))
+            {
+                $flag = SessionFlags::tryFrom($flag);
+                if($flag === null)
+                {
+                    return false;
+                }
+            }
+
+            return in_array($flag, $this->flags);
+        }
+
+        /**
          * Retrieves the timestamp of the last request made.
          *
          * @return DateTime|null The DateTime object representing the last request time, or null if no request has been made.

@@ -293,6 +293,17 @@
             {
                 $method = StandardMethods::tryFrom($rpcRequest->getMethod());
 
+                try
+                {
+                    $method->checkAccess($clientRequest);
+                }
+                catch (StandardException $e)
+                {
+                    $response = $e->produceError($rpcRequest);
+                    $results[] = $response->toArray();
+                    continue;
+                }
+
                 if($method === false)
                 {
                     Logger::getLogger()->warning('The requested method does not exist');

@@ -51,4 +51,43 @@
 
             return array_map(fn(string $value) => SessionFlags::from(trim($value)), explode(',', $flagString));
         }
+
+        /**
+         * Determines if all required session flags for completion are satisfied based on the given array of flags.
+         *
+         * @param array $flags An array of session flags to evaluate. Accepts both enum values (strings) and enum objects.
+         * @return bool True if all required flags for completion are satisfied, false otherwise.
+         */
+        public static function isComplete(array $flags): bool
+        {
+            $flags = array_map(function ($flag) {
+                return is_string($flag) ? SessionFlags::from($flag) : $flag;
+            }, $flags);
+
+            $flags = array_map(fn(SessionFlags $flag) => $flag->value, $flags);
+
+            if (in_array(SessionFlags::REGISTRATION_REQUIRED->value, $flags)) {
+                $flagsToComplete = [
+                    SessionFlags::SET_PASSWORD->value,
+                    SessionFlags::SET_OTP->value,
+                    SessionFlags::SET_DISPLAY_NAME->value,
+                    SessionFlags::VER_PRIVACY_POLICY->value,
+                    SessionFlags::VER_TERMS_OF_SERVICE->value,
+                    SessionFlags::VER_EMAIL->value,
+                    SessionFlags::VER_SMS->value,
+                    SessionFlags::VER_PHONE_CALL->value,
+                    SessionFlags::VER_IMAGE_CAPTCHA->value
+                ];
+                return !array_intersect($flagsToComplete, $flags); // Check if the intersection is empty
+            }
+            if (in_array(SessionFlags::AUTHENTICATION_REQUIRED->value, $flags)) {
+                $flagsToComplete = [
+                    SessionFlags::VER_PASSWORD->value,
+                    SessionFlags::VER_OTP->value
+                ];
+                return !array_intersect($flagsToComplete, $flags); // Check if the intersection is empty
+
+            }
+            return true;
+        }
     }

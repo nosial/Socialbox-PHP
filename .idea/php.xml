@@ -10,6 +10,11 @@
     <option name="highlightLevel" value="WARNING" />
     <option name="transferred" value="true" />
   </component>
+  <component name="PhpCodeSniffer">
+    <phpcs_settings>
+      <phpcs_by_interpreter asDefaultInterpreter="true" interpreter_id="347c1ee9-eeae-4334-9e17-b7e47c2bca71" timeout="30000" />
+    </phpcs_settings>
+  </component>
   <component name="PhpIncludePathManager">
     <include_path>
       <path value="/var/ncc/packages/net.nosial.loglib=2.0.0" />
@@ -121,6 +126,11 @@
       <extension name="zmq" enabled="false" />
     </extensions>
   </component>
+  <component name="PhpStan">
+    <PhpStan_settings>
+      <phpstan_by_interpreter asDefaultInterpreter="true" interpreter_id="347c1ee9-eeae-4334-9e17-b7e47c2bca71" timeout="60000" />
+    </PhpStan_settings>
+  </component>
   <component name="PhpStanOptionsConfiguration">
     <option name="transferred" value="true" />
   </component>
@@ -128,6 +138,11 @@
     <phpunit_settings>
       <PhpUnitSettings load_method="PHPUNIT_PHAR" bootstrap_file_path="$PROJECT_DIR$/bootstrap.php" custom_loader_path="" phpunit_phar_path="$USER_HOME$/phpunit.phar" use_bootstrap_file="true" />
     </phpunit_settings>
+  </component>
+  <component name="Psalm">
+    <Psalm_settings>
+      <psalm_fixer_by_interpreter asDefaultInterpreter="true" interpreter_id="347c1ee9-eeae-4334-9e17-b7e47c2bca71" timeout="60000" />
+    </Psalm_settings>
   </component>
   <component name="PsalmOptionsConfiguration">
     <option name="transferred" value="true" />

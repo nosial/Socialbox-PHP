@@ -81,4 +81,20 @@
         {
             return $this->updated;
         }
+
+        public function toArray(): array
+        {
+            return [
+                'peer_uuid' => $this->peerUuid,
+                'iv' => $this->iv,
+                'encrypted_password' => $this->encryptedPassword,
+                'encrypted_tag' => $this->encryptedTag,
+                'updated' => $this->updated->format('Y-m-d H:i:s')
+            ];
+        }
+
+        public static function fromArray(array $data): SecurePasswordRecord
+        {
+            return new SecurePasswordRecord($data);
+        }
     }

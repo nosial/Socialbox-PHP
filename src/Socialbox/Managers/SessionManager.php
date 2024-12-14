@@ -361,7 +361,7 @@
                     throw new StandardException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
                 }
 
-                return Utilities::unserializeList($data['flags']);
+                return SessionFlags::fromString($data['flags']);
             }
             catch (PDOException $e)
             {
@@ -404,7 +404,7 @@
          * Removes specified flags from the session associated with the given UUID.
          *
          * @param string $uuid The UUID of the session from which the flags will be removed.
-         * @param array $flags An array of flags to be removed from the session.
+         * @param SessionFlags[] $flags An array of flags to be removed from the session.
          * @return void
          * @throws DatabaseOperationException|StandardException If there is an error while updating the session in the database.
          */
@@ -412,22 +412,46 @@
         {
             Logger::getLogger()->verbose(sprintf("Removing flags from session %s", $uuid));
 
-            // First get the existing flags
             $existingFlags = self::getFlags($uuid);
-
-            // Remove the specified flags
-            $flags = array_diff($existingFlags, $flags);
+            $flagsToRemove = array_map(fn($flag) => $flag->value, $flags);
+            $updatedFlags = array_filter($existingFlags, fn($flag) => !in_array($flag->value, $flagsToRemove));
+            $flags = SessionFlags::toString($updatedFlags);
 
             try
             {
                 $statement = Database::getConnection()->prepare("UPDATE sessions SET flags=? WHERE uuid=?");
-                $statement->bindValue(1, Utilities::serializeList($flags));
+                $statement->bindValue(1, $flags); // Directly use the toString() result
                 $statement->bindParam(2, $uuid);
                 $statement->execute();
             }
             catch (PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to remove flags from session', $e);
+            }
+        }
+
+        /**
+         * Updates the authentication status for the specified session.
+         *
+         * @param string $uuid The unique identifier of the session to be updated.
+         * @param bool $authenticated The authentication status to set for the session.
+         * @return void
+         * @throws DatabaseOperationException If the database operation fails.
+         */
+        public static function setAuthenticated(string $uuid, bool $authenticated): void
+        {
+            Logger::getLogger()->verbose(sprintf("Setting session %s as authenticated: %s", $uuid, $authenticated ? 'true' : 'false'));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare("UPDATE sessions SET authenticated=? WHERE uuid=?");
+                $statement->bindParam(1, $authenticated);
+                $statement->bindParam(2, $uuid);
+                $statement->execute();
+            }
+            catch (PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to update authenticated peer', $e);
             }
         }
     }

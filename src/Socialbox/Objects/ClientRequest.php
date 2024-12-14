@@ -10,7 +10,9 @@
     use Socialbox\Enums\Types\RequestType;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\RequestException;
+    use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
+    use Socialbox\Objects\Database\RegisteredPeerRecord;
     use Socialbox\Objects\Database\SessionRecord;
 
     class ClientRequest
@@ -111,6 +113,18 @@
             }
 
             return SessionManager::getSession($this->sessionUuid);
+        }
+
+        public function getPeer(): ?RegisteredPeerRecord
+        {
+            $session = $this->getSession();
+
+            if($session === null)
+            {
+                return null;
+            }
+
+            return RegisteredPeerManager::getPeer($session->getPeerUuid());
         }
 
         public function getSignature(): ?string
