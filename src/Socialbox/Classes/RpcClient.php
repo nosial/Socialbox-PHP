@@ -3,11 +3,14 @@
     namespace Socialbox\Classes;
 
     use Socialbox\Enums\StandardHeaders;
+    use Socialbox\Enums\Types\RequestType;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Objects\RpcError;
+    use Socialbox\Objects\ExportedSession;
+    use Socialbox\Objects\KeyPair;
+    use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
     use Socialbox\Objects\RpcResponse;
 
@@ -15,270 +18,333 @@
     {
         private const string CLIENT_NAME = 'Socialbox PHP';
         private const string CLIENT_VERSION = '1.0';
-        private const string CONTENT_TYPE = 'application/json; charset=utf-8';
 
-        private string $domain;
-        private string $endpoint;
+        private bool $bypassSignatureVerification;
+        private PeerAddress $peerAddress;
+        private KeyPair $keyPair;
+        private string $encryptionKey;
         private string $serverPublicKey;
-        private ?string $sessionUuid;
-        private ?string $privateKey;
+        private string $rpcEndpoint;
+        private string $sessionUuid;
 
         /**
-         * Constructor for initializing the server connection with a given domain.
+         * Constructs a new instance with the specified peer address.
          *
-         * @param string $domain The domain used to resolve the server's endpoint and public key.
-         * @throws ResolutionException
-         * @noinspection PhpUnhandledExceptionInspection
+         * @param string|PeerAddress $peerAddress The peer address to be used for the instance (eg; johndoe@example.com)
+         * @param ExportedSession|null $exportedSession Optional. An exported session to be used to re-connect.
+         * @throws CryptographyException If there is an error in the cryptographic operations.
+         * @throws RpcException If there is an error in the RPC request or if no response is received.
+         * @throws DatabaseOperationException If there is an error in the database operations.
+         * @throws ResolutionException If there is an error in the resolution process.
          */
-        public function __construct(string $domain)
+        public function __construct(string|PeerAddress $peerAddress, ?ExportedSession $exportedSession=null)
         {
-            $resolved = ServerResolver::resolveDomain($domain);
+            $this->bypassSignatureVerification = false;
 
-            $this->domain = $domain;
-            $this->endpoint = $resolved->getEndpoint();
-            $this->serverPublicKey = $resolved->getPublicKey();
-            $this->sessionUuid = null;
-            $this->privateKey = null;
+            // If an exported session is provided, no need to re-connect.
+            if($exportedSession !== null)
+            {
+                $this->peerAddress = PeerAddress::fromAddress($exportedSession->getPeerAddress());
+                $this->keyPair = new KeyPair($exportedSession->getPublicKey(), $exportedSession->getPrivateKey());
+                $this->encryptionKey = $exportedSession->getEncryptionKey();
+                $this->serverPublicKey = $exportedSession->getServerPublicKey();
+                $this->rpcEndpoint = $exportedSession->getRpcEndpoint();
+                $this->sessionUuid = $exportedSession->getSessionUuid();
+                return;
+            }
+
+            // If the peer address is a string, we need to convert it to a PeerAddress object
+            if(is_string($peerAddress))
+            {
+                $peerAddress = PeerAddress::fromAddress($peerAddress);
+            }
+
+            // Set the initial properties
+            $this->peerAddress = $peerAddress;
+            $this->keyPair = Cryptography::generateKeyPair();
+            $this->encryptionKey = Cryptography::generateEncryptionKey();
+
+            // Resolve the domain and get the server's Public Key & RPC Endpoint
+            $resolvedServer = ServerResolver::resolveDomain($this->peerAddress->getDomain(), false);
+            $this->serverPublicKey = $resolvedServer->getPublicKey();
+            $this->rpcEndpoint = $resolvedServer->getEndpoint();
+
+            // Attempt to create an encrypted session with the server
+            $this->sessionUuid = $this->createSession();
+            $this->sendDheExchange();
         }
 
         /**
-         * Retrieves the domain.
+         * Creates a new session by sending an HTTP GET request to the RPC endpoint.
+         * The request includes specific headers required for session initiation.
          *
-         * @return string The domain.
+         * @return string Returns the session UUID received from the server.
+         * @throws RpcException If the server response is invalid, the session creation fails, or no session UUID is returned.
          */
-        public function getDomain(): string
+        private function createSession(): string
         {
-            return $this->domain;
-        }
+            $ch = curl_init();
 
-        /**
-         * Retrieves the endpoint URL.
-         *
-         * @return string The endpoint URL.
-         */
-        public function getEndpoint(): string
-        {
-            return $this->endpoint;
-        }
-
-        /**
-         * Retrieves the server's public key.
-         *
-         * @return string The server's public key.
-         */
-        public function getServerPublicKey(): string
-        {
-            return $this->serverPublicKey;
-        }
-
-        /**
-         * Retrieves the session UUID.
-         *
-         * @return string|null The session UUID or null if not set.
-         */
-        public function getSessionUuid(): ?string
-        {
-            return $this->sessionUuid;
-        }
-
-        /**
-         * Sets the session UUID.
-         *
-         * @param string|null $sessionUuid The session UUID to set. Can be null.
-         * @return void
-         */
-        public function setSessionUuid(?string $sessionUuid): void
-        {
-            $this->sessionUuid = $sessionUuid;
-        }
-
-        /**
-         * Retrieves the private key.
-         *
-         * @return string|null The private key if available, or null if not set.
-         */
-        public function getPrivateKey(): ?string
-        {
-            return $this->privateKey;
-        }
-
-        /**
-         * Sets the private key.
-         *
-         * @param string|null $privateKey The private key to be set. Can be null.
-         * @return void
-         */
-        public function setPrivateKey(?string $privateKey): void
-        {
-            $this->privateKey = $privateKey;
-        }
-
-        /**
-         * Sends an RPC request to the specified endpoint.
-         *
-         * @param RpcRequest $request The RPC request to be sent.
-         * @return RpcResponse|RpcError|null The response from the RPC server, an error object, or null if no content.
-         * @throws CryptographyException If an error occurs during the signing of the content.
-         * @throws RpcException If an error occurs while sending the request or processing the response.
-         */
-        public function sendRequest(RpcRequest $request): RpcResponse|RpcError|null
-        {
-            $curl = curl_init($this->endpoint);
-            $content = Utilities::jsonEncode($request->toArray());
-            curl_setopt_array($curl, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_HTTPHEADER => $this->getHeaders($content),
-                CURLOPT_POSTFIELDS => $content,
+            curl_setopt($ch, CURLOPT_URL, $this->rpcEndpoint);
+            curl_setopt($ch, CURLOPT_HTTPGET, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::INITIATE_SESSION->value,
+                StandardHeaders::CLIENT_NAME->value . ': ' . self::CLIENT_NAME,
+                StandardHeaders::CLIENT_VERSION->value . ': ' . self::CLIENT_VERSION,
+                StandardHeaders::PUBLIC_KEY->value . ': ' . $this->keyPair->getPublicKey(),
+                StandardHeaders::IDENTIFY_AS->value . ': ' . $this->peerAddress->getAddress(),
             ]);
 
-            $response = curl_exec($curl);
-            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $response = curl_exec($ch);
 
-            if(curl_errno($curl))
+            if($response === false)
             {
-                throw new RpcException(sprintf('Failed to send request: %s', curl_error($curl)));
+                curl_close($ch);
+                throw new RpcException('Failed to create the session, no response received');
             }
 
-            curl_close($curl);
-
-            // Return null if the response is empty
-            if($httpCode === 204)
+            $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+            if($responseCode !== 201)
             {
-                return null;
-            }
-
-            if(!$this->isSuccessful($httpCode))
-            {
-                if(!empty($response))
-                {
-                    throw new RpcException($response);
-                }
-
-                throw new RpcException(sprintf('Error occurred while processing request: %d', $httpCode));
+                curl_close($ch);
+                throw new RpcException('Failed to create the session, server responded with ' . $responseCode . ': ' . $response);
             }
 
             if(empty($response))
             {
-                throw new RpcException('Response was empty but status code was successful');
+                curl_close($ch);
+                throw new RpcException('Failed to create the session, server did not return a session UUID');
             }
 
-            return RpcResponse::fromArray(Utilities::jsonDecode($response));
+            curl_close($ch);
+            return $response;
         }
 
         /**
-         * Sends multiple requests to the designated endpoint and returns their responses.
+         * Sends a Diffie-Hellman Ephemeral (DHE) exchange request to the server.
          *
-         * @param array $requests An array of request objects, each implementing the method toArray().
-         * @return RpcResponse[]|RpcError[] An array of response objects, each implementing the method toArray().
-         * @throws CryptographyException If an error occurs during the signing of the content.
-         * @throws RpcException If any errors occur during the request process or in case of unsuccessful HTTP codes.
+         * @throws RpcException If the encryption or the request fails.
          */
-        public function sendRequests(array $requests): array
+        private function sendDheExchange(): void
         {
-            $curl = curl_init($this->endpoint);
-            $contents = null;
-
-            foreach($requests as $request)
+            // Request body should contain the encrypted key, the client's public key, and the session UUID
+            // Upon success the server should return 204 without a body
+            try
             {
-                $contents[] = $request->toArray();
+                $encryptedKey = Cryptography::encryptContent($this->encryptionKey, $this->serverPublicKey);
+            }
+            catch (CryptographyException $e)
+            {
+                throw new RpcException('Failed to encrypt DHE exchange data', 0, $e);
             }
 
-            $content = Utilities::jsonEncode($contents);
-
-            curl_setopt_array($curl, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_HTTPHEADER => $this->getHeaders($content),
-                CURLOPT_POSTFIELDS => $content,
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $this->rpcEndpoint);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::DHE_EXCHANGE->value,
+                StandardHeaders::SESSION_UUID->value . ': ' . $this->sessionUuid,
             ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $encryptedKey);
 
-            $response = curl_exec($curl);
-            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $response = curl_exec($ch);
 
-            if(curl_errno($curl))
+            if($response === false)
             {
-                throw new RpcException(sprintf('Failed to send request: %s', curl_error($curl)));
+                curl_close($ch);
+                throw new RpcException('Failed to send DHE exchange, no response received');
             }
 
-            curl_close($curl);
-
-            // Return null if the response is empty
-            if($httpCode === 204)
+            $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+            if($responseCode !== 204)
             {
+                curl_close($ch);
+                throw new RpcException('Failed to send DHE exchange, server responded with ' . $responseCode . ': ' . $response);
+            }
+
+            curl_close($ch);
+        }
+
+        /**
+         * Sends an RPC request with the given JSON data.
+         *
+         * @param string $jsonData The JSON data to be sent in the request.
+         * @return array An array of RpcResult objects.
+         * @throws RpcException If the request fails, the response is invalid, or the decryption/signature verification fails.
+         */
+        public function sendRawRequest(string $jsonData): array
+        {
+            try
+            {
+                $encryptedData = Cryptography::encryptTransport($jsonData, $this->encryptionKey);
+                $signature = Cryptography::signContent($jsonData, $this->keyPair->getPrivateKey());
+            }
+            catch (CryptographyException $e)
+            {
+                throw new RpcException('Failed to encrypt request data: ' . $e->getMessage(), 0, $e);
+            }
+
+            $ch = curl_init();
+
+            curl_setopt($ch, CURLOPT_URL, $this->rpcEndpoint);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::RPC->value,
+                StandardHeaders::SESSION_UUID->value . ': ' . $this->sessionUuid,
+                StandardHeaders::SIGNATURE->value . ': ' . $signature,
+                'Content-Type: application/encrypted-json',
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $encryptedData);
+
+            $response = curl_exec($ch);
+
+            if ($response === false)
+            {
+                curl_close($ch);
+                throw new RpcException('Failed to send request, no response received');
+            }
+
+            $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+            $responseString = $response;
+
+            if (!Utilities::isSuccessCodes($responseCode))
+            {
+                curl_close($ch);
+                if (!empty($responseString))
+                {
+                    throw new RpcException($responseString);
+                }
+
+                throw new RpcException('Failed to send request (Empty Response): ' . $responseCode);
+            }
+
+            if ($responseCode == 204)
+            {
+                curl_close($ch);
                 return [];
             }
 
-            if(!$this->isSuccessful($httpCode))
+            if (empty($responseString))
             {
-                if(!empty($response))
+                curl_close($ch);
+                throw new RpcException('The request was successful but the server did not indicate an empty response');
+            }
+
+            curl_close($ch);
+
+            try
+            {
+                $decryptedResponse = Cryptography::decryptTransport($responseString, $this->encryptionKey);
+            }
+            catch (CryptographyException $e)
+            {
+                throw new RpcException('Failed to decrypt response: ' . $e->getMessage(), 0, $e);
+            }
+
+            if (!$this->bypassSignatureVerification)
+            {
+                $signature = curl_getinfo($ch, CURLINFO_HEADER_OUT)['Signature'] ?? null;
+                if ($signature === null)
                 {
-                    throw new RpcException($response);
+                    throw new RpcException('The server did not provide a signature for the response');
                 }
 
-                throw new RpcException(sprintf('Error occurred while processing request: %d', $httpCode));
+                try
+                {
+                    if (!Cryptography::verifyContent($decryptedResponse, $signature, $this->serverPublicKey))
+                    {
+                        throw new RpcException('Failed to verify the response signature');
+                    }
+                }
+                catch (CryptographyException $e)
+                {
+                    throw new RpcException('Failed to verify the response signature: ' . $e->getMessage(), 0, $e);
+                }
             }
 
-            if(empty($response))
+            $decoded = json_decode($decryptedResponse, true);
+
+            if (is_array($decoded))
             {
-                throw new RpcException('Response was empty but status code was successful');
+                $results = [];
+                foreach ($decoded as $responseMap)
+                {
+                    $results[] = RpcResponse::fromArray($responseMap);
+                }
+                return $results;
             }
 
-            $results = Utilities::jsonDecode($response);
-            $responses = [];
-
-            foreach($results as $result)
+            if (is_object($decoded))
             {
-                $responses[] = RpcResponse::fromArray($result);
+                return [RpcResponse::fromArray((array)$decoded)];
+            }
+
+            throw new RpcException('Failed to decode response');
+        }
+
+        /**
+         * Sends an RPC request and retrieves the corresponding RPC response.
+         *
+         * @param RpcRequest $request The RPC request to be sent.
+         * @return RpcResponse The received RPC response.
+         * @throws RpcException If no response is received from the request.
+         */
+        public function sendRequest(RpcRequest $request): RpcResponse
+        {
+            $response = $this->sendRawRequest(json_encode($request));
+
+            if (count($response) === 0)
+            {
+                throw new RpcException('Failed to send request, no response received');
+            }
+
+            return $response[0];
+        }
+
+        /**
+         * Sends a batch of requests to the server, processes them into an appropriate format,
+         * and handles the response.
+         *
+         * @param RpcRequest[] $requests An array of RpcRequest objects to be sent to the server.
+         * @return RpcResponse[] An array of RpcResponse objects received from the server.
+         * @throws RpcException If no response is received from the server.
+         */
+        public function sendRequests(array $requests): array
+        {
+            $parsedRequests = [];
+            foreach ($requests as $request)
+            {
+                $parsedRequests[] = $request->toArray();
+            }
+
+            $responses = $this->sendRawRequest(json_encode($parsedRequests));
+
+            if (count($responses) === 0)
+            {
+                throw new RpcException('Failed to send requests, no response received');
             }
 
             return $responses;
         }
 
         /**
-         * Determines if the provided HTTP status code indicates a successful response.
+         * Exports the current session details into an ExportedSession object.
          *
-         * @param int $code The HTTP status code to evaluate.
-         * @return bool True if the status code represents success (2xx), false otherwise.
+         * @return ExportedSession The exported session containing session-specific details.
          */
-        private function isSuccessful(int $code): bool
+        public function exportSession(): ExportedSession
         {
-            return $code >= 200 && $code < 300;
-        }
-
-        /**
-         * Generates an array of headers based on standard headers and instance-specific properties.
-         *
-         * @param string $content The content to be signed if a private key is available.
-         * @return array An array of headers to be included in an HTTP request.
-         * @throws CryptographyException If an error occurs during the signing of the content.
-         */
-        private function getHeaders(string $content): array
-        {
-            $headers = [
-                sprintf('%s: %s', StandardHeaders::CLIENT_NAME->value, self::CLIENT_NAME),
-                sprintf('%s: %s', StandardHeaders::CLIENT_VERSION->value, self::CLIENT_VERSION),
-                sprintf('%s: %s', StandardHeaders::CONTENT_TYPE->value, self::CONTENT_TYPE),
-            ];
-
-            if($this->sessionUuid !== null)
-            {
-                $headers[] = sprintf('%s: %s', StandardHeaders::SESSION_UUID->value, $this->sessionUuid);
-            }
-
-            if($this->privateKey !== null)
-            {
-                try
-                {
-                    $headers[] = sprintf('%s: %s', StandardHeaders::SIGNATURE->value, Cryptography::signContent($content, $this->privateKey, true));
-                }
-                catch (CryptographyException $e)
-                {
-                    Logger::getLogger()->error('Failed to sign content: ' . $e->getMessage());
-                    throw $e;
-                }
-            }
-
-            return $headers;
+            return new ExportedSession([
+                'peer_address' => $this->peerAddress->getAddress(),
+                'private_key' => $this->keyPair->getPrivateKey(),
+                'public_key' => $this->keyPair->getPublicKey(),
+                'encryption_key' => $this->encryptionKey,
+                'server_public_key' => $this->serverPublicKey,
+                'rpc_endpoint' => $this->rpcEndpoint,
+                'session_uuid' => $this->sessionUuid
+            ]);
         }
     }

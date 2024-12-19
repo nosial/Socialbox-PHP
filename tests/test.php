@@ -1,24 +1,21 @@
 <?php
 
-    use Socialbox\Classes\SecuredPassword;
-    use Socialbox\Managers\EncryptionRecordsManager;
-
     require 'ncc';
     import('net.nosial.socialbox');
 
-    print("Getting random encryption record\n");
-    $encryptionRecord = EncryptionRecordsManager::getRandomRecord();
-    var_dump($encryptionRecord);
+    $client = new \Socialbox\Classes\RpcClient(generateRandomPeer());
+    var_dump($client->exportSession());
 
-    print("Securing password\n");
-    $securedPassword = SecuredPassword::securePassword('123-123-123', 'password!', $encryptionRecord);
+    function generateRandomPeer()
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
 
-    print("Verifying password\n");
-    if(SecuredPassword::verifyPassword('password!', $securedPassword, EncryptionRecordsManager::getAllRecords()))
-    {
-        print("Password verified\n");
-    }
-    else
-    {
-        print("Password not verified\n");
+        for ($i = 0; $i < 16; $i++)
+        {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+
+        return 'userTest' . $randomString . '@intvo.id';
     }

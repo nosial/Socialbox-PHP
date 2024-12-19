@@ -215,4 +215,15 @@ class Utilities
     {
         return explode(',', $list);
     }
+
+    /**
+     * Checks if the given HTTP response code indicates success or failure.
+     *
+     * @param int $responseCode The HTTP response code to check.
+     * @return bool True if the response code indicates success, false otherwise.
+     */
+    public static function isSuccessCodes(int $responseCode): bool
+    {
+        return $responseCode >= 200 && $responseCode < 300;
+    }
 }

@@ -11,7 +11,6 @@
         {
             print("Getting random encryption record\n");
             $encryptionRecord = EncryptionRecordsManager::getRandomRecord();
-            var_dump($encryptionRecord);
 
             print("Securing password\n");
             $securedPassword = SecuredPassword::securePassword('123-123-123', 'password!', $encryptionRecord);
