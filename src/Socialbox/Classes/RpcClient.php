@@ -76,6 +76,11 @@
             $this->serverPublicKey = $resolvedServer->getPublicKey();
             $this->rpcEndpoint = $resolvedServer->getEndpoint();
 
+            if(empty($this->serverPublicKey))
+            {
+                throw new ResolutionException('Failed to resolve domain: No public key found for the server');
+            }
+
             // Attempt to create an encrypted session with the server
             $this->sessionUuid = $this->createSession();
             $this->sendDheExchange();

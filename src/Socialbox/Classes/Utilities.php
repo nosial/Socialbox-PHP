@@ -83,6 +83,7 @@ class Utilities
 
         if ($decoded === false)
         {
+            var_dump($data);
             throw new InvalidArgumentException('Failed to decode data from Base64');
         }
 

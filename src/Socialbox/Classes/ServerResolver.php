@@ -38,22 +38,18 @@
             }
 
             $fullRecord = self::concatenateTxtRecords($txtRecords);
-
             if (preg_match(self::PATTERN, $fullRecord, $matches))
             {
                 $endpoint = trim($matches[1]);
                 $publicKey = trim(str_replace(' ', '', $matches[2]));
-
                 if (empty($endpoint))
                 {
                     throw new ResolutionException(sprintf("Failed to resolve RPC endpoint for %s", $domain));
                 }
-
                 if (empty($publicKey))
                 {
                     throw new ResolutionException(sprintf("Failed to resolve public key for %s", $domain));
                 }
-
                 return new ResolvedServer($endpoint, $publicKey);
             }
             else
@@ -74,23 +70,26 @@
         }
 
         /**
-         * Concatenates an array of TXT records into a single string.
+         * Concatenates an array of TXT records into a single string, filtering for SocialBox records.
          *
          * @param array $txtRecords An array of TXT records, where each record is expected to have a 'txt' key.
-         * @return string A concatenated string of all TXT records.
+         * @return string A concatenated string of all relevant TXT records.
          */
         private static function concatenateTxtRecords(array $txtRecords): string
         {
             $fullRecordBuilder = '';
-
             foreach ($txtRecords as $txt)
             {
                 if (isset($txt['txt']))
                 {
-                    $fullRecordBuilder .= trim($txt['txt'], '" ');
+                    $record = trim($txt['txt'], '" ');
+                    // Only include records that start with v=socialbox
+                    if (stripos($record, 'v=socialbox') === 0)
+                    {
+                        $fullRecordBuilder .= $record;
+                    }
                 }
             }
-
             return $fullRecordBuilder;
         }
     }

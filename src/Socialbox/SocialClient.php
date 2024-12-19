@@ -43,4 +43,54 @@
             )->getResponse()->getResult();
         }
 
+        /**
+         * Retrieves the privacy policy from the server.
+         *
+         * @return string Returns the privacy policy as a string.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function getPrivacyPolicy(): string
+        {
+            return $this->sendRequest(
+                new RpcRequest('getPrivacyPolicy', Utilities::randomCrc32())
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Accepts the privacy policy by sending a request to the server.
+         *
+         * @return true Returns true if the privacy policy is successfully accepted.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function acceptPrivacyPolicy(): true
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest('acceptPrivacyPolicy', Utilities::randomCrc32())
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Retrieves the terms of service from the server.
+         *
+         * @return string Returns the terms of service as a string.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function getTermsOfService(): string
+        {
+            return $this->sendRequest(new RpcRequest('getTermsOfService', Utilities::randomCrc32())
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Sends a request to accept the terms of service and verifies the response.
+         *
+         * @return true Returns true if the terms of service are successfully accepted.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function acceptTermsOfService(): true
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest('acceptTermsOfService', Utilities::randomCrc32())
+            )->getResponse()->getResult();
+        }
     }
