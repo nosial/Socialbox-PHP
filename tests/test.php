@@ -3,8 +3,8 @@
     require 'ncc';
     import('net.nosial.socialbox');
 
-    $client = new \Socialbox\Classes\RpcClient(generateRandomPeer());
-    var_dump($client->exportSession());
+    $client = new \Socialbox\SocialClient(generateRandomPeer());
+    var_dump($client->ping());
 
     function generateRandomPeer()
     {

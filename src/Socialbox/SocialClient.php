@@ -5,53 +5,42 @@
     use Socialbox\Classes\RpcClient;
     use Socialbox\Classes\Utilities;
     use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
+    use Socialbox\Objects\ExportedSession;
     use Socialbox\Objects\KeyPair;
+    use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcError;
     use Socialbox\Objects\RpcRequest;
 
     class SocialClient extends RpcClient
     {
         /**
-         * Constructs a new instance with the specified domain.
+         * Constructs the object from an array of data.
          *
-         * @param string $domain The domain to be set for the instance.
-         * @throws ResolutionException
+         * @param string|PeerAddress $peerAddress The address of the peer to connect to.
+         * @param ExportedSession|null $exportedSession Optional. The exported session to use for communication.
+         * @throws CryptographyException If the public key is invalid.
+         * @throws ResolutionException If the domain cannot be resolved.
+         * @throws RpcException If the RPC request fails.
          */
-        public function __construct(string $domain)
+        public function __construct(string|PeerAddress $peerAddress, ?ExportedSession $exportedSession=null)
         {
-            parent::__construct($domain);
+            parent::__construct($peerAddress, $exportedSession);
         }
 
         /**
-         * Creates a new session using the provided key pair.
+         * Sends a ping request to the server and checks the response.
          *
-         * @param KeyPair $keyPair The key pair to be used for creating the session.
-         * @return string The UUID of the created session.
-         * @throws CryptographyException if there is an error in the cryptographic operations.
-         * @throws RpcException if there is an error in the RPC request or if no response is received.
+         * @return true Returns true if the ping request succeeds.
+         * @throws RpcException Thrown if the RPC request fails.
          */
-        public function createSession(KeyPair $keyPair): string
+        public function ping(): true
         {
-            $response = $this->sendRequest(new RpcRequest('createSession', Utilities::randomCrc32(), [
-                'public_key' => $keyPair->getPublicKey()
-            ]));
-
-            if($response === null)
-            {
-                throw new RpcException('Failed to create the session, no response received');
-            }
-
-            if($response instanceof RpcError)
-            {
-                throw RpcException::fromRpcError($response);
-            }
-
-            $this->setSessionUuid($response->getResult());
-            $this->setPrivateKey($keyPair->getPrivateKey());
-
-            return $response->getResult();
+            return (bool)$this->sendRequest(
+                new RpcRequest('ping', Utilities::randomCrc32())
+            )->getResponse()->getResult();
         }
 
     }

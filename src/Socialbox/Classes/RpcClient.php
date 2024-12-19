@@ -12,7 +12,7 @@
     use Socialbox\Objects\KeyPair;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
-    use Socialbox\Objects\RpcResponse;
+    use Socialbox\Objects\RpcResult;
 
     class RpcClient
     {
@@ -34,7 +34,6 @@
          * @param ExportedSession|null $exportedSession Optional. An exported session to be used to re-connect.
          * @throws CryptographyException If there is an error in the cryptographic operations.
          * @throws RpcException If there is an error in the RPC request or if no response is received.
-         * @throws DatabaseOperationException If there is an error in the database operations.
          * @throws ResolutionException If there is an error in the resolution process.
          */
         public function __construct(string|PeerAddress $peerAddress, ?ExportedSession $exportedSession=null)
@@ -65,7 +64,15 @@
             $this->encryptionKey = Cryptography::generateEncryptionKey();
 
             // Resolve the domain and get the server's Public Key & RPC Endpoint
-            $resolvedServer = ServerResolver::resolveDomain($this->peerAddress->getDomain(), false);
+            try
+            {
+                $resolvedServer = ServerResolver::resolveDomain($this->peerAddress->getDomain(), false);
+            }
+            catch (DatabaseOperationException $e)
+            {
+                throw new ResolutionException('Failed to resolve domain: ' . $e->getMessage(), 0, $e);
+            }
+
             $this->serverPublicKey = $resolvedServer->getPublicKey();
             $this->rpcEndpoint = $resolvedServer->getEndpoint();
 
@@ -171,7 +178,7 @@
          * Sends an RPC request with the given JSON data.
          *
          * @param string $jsonData The JSON data to be sent in the request.
-         * @return array An array of RpcResult objects.
+         * @return RpcResult[] An array of RpcResult objects.
          * @throws RpcException If the request fails, the response is invalid, or the decryption/signature verification fails.
          */
         public function sendRawRequest(string $jsonData): array
@@ -179,7 +186,7 @@
             try
             {
                 $encryptedData = Cryptography::encryptTransport($jsonData, $this->encryptionKey);
-                $signature = Cryptography::signContent($jsonData, $this->keyPair->getPrivateKey());
+                $signature = Cryptography::signContent($jsonData, $this->keyPair->getPrivateKey(), true);
             }
             catch (CryptographyException $e)
             {
@@ -187,15 +194,27 @@
             }
 
             $ch = curl_init();
+            $headers = [];
 
             curl_setopt($ch, CURLOPT_URL, $this->rpcEndpoint);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HEADERFUNCTION, function($curl, $header) use (&$headers)
+            {
+                $len = strlen($header);
+                $header = explode(':', $header, 2);
+                if (count($header) < 2) // ignore invalid headers
+                {
+                    return $len;
+                }
+
+                $headers[strtolower(trim($header[0]))][] = trim($header[1]);
+                return $len;
+            });
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::RPC->value,
                 StandardHeaders::SESSION_UUID->value . ': ' . $this->sessionUuid,
-                StandardHeaders::SIGNATURE->value . ': ' . $signature,
-                'Content-Type: application/encrypted-json',
+                StandardHeaders::SIGNATURE->value . ': ' . $signature
             ]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $encryptedData);
 
@@ -246,7 +265,7 @@
 
             if (!$this->bypassSignatureVerification)
             {
-                $signature = curl_getinfo($ch, CURLINFO_HEADER_OUT)['Signature'] ?? null;
+                $signature = $headers['signature'][0] ?? null;
                 if ($signature === null)
                 {
                     throw new RpcException('The server did not provide a signature for the response');
@@ -254,7 +273,7 @@
 
                 try
                 {
-                    if (!Cryptography::verifyContent($decryptedResponse, $signature, $this->serverPublicKey))
+                    if (!Cryptography::verifyContent($decryptedResponse, $signature, $this->serverPublicKey, true))
                     {
                         throw new RpcException('Failed to verify the response signature');
                     }
@@ -266,39 +285,43 @@
             }
 
             $decoded = json_decode($decryptedResponse, true);
-
-            if (is_array($decoded))
+            if(isset($decoded['id']))
+            {
+                return [new RpcResult($decoded)];
+            }
+            else
             {
                 $results = [];
                 foreach ($decoded as $responseMap)
                 {
-                    $results[] = RpcResponse::fromArray($responseMap);
+                    $results[] = new RpcResult($responseMap);
                 }
                 return $results;
             }
-
-            if (is_object($decoded))
-            {
-                return [RpcResponse::fromArray((array)$decoded)];
-            }
-
-            throw new RpcException('Failed to decode response');
         }
 
         /**
          * Sends an RPC request and retrieves the corresponding RPC response.
          *
          * @param RpcRequest $request The RPC request to be sent.
-         * @return RpcResponse The received RPC response.
+         * @return RpcResult The received RPC response.
          * @throws RpcException If no response is received from the request.
          */
-        public function sendRequest(RpcRequest $request): RpcResponse
+        public function sendRequest(RpcRequest $request, bool $throwException=true): RpcResult
         {
-            $response = $this->sendRawRequest(json_encode($request));
+            $response = $this->sendRawRequest(json_encode($request->toArray()));
 
             if (count($response) === 0)
             {
                 throw new RpcException('Failed to send request, no response received');
+            }
+
+            if($throwException)
+            {
+                if($response[0]->getError() !== null)
+                {
+                    throw $response[0]->getError()->toRpcException();
+                }
             }
 
             return $response[0];
@@ -309,7 +332,7 @@
          * and handles the response.
          *
          * @param RpcRequest[] $requests An array of RpcRequest objects to be sent to the server.
-         * @return RpcResponse[] An array of RpcResponse objects received from the server.
+         * @return RpcResult[] An array of RpcResult objects received from the server.
          * @throws RpcException If no response is received from the server.
          */
         public function sendRequests(array $requests): array
@@ -324,7 +347,7 @@
 
             if (count($responses) === 0)
             {
-                throw new RpcException('Failed to send requests, no response received');
+                return [];
             }
 
             return $responses;

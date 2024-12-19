@@ -4,6 +4,7 @@
 
     use InvalidArgumentException;
     use Socialbox\Classes\Cryptography;
+    use Socialbox\Classes\Logger;
     use Socialbox\Classes\Utilities;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardHeaders;
@@ -141,7 +142,7 @@
 
             try
             {
-                return Cryptography::verifyContent(hash('sha1', $decryptedContent), $this->getSignature(), $this->getSession()->getPublicKey());
+                return Cryptography::verifyContent($decryptedContent, $this->getSignature(), $this->getSession()->getPublicKey(), true);
             }
             catch(CryptographyException)
             {

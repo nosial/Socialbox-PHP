@@ -23,7 +23,7 @@
          * @param string|null $id The ID of the request.
          * @param array|null $parameters The parameters of the request.
          */
-        public function __construct(string $method, ?string $id, ?array $parameters)
+        public function __construct(string $method, ?string $id, ?array $parameters=null)
         {
             $this->method = $method;
             $this->parameters = $parameters;

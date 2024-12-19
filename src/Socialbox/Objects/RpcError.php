@@ -1,98 +1,112 @@
 <?php
 
-namespace Socialbox\Objects;
+    namespace Socialbox\Objects;
 
-use Socialbox\Enums\StandardError;
-use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\RpcException;
+    use Socialbox\Interfaces\SerializableInterface;
 
-class RpcError implements SerializableInterface
-{
-    private string $id;
-    private string $error;
-    private StandardError $code;
-
-    /**
-     * Constructs the RPC error object.
-     *
-     * @param string $id The ID of the RPC request
-     * @param StandardError $code The error code
-     * @param string|null $error The error message
-     */
-    public function __construct(string $id, StandardError $code, ?string $error)
+    class RpcError implements SerializableInterface
     {
-        $this->id = $id;
-        $this->code = $code;
+        private string $id;
+        private StandardError $code;
+        private string $error;
 
-        if($error === null)
+        /**
+         * Constructs the RPC error object.
+         *
+         * @param string $id The ID of the RPC request
+         * @param StandardError|int $code The error code
+         * @param string|null $error The error message
+         */
+        public function __construct(string $id, StandardError|int $code, ?string $error)
         {
-            $this->error = $code->getMessage();
-        }
-        else
-        {
-            $this->error = $error;
-        }
+            $this->id = $id;
 
-    }
+            if(is_int($code))
+            {
+                $code = StandardError::tryFrom($code);
+                if($code === null)
+                {
+                    $code = StandardError::UNKNOWN;
+                }
+            }
 
-    /**
-     * Returns the ID of the RPC request.
-     *
-     * @return string The ID of the RPC request.
-     */
-    public function getId(): string
-    {
-        return $this->id;
-    }
+            $this->code = $code;
 
-    /**
-     * Returns the error message.
-     *
-     * @return string The error message.
-     */
-    public function getError(): string
-    {
-        return $this->error;
-    }
+            if($error === null)
+            {
+                $this->error = $code->getMessage();
+            }
+            else
+            {
+                $this->error = $error;
+            }
 
-    /**
-     * Returns the error code.
-     *
-     * @return StandardError The error code.
-     */
-    public function getCode(): StandardError
-    {
-        return $this->code;
-    }
-
-    /**
-     * Returns an array representation of the object.
-     *
-     * @return array The array representation of the object.
-     */
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'error' => $this->error,
-            'code' => $this->code->value
-        ];
-    }
-
-    /**
-     * Returns the RPC error object from an array of data.
-     *
-     * @param array $data The data to construct the RPC error from.
-     * @return RpcError The RPC error object.
-     */
-    public static function fromArray(array $data): RpcError
-    {
-        $errorCode = StandardError::tryFrom($data['code']);
-
-        if($errorCode == null)
-        {
-            $errorCode = StandardError::UNKNOWN;
         }
 
-        return new RpcError($data['id'], $data['error'], $errorCode);
+        /**
+         * Returns the ID of the RPC request.
+         *
+         * @return string The ID of the RPC request.
+         */
+        public function getId(): string
+        {
+            return $this->id;
+        }
+
+        /**
+         * Returns the error code.
+         *
+         * @return StandardError The error code.
+         */
+        public function getCode(): StandardError
+        {
+            return $this->code;
+        }
+
+        /**
+         * Returns the error message.
+         *
+         * @return string The error message.
+         */
+        public function getError(): string
+        {
+            return $this->error;
+        }
+
+        /**
+         * Returns an array representation of the object.
+         *
+         * @return array The array representation of the object.
+         */
+        public function toArray(): array
+        {
+            return [
+                'id' => $this->id,
+                'code' => $this->code->value,
+                'error' => $this->error
+            ];
+        }
+
+        /**
+         * Converts the current object to an RpcException instance.
+         *
+         * @return RpcException The RpcException generated from the current object.
+         */
+        public function toRpcException(): RpcException
+        {
+            return new RpcException($this->error, $this->code->value);
+        }
+
+        /**
+         * Returns the RPC error object from an array of data.
+         *
+         * @param array $data The data to construct the RPC error from.
+         * @return RpcError The RPC error object.
+         */
+        public static function fromArray(array $data): RpcError
+        {
+            return new RpcError($data['id'], $data['code'], $data['error']);
+        }
     }
-}
