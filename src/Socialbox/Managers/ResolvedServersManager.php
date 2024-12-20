@@ -81,10 +81,11 @@ class ResolvedServersManager
      * Retrieves the resolved server record from the database for a given domain.
      *
      * @param string $domain The domain name for which to retrieve the resolved server record.
-     * @return ResolvedServerRecord The resolved server record associated with the given domain.
+     * @return ResolvedServerRecord|null The resolved server record associated with the given domain.
      * @throws DatabaseOperationException If there is an error retrieving the resolved server record from the database.
+     * @throws \DateMalformedStringException If the date string is malformed.
      */
-    public static function getResolvedServer(string $domain): ResolvedServerRecord
+    public static function getResolvedServer(string $domain): ?ResolvedServerRecord
     {
         try
         {
@@ -92,7 +93,13 @@ class ResolvedServersManager
             $statement->bindParam(1, $domain);
             $statement->execute();
             $result = $statement->fetch();
-            return new ResolvedServerRecord($result);
+
+            if($result === false)
+            {
+                return null;
+            }
+
+            return ResolvedServerRecord::fromArray($result);
         }
         catch(PDOException $e)
         {

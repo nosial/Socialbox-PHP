@@ -15,7 +15,7 @@
          * @var SessionFlags[]|null
          */
         private ?array $flags;
-        private DateTime $created;
+        private int $created;
 
         /**
          * Constructor for initializing the object with the provided data.
@@ -25,7 +25,6 @@
          *                    - 'identified_as': mixed, The identity information.
          *                    - 'authenticated': bool, Whether the object is authenticated.
          *                    - 'flags': string|null, Optional flags in
-         * @throws \DateMalformedStringException
          */
         public function __construct(array $data)
         {
@@ -48,49 +47,101 @@
 
             if(is_int($data['created']))
             {
-                $this->created = new DateTime();
-                $this->created->setTimestamp($data['created']);
+                $this->created = $data['created'];
             }
             elseif($data['created'] instanceof DateTime)
             {
-                $this->created = $data['created'];
+                $this->created = $data['created']->getTimestamp();
             }
             else
             {
-                $this->created = new DateTime($data['created']);
+                $this->created = time();
             }
         }
 
+        /**
+         * Retrieves the UUID of the current instance.
+         *
+         * @return string The UUID as a string.
+         */
         public function getUuid(): string
         {
             return $this->uuid;
         }
 
+        /**
+         *
+         * @return string The identifier associated with the entity.
+         */
         public function getIdentifiedAs(): string
         {
             return $this->identifiedAs;
         }
 
+        /**
+         * Checks if the user is authenticated.
+         *
+         * @return bool Returns true if the user is authenticated, otherwise false.
+         */
         public function isAuthenticated(): bool
         {
             return $this->authenticated;
         }
 
+        /**
+         *
+         * @return array|null
+         */
         public function getFlags(): ?array
         {
             return $this->flags;
         }
 
-        public function getCreated(): DateTime
+        /**
+         * Checks if the provided flag exists within the current flags.
+         *
+         * @param string|SessionFlags $flag The flag to check, either as a string or an instance of SessionFlags.
+         * @return bool Returns true if the flag is found in the current flags, otherwise false.
+         */
+        public function containsFlag(string|SessionFlags $flag): bool
+        {
+            if($this->flags === null || count($this->flags) === 0)
+            {
+                return false;
+            }
+
+            if($flag instanceof SessionFlags)
+            {
+                $flag = $flag->value;
+            }
+
+            return in_array($flag, $this->flags);
+        }
+
+        /**
+         *
+         * @return int Returns the created timestamp as an integer.
+         */
+        public function getCreated(): int
         {
             return $this->created;
         }
 
+        /**
+         * Creates a new instance of SessionState from the provided array.
+         *
+         * @param array $data The input array containing data to initialize the SessionState instance.
+         * @return SessionState A new instance of the SessionState class.
+         */
         public static function fromArray(array $data): SessionState
         {
             return new self($data);
         }
 
+        /**
+         *
+         * @return array An associative array representation of the object's properties, including 'uuid', 'identified_as', 'authenticated', 'flags', and 'created'.
+         */
         public function toArray(): array
         {
             return [
@@ -98,7 +149,7 @@
                 'identified_as' => $this->identifiedAs,
                 'authenticated' => $this->authenticated,
                 'flags' => $this->flags,
-                'created' => $this->created->getTimestamp()
+                'created' => $this->created,
             ];
         }
     }

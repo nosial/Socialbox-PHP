@@ -5,14 +5,12 @@
     use Socialbox\Classes\RpcClient;
     use Socialbox\Classes\Utilities;
     use Socialbox\Exceptions\CryptographyException;
-    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
     use Socialbox\Objects\ExportedSession;
-    use Socialbox\Objects\KeyPair;
     use Socialbox\Objects\PeerAddress;
-    use Socialbox\Objects\RpcError;
     use Socialbox\Objects\RpcRequest;
+    use Socialbox\Objects\Standard\SessionState;
 
     class SocialClient extends RpcClient
     {
@@ -41,6 +39,19 @@
             return (bool)$this->sendRequest(
                 new RpcRequest('ping', Utilities::randomCrc32())
             )->getResponse()->getResult();
+        }
+
+        /**
+         * Retrieves the current state of the session from the server.
+         *
+         * @return SessionState Returns an instance of SessionState representing the session's current state.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function getSessionState(): SessionState
+        {
+            return SessionState::fromArray($this->sendRequest(
+                new RpcRequest('getSessionState', Utilities::randomCrc32())
+            )->getResponse()->getResult());
         }
 
         /**

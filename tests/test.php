@@ -4,11 +4,7 @@
     import('net.nosial.socialbox');
 
     $client = new \Socialbox\SocialClient(generateRandomPeer());
-    var_dump($client->ping());
-    var_dump($client->getPrivacyPolicy());
-    var_dump($client->acceptPrivacyPolicy());
-    var_dump($client->getTermsOfService());
-    var_dump($client->acceptTermsOfService());
+    var_dump($client->getSessionState());
 
     function generateRandomPeer()
     {
