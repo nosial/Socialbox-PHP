@@ -6,6 +6,7 @@
     $client = new \Socialbox\SocialClient(generateRandomPeer());
     var_dump($client->getSessionState());
 
+
     function generateRandomPeer()
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';

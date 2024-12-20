@@ -26,11 +26,34 @@
         case ACCEPT_PRIVACY_POLICY = 'acceptPrivacyPolicy';
         case GET_TERMS_OF_SERVICE = 'getTermsOfService';
         case ACCEPT_TERMS_OF_SERVICE = 'acceptTermsOfService';
+        case GET_COMMUNITY_GUIDELINES = 'getCommunityGuidelines';
+        case ACCEPT_COMMUNITY_GUIDELINES = 'acceptCommunityGuidelines';
+
+        case VERIFICATION_EMAIL = 'verificationEmail';
+        case VERIFICATION_ANSWER_EMAIL = 'verificationAnswerEmail';
+
+        case VERIFICATION_SMS = 'verificationSms';
+        case VERIFICATION_ANSWER_SMS = 'verificationAnswerSms';
+
+        case VERIFICATION_PHONE_CALL = 'verificationPhoneCall';
+        case VERIFICATION_ANSWER_PHONE_CALL = 'verificationAnswerPhoneCall';
 
         case VERIFICATION_GET_IMAGE_CAPTCHA = 'verificationGetImageCaptcha';
         case VERIFICATION_ANSWER_IMAGE_CAPTCHA = 'verificationAnswerImageCaptcha';
 
+        case VERIFICATION_GET_TEXT_CAPTCHA = 'verificationGetTextCaptcha';
+        case VERIFICATION_ANSWER_TEXT_CAPTCHA = 'verificationAnswerTextCaptcha';
+
+        case VERIFICATION_GET_EXTERNAL_URL = 'verificationGetExternalUrl';
+        case VERIFICATION_ANSWER_EXTERNAL_URL = 'verificationAnswerExternalUrl';
+
         case SETTINGS_SET_PASSWORD = 'settingsSetPassword';
+        case SETTINGS_SET_OTP = 'settingsSetOtp';
+        case SETTINGS_SET_DISPLAY_NAME = 'settingsSetDisplayName';
+        case SETTINGS_SET_DISPLAY_PICTURE = 'settingsSetDisplayPicture';
+        case SETTINGS_SET_EMAIL = 'settingsSetEmail';
+        case SETTINGS_SET_PHONE = 'settingsSetPhone';
+        case SETTINGS_SET_BIRTHDAY = 'settingsSetBirthday';
 
         /**
          * Executes the appropriate operation based on the current context and requests provided.

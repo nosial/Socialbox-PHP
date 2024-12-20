@@ -29,7 +29,15 @@
             $this->iv = $data['iv'];
             $this->encryptedPassword = $data['encrypted_password'];
             $this->encryptedTag = $data['encrypted_tag'];
-            $this->updated = new DateTime($data['updated']);
+
+            if($data['updated'] instanceof DateTime)
+            {
+                $this->updated = $data['updated'];
+            }
+            else
+            {
+                $this->updated = new DateTime($data['updated']);
+            }
         }
 
         /**
