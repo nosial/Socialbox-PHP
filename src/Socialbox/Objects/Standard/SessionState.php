@@ -70,8 +70,9 @@
         }
 
         /**
+         * Retrieves the identifier of the current instance.
          *
-         * @return string The identifier associated with the entity.
+         * @return string The identifier as a string.
          */
         public function getIdentifiedAs(): string
         {
@@ -89,8 +90,9 @@
         }
 
         /**
+         * Retrieves the flags associated with the current instance.
          *
-         * @return array|null
+         * @return array|null An array of flags or null if no flags are set.
          */
         public function getFlags(): ?array
         {
@@ -119,8 +121,9 @@
         }
 
         /**
+         * Retrieves the creation timestamp of the current instance.
          *
-         * @return int Returns the created timestamp as an integer.
+         * @return int The creation timestamp as an integer.
          */
         public function getCreated(): int
         {
@@ -139,8 +142,9 @@
         }
 
         /**
+         * Converts the current instance into an associative array.
          *
-         * @return array An associative array representation of the object's properties, including 'uuid', 'identified_as', 'authenticated', 'flags', and 'created'.
+         * @return array An associative array representation of the instance, including UUID, identification, authentication status, flags, and creation date.
          */
         public function toArray(): array
         {
