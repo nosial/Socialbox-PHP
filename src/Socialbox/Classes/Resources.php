@@ -64,4 +64,22 @@
 
             return file_get_contents(self::getDocumentResource('tos'));
         }
+
+        /**
+         * Retrieves the community guidelines document content.
+         *
+         * @return string The content of the community guidelines document, either from a configured location
+         *                or a default resource if the configured location is unavailable.
+         */
+        public static function getCommunityGuidelines(): string
+        {
+            $configuredLocation = Configuration::getRegistrationConfiguration()->getCommunityGuidelinesDocument();
+            if($configuredLocation !== null && file_exists($configuredLocation))
+            {
+                return file_get_contents($configuredLocation);
+            }
+
+            return file_get_contents(self::getDocumentResource('community'));
+        }
+
     }

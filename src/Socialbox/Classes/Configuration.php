@@ -1,236 +1,264 @@
 <?php
 
-namespace Socialbox\Classes;
+    namespace Socialbox\Classes;
 
-use League\Flysystem\Config;
-use Socialbox\Classes\Configuration\CacheConfiguration;
-use Socialbox\Classes\Configuration\DatabaseConfiguration;
-use Socialbox\Classes\Configuration\InstanceConfiguration;
-use Socialbox\Classes\Configuration\LoggingConfiguration;
-use Socialbox\Classes\Configuration\RegistrationConfiguration;
-use Socialbox\Classes\Configuration\SecurityConfiguration;
+    use Socialbox\Classes\ClientCommands\StorageConfiguration;
+    use Socialbox\Classes\Configuration\CacheConfiguration;
+    use Socialbox\Classes\Configuration\DatabaseConfiguration;
+    use Socialbox\Classes\Configuration\InstanceConfiguration;
+    use Socialbox\Classes\Configuration\LoggingConfiguration;
+    use Socialbox\Classes\Configuration\RegistrationConfiguration;
+    use Socialbox\Classes\Configuration\SecurityConfiguration;
 
-class Configuration
-{
-    private static ?\ConfigLib\Configuration $configuration = null;
-    private static ?InstanceConfiguration $instanceConfiguration = null;
-    private static ?SecurityConfiguration $securityConfiguration = null;
-    private static ?DatabaseConfiguration $databaseConfiguration = null;
-    private static ?LoggingConfiguration $loggingConfiguration = null;
-    private static ?CacheConfiguration $cacheConfiguration = null;
-    private static ?RegistrationConfiguration $registrationConfiguration = null;
-
-    /**
-     * Initializes the configuration settings for the application. This includes
-     * settings for the instance, security, database, cache layer, and registration.
-     *
-     * @return void
-     */
-    private static function initializeConfiguration(): void
+    class Configuration
     {
-        $config = new \ConfigLib\Configuration('socialbox');
+        private static ?\ConfigLib\Configuration $configuration = null;
+        private static ?InstanceConfiguration $instanceConfiguration = null;
+        private static ?SecurityConfiguration $securityConfiguration = null;
+        private static ?DatabaseConfiguration $databaseConfiguration = null;
+        private static ?LoggingConfiguration $loggingConfiguration = null;
+        private static ?CacheConfiguration $cacheConfiguration = null;
+        private static ?RegistrationConfiguration $registrationConfiguration = null;
+        private static ?StorageConfiguration $storageConfiguration = null;
 
-        // Instance configuration
-        $config->setDefault('instance.enabled', false); // False by default, requires the user to enable it.
-        $config->setDefault('instance.domain', null);
-        $config->setDefault('instance.rpc_endpoint', null);
-        $config->setDefault('instance.encryption_keys_count', 5);
-        $config->setDefault('instance.encryption_records_count', 5);
-        $config->setDefault('instance.private_key', null);
-        $config->setDefault('instance.public_key', null);
-        $config->setDefault('instance.encryption_keys', null);
-
-        // Security Configuration
-        $config->setDefault('security.display_internal_exceptions', false);
-        $config->setDefault('security.resolved_servers_ttl', 600);
-        $config->setDefault('security.captcha_ttl', 200);
-
-        // Database configuration
-        $config->setDefault('database.host', '127.0.0.1');
-        $config->setDefault('database.port', 3306);
-        $config->setDefault('database.username', 'root');
-        $config->setDefault('database.password', 'root');
-        $config->setDefault('database.name', 'test');
-
-        // Logging configuration
-        $config->setDefault('logging.console_logging_enabled', true);
-        $config->setDefault('logging.console_logging_level', 'info');
-        $config->setDefault('logging.file_logging_enabled', true);
-        $config->setDefault('logging.file_logging_level', 'error');
-
-        // Cache layer configuration
-        $config->setDefault('cache.enabled', false);
-        $config->setDefault('cache.engine', 'redis');
-        $config->setDefault('cache.host', '127.0.0.1');
-        $config->setDefault('cache.port', 6379);
-        $config->setDefault('cache.username', null);
-        $config->setDefault('cache.password', null);
-        $config->setDefault('cache.database', 0);
-        $config->setDefault('cache.sessions.enabled', true);
-        $config->setDefault('cache.sessions.ttl', 3600);
-        $config->setDefault('cache.sessions.max', 1000);
-
-        // Registration configuration
-        $config->setDefault('registration.enabled', true);
-        $config->setDefault('registration.privacy_policy_document', null);
-        $config->setDefault('registration.accept_privacy_policy', true);
-        $config->setDefault('registration.terms_of_service_document', null);
-        $config->setDefault('registration.accept_terms_of_service', null);
-        $config->setDefault('registration.password_required', true);
-        $config->setDefault('registration.otp_required', false);
-        $config->setDefault('registration.display_name_required', false);
-        $config->setDefault('registration.email_verification_required', false);
-        $config->setDefault('registration.sms_verification_required', false);
-        $config->setDefault('registration.phone_call_verification_required', false);
-        $config->setDefault('registration.image_captcha_verification_required', true);
-
-        $config->save();
-
-        self::$configuration = $config;
-        self::$instanceConfiguration = new InstanceConfiguration(self::$configuration->getConfiguration()['instance']);
-        self::$securityConfiguration = new SecurityConfiguration(self::$configuration->getConfiguration()['security']);
-        self::$databaseConfiguration = new DatabaseConfiguration(self::$configuration->getConfiguration()['database']);
-        self::$loggingConfiguration = new LoggingConfiguration(self::$configuration->getConfiguration()['logging']);
-        self::$cacheConfiguration = new CacheConfiguration(self::$configuration->getConfiguration()['cache']);
-        self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration->getConfiguration()['registration']);
-    }
-
-    /**
-     * Resets all configuration instances by setting them to null and then
-     * reinitializes the configurations.
-     *
-     * @return void
-     */
-    public static function reload(): void
-    {
-        self::$configuration = null;
-        self::$instanceConfiguration = null;
-        self::$securityConfiguration = null;
-        self::$databaseConfiguration = null;
-        self::$loggingConfiguration = null;
-        self::$cacheConfiguration = null;
-        self::$registrationConfiguration = null;
-
-        self::initializeConfiguration();
-    }
-
-    /**
-     * Retrieves the current configuration array. If the configuration is not initialized,
-     * it triggers the initialization process.
-     *
-     * @return array The current configuration array.
-     */
-    public static function getConfiguration(): array
-    {
-        if(self::$configuration === null)
+        /**
+         * Initializes the configuration settings for the application. This includes
+         * settings for the instance, security, database, cache layer, and registration.
+         *
+         * @return void
+         */
+        private static function initializeConfiguration(): void
         {
+            $config = new \ConfigLib\Configuration('socialbox');
+
+            // Instance configuration
+            $config->setDefault('instance.enabled', false); // False by default, requires the user to enable it.
+            $config->setDefault('instance.domain', null);
+            $config->setDefault('instance.rpc_endpoint', null);
+            $config->setDefault('instance.encryption_keys_count', 5);
+            $config->setDefault('instance.encryption_records_count', 5);
+            $config->setDefault('instance.private_key', null);
+            $config->setDefault('instance.public_key', null);
+            $config->setDefault('instance.encryption_keys', null);
+
+            // Security Configuration
+            $config->setDefault('security.display_internal_exceptions', false);
+            $config->setDefault('security.resolved_servers_ttl', 600);
+            $config->setDefault('security.captcha_ttl', 200);
+
+            // Database configuration
+            $config->setDefault('database.host', '127.0.0.1');
+            $config->setDefault('database.port', 3306);
+            $config->setDefault('database.username', 'root');
+            $config->setDefault('database.password', 'root');
+            $config->setDefault('database.name', 'test');
+
+            // Logging configuration
+            $config->setDefault('logging.console_logging_enabled', true);
+            $config->setDefault('logging.console_logging_level', 'info');
+            $config->setDefault('logging.file_logging_enabled', true);
+            $config->setDefault('logging.file_logging_level', 'error');
+
+            // Cache layer configuration
+            $config->setDefault('cache.enabled', false);
+            $config->setDefault('cache.engine', 'redis');
+            $config->setDefault('cache.host', '127.0.0.1');
+            $config->setDefault('cache.port', 6379);
+            $config->setDefault('cache.username', null);
+            $config->setDefault('cache.password', null);
+            $config->setDefault('cache.database', 0);
+            $config->setDefault('cache.sessions.enabled', true);
+            $config->setDefault('cache.sessions.ttl', 3600);
+            $config->setDefault('cache.sessions.max', 1000);
+
+            // Registration configuration
+            $config->setDefault('registration.enabled', true);
+            $config->setDefault('registration.privacy_policy_document', null);
+            $config->setDefault('registration.privacy_policy_date', 1734985525);
+            $config->setDefault('registration.accept_privacy_policy', true);
+            $config->setDefault('registration.terms_of_service_document', null);
+            $config->setDefault('registration.terms_of_service_date', 1734985525);
+            $config->setDefault('registration.accept_terms_of_service', true);
+            $config->setDefault('registration.community_guidelines_document', null);
+            $config->setDefault('registration.community_guidelines_date', 1734985525);
+            $config->setDefault('registration.accept_community_guidelines', true);
+            $config->setDefault('registration.password_required', true);
+            $config->setDefault('registration.otp_required', false);
+            $config->setDefault('registration.display_name_required', true);
+            $config->setDefault('registration.display_picture_required', false);
+            $config->setDefault('registration.image_captcha_verification_required', true);
+
+            // Storage configuration
+            $config->setDefault('storage.path', '/etc/socialbox'); // The main path for file storage
+            $config->setDefault('storage.user_display_images_path', 'user_profiles'); // eg; `/etc/socialbox/user_profiles`
+            $config->setDefault('storage.user_display_images_max_size', 3145728); // 3MB
+
+            $config->save();
+
+            self::$configuration = $config;
+            self::$instanceConfiguration = new InstanceConfiguration(self::$configuration->getConfiguration()['instance']);
+            self::$securityConfiguration = new SecurityConfiguration(self::$configuration->getConfiguration()['security']);
+            self::$databaseConfiguration = new DatabaseConfiguration(self::$configuration->getConfiguration()['database']);
+            self::$loggingConfiguration = new LoggingConfiguration(self::$configuration->getConfiguration()['logging']);
+            self::$cacheConfiguration = new CacheConfiguration(self::$configuration->getConfiguration()['cache']);
+            self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration->getConfiguration()['registration']);
+            self::$storageConfiguration = new StorageConfiguration(self::$configuration->getConfiguration()['storage']);
+        }
+
+        /**
+         * Resets all configuration instances by setting them to null and then
+         * reinitializes the configurations.
+         *
+         * @return void
+         */
+        public static function reload(): void
+        {
+            self::$configuration = null;
+            self::$instanceConfiguration = null;
+            self::$securityConfiguration = null;
+            self::$databaseConfiguration = null;
+            self::$loggingConfiguration = null;
+            self::$cacheConfiguration = null;
+            self::$registrationConfiguration = null;
+
             self::initializeConfiguration();
         }
 
-        return self::$configuration->getConfiguration();
-    }
-
-    public static function getConfigurationLib(): \ConfigLib\Configuration
-    {
-        if(self::$configuration === null)
+        /**
+         * Retrieves the current configuration array. If the configuration is not initialized,
+         * it triggers the initialization process.
+         *
+         * @return array The current configuration array.
+         */
+        public static function getConfiguration(): array
         {
-            self::initializeConfiguration();
+            if(self::$configuration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$configuration->getConfiguration();
         }
 
-        return self::$configuration;
-    }
-
-    /**
-     * Retrieves the current instance configuration.
-     *
-     * @return InstanceConfiguration The current instance configuration instance.
-     */
-    public static function getInstanceConfiguration(): InstanceConfiguration
-    {
-        if(self::$instanceConfiguration === null)
+        public static function getConfigurationLib(): \ConfigLib\Configuration
         {
-            self::initializeConfiguration();
+            if(self::$configuration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$configuration;
         }
 
-        return self::$instanceConfiguration;
-    }
-
-    /**
-     * Retrieves the current security configuration.
-     *
-     * @return SecurityConfiguration The current security configuration instance.
-     */
-    public static function getSecurityConfiguration(): SecurityConfiguration
-    {
-        if(self::$securityConfiguration === null)
+        /**
+         * Retrieves the current instance configuration.
+         *
+         * @return InstanceConfiguration The current instance configuration instance.
+         */
+        public static function getInstanceConfiguration(): InstanceConfiguration
         {
-            self::initializeConfiguration();
+            if(self::$instanceConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$instanceConfiguration;
         }
 
-        return self::$securityConfiguration;
-    }
-
-    /**
-     * Retrieves the current database configuration.
-     *
-     * @return DatabaseConfiguration The configuration settings for the database.
-     */
-    public static function getDatabaseConfiguration(): DatabaseConfiguration
-    {
-        if(self::$databaseConfiguration === null)
+        /**
+         * Retrieves the current security configuration.
+         *
+         * @return SecurityConfiguration The current security configuration instance.
+         */
+        public static function getSecurityConfiguration(): SecurityConfiguration
         {
-            self::initializeConfiguration();
+            if(self::$securityConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$securityConfiguration;
         }
 
-        return self::$databaseConfiguration;
-    }
-
-    /**
-     * Retrieves the current logging configuration.
-     *
-     * @return LoggingConfiguration The current logging configuration instance.
-     */
-    public static function getLoggingConfiguration(): LoggingConfiguration
-    {
-        if(self::$loggingConfiguration === null)
+        /**
+         * Retrieves the current database configuration.
+         *
+         * @return DatabaseConfiguration The configuration settings for the database.
+         */
+        public static function getDatabaseConfiguration(): DatabaseConfiguration
         {
-            self::initializeConfiguration();
+            if(self::$databaseConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$databaseConfiguration;
         }
 
-        return self::$loggingConfiguration;
-    }
-
-    /**
-     * Retrieves the current cache configuration. If the cache configuration
-     * has not been initialized, it will initialize it first.
-     *
-     * @return CacheConfiguration The current cache configuration instance.
-     */
-    public static function getCacheConfiguration(): CacheConfiguration
-    {
-        if(self::$cacheConfiguration === null)
+        /**
+         * Retrieves the current logging configuration.
+         *
+         * @return LoggingConfiguration The current logging configuration instance.
+         */
+        public static function getLoggingConfiguration(): LoggingConfiguration
         {
-            self::initializeConfiguration();
+            if(self::$loggingConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$loggingConfiguration;
         }
 
-        return self::$cacheConfiguration;
-    }
-
-    /**
-     * Retrieves the registration configuration.
-     *
-     * This method returns the current RegistrationConfiguration instance.
-     * If the configuration has not been initialized yet, it initializes it first.
-     *
-     * @return RegistrationConfiguration The registration configuration instance.
-     */
-    public static function getRegistrationConfiguration(): RegistrationConfiguration
-    {
-        if(self::$registrationConfiguration === null)
+        /**
+         * Retrieves the current cache configuration. If the cache configuration
+         * has not been initialized, it will initialize it first.
+         *
+         * @return CacheConfiguration The current cache configuration instance.
+         */
+        public static function getCacheConfiguration(): CacheConfiguration
         {
-            self::initializeConfiguration();
+            if(self::$cacheConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$cacheConfiguration;
         }
 
-        return self::$registrationConfiguration;
+        /**
+         * Retrieves the registration configuration.
+         *
+         * This method returns the current RegistrationConfiguration instance.
+         * If the configuration has not been initialized yet, it initializes it first.
+         *
+         * @return RegistrationConfiguration The registration configuration instance.
+         */
+        public static function getRegistrationConfiguration(): RegistrationConfiguration
+        {
+            if(self::$registrationConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$registrationConfiguration;
+        }
+
+        /**
+         * Retrieves the storage configuration.
+         *
+         * This method returns the current StorageConfiguration instance.
+         * If the configuration has not been initialized yet, it initializes it first.
+         *
+         * @return StorageConfiguration The storage configuration instance.
+         */
+        public static function getStorageConfiguration(): StorageConfiguration
+        {
+            if(self::$storageConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$storageConfiguration;
+        }
     }
-}

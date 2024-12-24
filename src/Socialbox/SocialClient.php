@@ -13,6 +13,7 @@
     use Socialbox\Objects\ExportedSession;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
+    use Socialbox\Objects\Standard\ServerDocument;
     use Socialbox\Objects\Standard\SessionState;
 
     class SocialClient extends RpcClient
@@ -58,16 +59,16 @@
         }
 
         /**
-         * Retrieves the privacy policy from the server.
+         * Fetches the privacy policy document by sending a remote procedure call request.
          *
-         * @return string Returns the privacy policy as a string.
+         * @return ServerDocument The privacy policy document retrieved from the server.
          * @throws RpcException Thrown if the RPC request fails.
          */
-        public function getPrivacyPolicy(): string
+        public function getPrivacyPolicy(): ServerDocument
         {
-            return $this->sendRequest(
+            return ServerDocument::fromArray($this->sendRequest(
                 new RpcRequest(StandardMethods::GET_PRIVACY_POLICY->value, Utilities::randomCrc32())
-            )->getResponse()->getResult();
+            )->getResponse()->getResult());
         }
 
         /**
@@ -84,16 +85,16 @@
         }
 
         /**
-         * Retrieves the terms of service from the server.
+         * Retrieves the terms of service document by sending a remote procedure call request.
          *
-         * @return string Returns the terms of service as a string.
+         * @return ServerDocument The terms of service document retrieved from the server.
          * @throws RpcException Thrown if the RPC request fails.
          */
-        public function getTermsOfService(): string
+        public function getTermsOfService(): ServerDocument
         {
-            return $this->sendRequest(
+            return ServerDocument::fromArray($this->sendRequest(
                 new RpcRequest(StandardMethods::GET_TERMS_OF_SERVICE->value, Utilities::randomCrc32())
-            )->getResponse()->getResult();
+            )->getResponse()->getResult());
         }
 
         /**
@@ -110,16 +111,16 @@
         }
 
         /**
-         * Fetches the community guidelines by performing a remote procedure call request.
+         * Fetches the community guidelines document from the server by sending a remote procedure call request.
          *
-         * @return string The content of the community guidelines.
-         * @throws RpcException Thrown if the RPC request encounters an error.
+         * @return ServerDocument The community guidelines document retrieved from the server.
+         * @throws RpcException Thrown if the RPC request fails.
          */
-        public function getCommunityGuidelines(): string
+        public function getCommunityGuidelines(): ServerDocument
         {
-            return $this->sendRequest(
+            return ServerDocument::fromArray($this->sendRequest(
                 new RpcRequest(StandardMethods::GET_COMMUNITY_GUIDELINES->value, Utilities::randomCrc32())
-            )->getResponse()->getResult();
+            )->getResponse()->getResult());
         }
 
         /**

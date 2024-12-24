@@ -2,8 +2,10 @@
 
     namespace Socialbox\Enums;
 
+    use Socialbox\Classes\StandardMethods\AcceptCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\AcceptTermsOfService;
+    use Socialbox\Classes\StandardMethods\GetCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\GetPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\GetSessionState;
     use Socialbox\Classes\StandardMethods\GetTermsOfService;
@@ -74,11 +76,15 @@
                 self::ACCEPT_PRIVACY_POLICY => AcceptPrivacyPolicy::execute($request, $rpcRequest),
                 self::GET_TERMS_OF_SERVICE => GetTermsOfService::execute($request, $rpcRequest),
                 self::ACCEPT_TERMS_OF_SERVICE => AcceptTermsOfService::execute($request, $rpcRequest),
+                self::GET_COMMUNITY_GUIDELINES => GetCommunityGuidelines::execute($request, $rpcRequest),
+                self::ACCEPT_COMMUNITY_GUIDELINES => AcceptCommunityGuidelines::execute($request, $rpcRequest),
 
                 self::VERIFICATION_GET_IMAGE_CAPTCHA => VerificationGetImageCaptcha::execute($request, $rpcRequest),
                 self::VERIFICATION_ANSWER_IMAGE_CAPTCHA => VerificationAnswerImageCaptcha::execute($request, $rpcRequest),
 
                 self::SETTINGS_SET_PASSWORD => SettingsSetPassword::execute($request, $rpcRequest),
+
+                default => $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, sprintf("The method %s is not supported by the server", $rpcRequest->getMethod()))
             };
         }
 
@@ -107,34 +113,57 @@
          */
         public static function getAllowedMethods(ClientRequest $clientRequest): array
         {
+            // These methods should always accessible
             $methods = [
-                self::PING,
-                self::GET_SESSION_STATE,
-                self::GET_PRIVACY_POLICY,
-                self::GET_TERMS_OF_SERVICE,
+                // Important methods
+                self::PING, // Always allow the ping method
+                self::GET_SESSION_STATE, // The session state should always be accessible
+                self::GET_PRIVACY_POLICY, // The user should always be able to get the privacy policy
+                self::GET_TERMS_OF_SERVICE, // The user should always be able to get the terms of service
+                self::GET_COMMUNITY_GUIDELINES, // The user should always be able to get the community guidelines
             ];
 
             $session = $clientRequest->getSession();
 
-            if(in_array(SessionFlags::VER_PRIVACY_POLICY, $session->getFlags()))
+            // If the flag `VER_PRIVACY_POLICY` is set, then the user can accept the privacy policy
+            if($session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
             {
                 $methods[] = self::ACCEPT_PRIVACY_POLICY;
             }
 
-            if(in_array(SessionFlags::VER_TERMS_OF_SERVICE, $session->getFlags()))
+            // If the flag `VER_TERMS_OF_SERVICE` is set, then the user can accept the terms of service
+            if($session->flagExists(SessionFlags::VER_TERMS_OF_SERVICE))
             {
                 $methods[] = self::ACCEPT_TERMS_OF_SERVICE;
             }
 
-            if(in_array(SessionFlags::VER_IMAGE_CAPTCHA, $session->getFlags()))
+            // If the flag `VER_COMMUNITY_GUIDELINES` is set, then the user can accept the community guidelines
+            if($session->flagExists(SessionFlags::VER_COMMUNITY_GUIDELINES))
+            {
+                $methods[] = self::ACCEPT_COMMUNITY_GUIDELINES;
+            }
+
+            // If the flag `VER_IMAGE_CAPTCHA` is set, then the user has to get and answer an image captcha
+            if($session->flagExists(SessionFlags::VER_IMAGE_CAPTCHA))
             {
                 $methods[] = self::VERIFICATION_GET_IMAGE_CAPTCHA;
                 $methods[] = self::VERIFICATION_ANSWER_IMAGE_CAPTCHA;
             }
 
+            // If the flag `SET_PASSWORD` is set, then the user has to set a password
             if(in_array(SessionFlags::SET_PASSWORD, $session->getFlags()))
             {
                 $methods[] = self::SETTINGS_SET_PASSWORD;
+            }
+
+            // If the user is authenticated, then preform additional method calls
+            if($session->isAuthenticated())
+            {
+                // Always allow the authenticated user to change their password
+                if(!in_array(SessionFlags::SET_PASSWORD, $session->getFlags()))
+                {
+                    $methods[] = self::SETTINGS_SET_PASSWORD;
+                }
             }
 
             return $methods;

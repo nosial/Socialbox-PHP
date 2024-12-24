@@ -3,11 +3,13 @@
     namespace Socialbox\Classes\StandardMethods;
 
     use Socialbox\Abstracts\Method;
+    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Resources;
     use Socialbox\Enums\StandardError;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
+    use Socialbox\Objects\Standard\ServerDocument;
 
     class GetPrivacyPolicy extends Method
     {
@@ -17,6 +19,10 @@
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-            return $rpcRequest->produceResponse(Resources::getPrivacyPolicy());
+            return $rpcRequest->produceResponse(new ServerDocument([
+                'last_updated' => Configuration::getRegistrationConfiguration()->getPrivacyPolicyDate(),
+                'title' => 'Privacy Policy',
+                'content' => Resources::getPrivacyPolicy()
+            ]));
         }
     }

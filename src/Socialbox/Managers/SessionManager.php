@@ -454,4 +454,21 @@
                 throw new DatabaseOperationException('Failed to update authenticated peer', $e);
             }
         }
+
+        /**
+         * Marks the session as complete if all necessary conditions are met.
+         *
+         * @param SessionRecord $session The session record to evaluate and potentially mark as complete.
+         * @throws DatabaseOperationException If there is an error while updating the session in the database.
+         * @throws StandardException If the session record cannot be found or if there is an error during retrieval.
+         * @return void
+         */
+        public static function updateFlow(SessionRecord $session): void
+        {
+            if(SessionFlags::isComplete($session->getFlags()))
+            {
+                SessionManager::setAuthenticated($session->getUuid(), true);
+                SessionManager::removeFlags($session->getUuid(), [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]);
+            }
+        }
     }

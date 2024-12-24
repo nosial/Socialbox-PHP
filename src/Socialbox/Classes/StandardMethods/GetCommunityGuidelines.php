@@ -11,7 +11,7 @@
     use Socialbox\Objects\RpcRequest;
     use Socialbox\Objects\Standard\ServerDocument;
 
-    class GetTermsOfService extends Method
+    class GetCommunityGuidelines extends Method
     {
 
         /**
@@ -20,9 +20,9 @@
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
             return $rpcRequest->produceResponse(new ServerDocument([
-                'last_updated' => Configuration::getRegistrationConfiguration()->getTermsOfServiceDate(),
-                'title' => 'Terms of Service',
-                'content' => Resources::getTermsOfService()
+                'last_updated' => Configuration::getRegistrationConfiguration()->getCommunityGuidelinesDate(),
+                'title' => 'Community Guidelines',
+                'content' => Resources::getCommunityGuidelines()
             ]));
         }
     }

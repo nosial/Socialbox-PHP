@@ -60,6 +60,7 @@
 
             // Build the captcha
             // Returns HTML base64 encoded image of the captcha
+            // Important note: Must always be HTML-BASE64 which means it must be prefixed with `data:image/jpeg;base64,`
             return $rpcRequest->produceResponse(new ImageCaptcha([
                 'expires' => $captchaRecord->getExpires(),
                 'content' => (new CaptchaBuilder($answer))->build()->inline()

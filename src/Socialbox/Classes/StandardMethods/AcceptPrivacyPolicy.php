@@ -21,26 +21,15 @@
         {
             try
             {
+                // Remove the verification flag
                 SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::VER_PRIVACY_POLICY]);
+
+                // Check & update the session flow
+                SessionManager::updateFlow($request->getSession());
             }
             catch (DatabaseOperationException $e)
             {
                 return $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, $e);
-            }
-
-            // Check if all registration flags are removed
-            if(SessionFlags::isComplete($request->getSession()->getFlags()))
-            {
-                // Set the session as authenticated
-                try
-                {
-                    SessionManager::setAuthenticated($request->getSessionUuid(), true);
-                    SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]);
-                }
-                catch (DatabaseOperationException $e)
-                {
-                    return $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, $e);
-                }
             }
 
             return $rpcRequest->produceResponse(true);

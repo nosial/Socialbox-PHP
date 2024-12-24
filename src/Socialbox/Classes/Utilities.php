@@ -194,6 +194,66 @@ class Utilities
         return preg_replace('/[^a-zA-Z0-9-_]/', '', $name);
     }
 
+
+    /**
+     * Sanitizes a Base64-encoded JPEG image by validating its data, decoding it,
+     * and re-encoding it to ensure it conforms to the JPEG format.
+     *
+     * @param string $data The Base64-encoded string potentially containing a JPEG image,
+     *                     optionally prefixed with "data:image/...;base64,".
+     * @return string A sanitized and re-encoded JPEG image as a binary string.
+     * @throws InvalidArgumentException If the input data is not valid Base64,
+     *                                  does not represent an image, or is not in the JPEG format.
+     */
+    public static function sanitizeBase64Jpeg(string $data): string
+    {
+        // Detect and strip the potential "data:image/...;base64," prefix, if present
+        if (str_contains($data, ','))
+        {
+            [, $data] = explode(',', $data, 2);
+        }
+
+        // Decode the Base64 string
+        $decodedData = base64_decode($data, true);
+
+        // Check if decoding succeeded
+        if ($decodedData === false)
+        {
+            throw new InvalidArgumentException("Invalid Base64 data.");
+        }
+
+        // Temporarily load the decoded data as an image
+        $tempResource = imagecreatefromstring($decodedData);
+
+        // Validate that the decoded data is indeed an image
+        if ($tempResource === false)
+        {
+            throw new InvalidArgumentException("The Base64 data does not represent a valid image.");
+        }
+
+        // Validate MIME type using getimagesizefromstring
+        $imageInfo = getimagesizefromstring($decodedData);
+        if ($imageInfo === false || $imageInfo['mime'] !== 'image/jpeg')
+        {
+            imagedestroy($tempResource); // Cleanup resources
+            throw new InvalidArgumentException("The image is not a valid JPEG format.");
+        }
+
+        // Capture the re-encoded image in memory and return it as a string
+        ob_start(); // Start output buffering
+        $saveResult = imagejpeg($tempResource, null, 100); // Max quality, save to output buffer
+        imagedestroy($tempResource); // Free up memory resources
+
+        if (!$saveResult)
+        {
+            ob_end_clean(); // Clean the output buffer if encoding failed
+            throw new InvalidArgumentException("Failed to encode the sanitized image.");
+        }
+
+        // Return the sanitized jpeg image as the result
+        return ob_get_clean();
+    }
+
     /**
      * Converts an array into a serialized string by joining the elements with a comma.
      *

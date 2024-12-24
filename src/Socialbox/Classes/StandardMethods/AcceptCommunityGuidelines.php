@@ -11,8 +11,9 @@
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
 
-    class AcceptTermsOfService extends Method
+    class AcceptCommunityGuidelines extends Method
     {
+
         /**
          * @inheritDoc
          */
@@ -21,7 +22,7 @@
             try
             {
                 // Remove the verification flag
-                SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::VER_TERMS_OF_SERVICE]);
+                SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::VER_COMMUNITY_GUIDELINES]);
 
                 // Check & update the session flow
                 SessionManager::updateFlow($request->getSession());
