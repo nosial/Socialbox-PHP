@@ -5,7 +5,6 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
-    use Socialbox\Objects\ClientRequestOld;
     use Socialbox\Objects\RpcRequest;
 
     class Ping extends Method

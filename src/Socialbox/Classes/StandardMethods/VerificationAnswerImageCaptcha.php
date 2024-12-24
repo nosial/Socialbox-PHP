@@ -3,17 +3,14 @@
     namespace Socialbox\Classes\StandardMethods;
 
     use Socialbox\Abstracts\Method;
-    use Socialbox\Enums\Flags\PeerFlags;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\CaptchaManager;
-    use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
-    use Socialbox\Objects\ClientRequestOld;
     use Socialbox\Objects\RpcRequest;
 
     class VerificationAnswerImageCaptcha extends Method
