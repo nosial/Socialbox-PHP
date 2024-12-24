@@ -180,6 +180,7 @@
             return [
                 'uuid' => $this->uuid,
                 'username' => $this->username,
+                'server' => $this->server,
                 'display_name' => $this->displayName,
                 'flags' => PeerFlags::toString($this->flags),
                 'enabled' => $this->enabled,
