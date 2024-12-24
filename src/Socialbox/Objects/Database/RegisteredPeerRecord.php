@@ -14,6 +14,7 @@
         private string $username;
         private string $server;
         private ?string $displayName;
+        private ?string $displayPicture;
         /**
          * @var PeerFlags[]
          */
@@ -33,6 +34,7 @@
             $this->username = $data['username'];
             $this->server = $data['server'];
             $this->displayName = $data['display_name'] ?? null;
+            $this->displayPicture = $data['display_picture'] ?? null;
 
             if($data['flags'])
             {
@@ -105,16 +107,41 @@
             return $this->displayName;
         }
 
+        /**
+         * Retrieves the display picture.
+         *
+         * @return string|null The display picture if set, or null otherwise.
+         */
+        public function getDisplayPicture(): ?string
+        {
+            return $this->displayPicture;
+        }
+
+        /**
+         * Retrieves the flags.
+         *
+         * @return PeerFlags[] The flags.
+         */
         public function getFlags(): array
         {
             return $this->flags;
         }
 
+        /**
+         * Adds a flag to the current instance.
+         *
+         * @param PeerFlags $flag The flag to add.
+         */
         public function flagExists(PeerFlags $flag): bool
         {
             return in_array($flag, $this->flags, true);
         }
 
+        /**
+         * Adds a flag to the current instance.
+         *
+         * @param PeerFlags $flag The flag to add.
+         */
         public function removeFlag(PeerFlags $flag): void
         {
             $key = array_search($flag, $this->flags, true);
@@ -182,6 +209,7 @@
                 'username' => $this->username,
                 'server' => $this->server,
                 'display_name' => $this->displayName,
+                'display_picture' => $this->displayPicture,
                 'flags' => PeerFlags::toString($this->flags),
                 'enabled' => $this->enabled,
                 'created' => $this->created

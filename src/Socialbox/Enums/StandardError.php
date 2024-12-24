@@ -15,28 +15,31 @@ enum StandardError : int
     case INTERNAL_SERVER_ERROR = -2000;
     case SERVER_UNAVAILABLE = -2001;
 
+    // Client Errors
+    case BAD_REQUEST = -3000;
+    case METHOD_NOT_ALLOWED = -3001;
+
     // Authentication/Cryptography Errors
-    case INVALID_PUBLIC_KEY = -3000;
+    case INVALID_PUBLIC_KEY = -4000; // *
 
-    case SESSION_REQUIRED = -3001;
-    case SESSION_NOT_FOUND = -3002;
-    case SESSION_EXPIRED = -3003;
-    case SESSION_DHE_REQUIRED = -3004;
+    case SESSION_REQUIRED = -5001; // *
+    case SESSION_NOT_FOUND = -5002; // *
+    case SESSION_EXPIRED = -5003; // *
+    case SESSION_DHE_REQUIRED = -5004; // *
 
-    case ALREADY_AUTHENTICATED = -3005;
-    case UNSUPPORTED_AUTHENTICATION_TYPE = -3006;
-    case AUTHENTICATION_REQUIRED = -3007;
-    case REGISTRATION_DISABLED = -3008;
-    case CAPTCHA_NOT_AVAILABLE = -3009;
-    case INCORRECT_CAPTCHA_ANSWER = -3010;
-    case CAPTCHA_EXPIRED = -3011;
+    case ALREADY_AUTHENTICATED = -6005;
+    case UNSUPPORTED_AUTHENTICATION_TYPE = -6006;
+    case AUTHENTICATION_REQUIRED = -6007;
+    case REGISTRATION_DISABLED = -6008;
+    case CAPTCHA_NOT_AVAILABLE = -6009;
+    case INCORRECT_CAPTCHA_ANSWER = -6010;
+    case CAPTCHA_EXPIRED = -6011;
 
     // General Error Messages
-    case PEER_NOT_FOUND = -4000;
-    case INVALID_USERNAME = -4001;
-    case USERNAME_ALREADY_EXISTS = -4002;
-    case NOT_REGISTERED = -4003;
-    case METHOD_NOT_ALLOWED = -4004;
+    case PEER_NOT_FOUND = -7000;
+    case INVALID_USERNAME = -7001;
+    case USERNAME_ALREADY_EXISTS = -7002;
+    case NOT_REGISTERED = -7003;
 
     /**
      * Returns the default generic message for the error

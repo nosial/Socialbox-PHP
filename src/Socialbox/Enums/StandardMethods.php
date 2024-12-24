@@ -10,6 +10,7 @@
     use Socialbox\Classes\StandardMethods\GetSessionState;
     use Socialbox\Classes\StandardMethods\GetTermsOfService;
     use Socialbox\Classes\StandardMethods\Ping;
+    use Socialbox\Classes\StandardMethods\SettingsSetDisplayName;
     use Socialbox\Classes\StandardMethods\SettingsSetPassword;
     use Socialbox\Classes\StandardMethods\VerificationAnswerImageCaptcha;
     use Socialbox\Classes\StandardMethods\VerificationGetImageCaptcha;
@@ -83,6 +84,7 @@
                 self::VERIFICATION_ANSWER_IMAGE_CAPTCHA => VerificationAnswerImageCaptcha::execute($request, $rpcRequest),
 
                 self::SETTINGS_SET_PASSWORD => SettingsSetPassword::execute($request, $rpcRequest),
+                self::SETTINGS_SET_DISPLAY_NAME => SettingsSetDisplayName::execute($request, $rpcRequest),
 
                 default => $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, sprintf("The method %s is not supported by the server", $rpcRequest->getMethod()))
             };

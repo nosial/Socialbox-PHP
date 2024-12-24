@@ -322,7 +322,8 @@
          * Updates the display name of a registered peer based on the given unique identifier or RegisteredPeerRecord object.
          *
          * @param string|RegisteredPeerRecord $peer The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
-         * @param string $name The new
+         * @param string $name The new display name to set to the user
+         * @throws DatabaseOperationException Thrown if there was an error while trying to update the display name
          */
         public static function updateDisplayName(string|RegisteredPeerRecord $peer, string $name): void
         {
@@ -359,6 +360,60 @@
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to update the display name of the peer in the database', $e);
+            }
+        }
+
+        /**
+         * Updates the display picture of a registered peer in the database.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the peer or an instance of RegisteredPeerRecord.
+         * @param string $displayPictureData The raw jpeg data of the display picture.
+         * @return void
+         * @throws DatabaseOperationException If there is an error during the database operation.
+         */
+        public static function updateDisplayPicture(string|RegisteredPeerRecord $peer, string $displayPictureData): void
+        {
+            if(empty($uuid))
+            {
+                throw new InvalidArgumentException('The display picture UUID cannot be empty');
+            }
+
+            $uuid = Uuid::v4()->toRfc4122();
+            $displayPicturePath = Configuration::getStorageConfiguration()->getUserDisplayImagesPath() . DIRECTORY_SEPARATOR . $uuid . '.jpeg';
+
+            // Delete the file if it already exists
+            if(file_exists($displayPicturePath))
+            {
+                unlink($displayPicturePath);
+            }
+
+            // Write the file contents & set the permissions
+            file_put_contents($displayPicturePath, $displayPictureData);
+            chmod($displayPicturePath, 0644);
+
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot update the display picture of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Updating display picture of peer %s to %s", $peer->getUuid(), $uuid));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET display_picture=? WHERE uuid=?');
+                $statement->bindParam(1, $uuid);
+                $peerUuid = $peer->getUuid();
+                $statement->bindParam(2, $peerUuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to update the display picture of the peer in the database', $e);
             }
         }
 

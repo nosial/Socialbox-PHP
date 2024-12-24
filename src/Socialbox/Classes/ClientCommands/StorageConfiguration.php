@@ -37,7 +37,7 @@
          */
         public function getUserDisplayImagesPath(): string
         {
-            return $this->userDisplayImagesPath;
+            return $this->path . DIRECTORY_SEPARATOR . $this->userDisplayImagesPath;
         }
 
         /**
