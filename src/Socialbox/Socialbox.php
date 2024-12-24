@@ -116,11 +116,21 @@
                 return;
             }
 
-            // TODO: Check if the peer address points to the domain of this server, if not we can't accept the request
+            // If the peer is identifying as the same domain
+            if($clientRequest->getIdentifyAs()->getDomain() === Configuration::getInstanceConfiguration()->getDomain())
+            {
+                // Prevent the peer from identifying as the host unless it's coming from an external domain
+               if($clientRequest->getIdentifyAs()->getUsername() === 'host')
+               {
+                     http_response_code(403);
+                     print('Unauthorized: The requested peer is not allowed to identify as the host');
+                     return;
+               }
+            }
 
             try
             {
-                $registeredPeer = RegisteredPeerManager::getPeerByUsername($clientRequest->getIdentifyAs()->getUsername());
+                $registeredPeer = RegisteredPeerManager::getPeerByAddress($clientRequest->getIdentifyAs());
 
                 // If the peer is registered, check if it is enabled
                 if($registeredPeer !== null && !$registeredPeer->isEnabled())
@@ -143,7 +153,7 @@
                     }
 
                     // Register the peer if it is not already registered
-                    $peerUuid = RegisteredPeerManager::createPeer(PeerAddress::fromAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS))->getUsername());
+                    $peerUuid = RegisteredPeerManager::createPeer(PeerAddress::fromAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)));
                     // Retrieve the peer object
                     $registeredPeer = RegisteredPeerManager::getPeer($peerUuid);
                 }

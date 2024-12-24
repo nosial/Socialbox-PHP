@@ -70,19 +70,9 @@
                     $flags[] = SessionFlags::SET_DISPLAY_NAME;
                 }
 
-                if(Configuration::getRegistrationConfiguration()->isEmailVerificationRequired())
+                if(Configuration::getRegistrationConfiguration()->isDisplayPictureRequired())
                 {
-                    $flags[] = SessionFlags::VER_EMAIL;
-                }
-
-                if(Configuration::getRegistrationConfiguration()->isSmsVerificationRequired())
-                {
-                    $flags[] = SessionFlags::VER_SMS;
-                }
-
-                if(Configuration::getRegistrationConfiguration()->isPhoneCallVerificationRequired())
-                {
-                    $flags[] = SessionFlags::VER_PHONE_CALL;
+                    $flags[] = SessionFlags::SET_DISPLAY_PICTURE;
                 }
 
                 if(Configuration::getRegistrationConfiguration()->isImageCaptchaVerificationRequired())
@@ -108,6 +98,11 @@
                 if(Configuration::getRegistrationConfiguration()->isAcceptTermsOfServiceRequired())
                 {
                     $flags[] = SessionFlags::VER_TERMS_OF_SERVICE;
+                }
+
+                if(Configuration::getRegistrationConfiguration()->isAcceptCommunityGuidelinesRequired())
+                {
+                    $flags[] = SessionFlags::VER_COMMUNITY_GUIDELINES;
                 }
             }
 

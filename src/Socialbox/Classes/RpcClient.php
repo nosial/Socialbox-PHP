@@ -113,20 +113,26 @@
             if($response === false)
             {
                 curl_close($ch);
-                throw new RpcException('Failed to create the session, no response received');
+                throw new RpcException(sprintf('Failed to create the session at %s, no response received', $this->rpcEndpoint));
             }
 
             $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
             if($responseCode !== 201)
             {
                 curl_close($ch);
-                throw new RpcException('Failed to create the session, server responded with ' . $responseCode . ': ' . $response);
+
+                if(empty($response))
+                {
+                    throw new RpcException(sprintf('Failed to create the session at %s, server responded with ' . $responseCode, $this->rpcEndpoint));
+                }
+
+                throw new RpcException(sprintf('Failed to create the session at %s, server responded with ' . $responseCode . ': ' . $response, $this->rpcEndpoint));
             }
 
             if(empty($response))
             {
                 curl_close($ch);
-                throw new RpcException('Failed to create the session, server did not return a session UUID');
+                throw new RpcException(sprintf('Failed to create the session at %s, server did not return a session UUID', $this->rpcEndpoint));
             }
 
             curl_close($ch);
