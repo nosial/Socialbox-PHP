@@ -47,26 +47,12 @@
                 if($result)
                 {
                     SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::VER_IMAGE_CAPTCHA]);
+                    SessionManager::updateFlow($session);
                 }
             }
             catch (DatabaseOperationException $e)
             {
                 throw new StandardException("There was an unexpected error while trying to answer the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
-            }
-
-            // Check if all registration flags are removed
-            if(SessionFlags::isComplete($request->getSession()->getFlags()))
-            {
-                // Set the session as authenticated
-                try
-                {
-                    SessionManager::setAuthenticated($request->getSessionUuid(), true);
-                    SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]);
-                }
-                catch (DatabaseOperationException $e)
-                {
-                    return $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, $e);
-                }
             }
 
             return $rpcRequest->produceResponse($result);

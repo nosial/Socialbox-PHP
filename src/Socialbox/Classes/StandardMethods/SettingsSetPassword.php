@@ -50,25 +50,13 @@
 
                 // Remove the SET_PASSWORD flag
                 SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::SET_PASSWORD]);
+
+                // Check & update the session flow
+                SessionManager::updateFlow($request->getSession());
             }
             catch(Exception $e)
             {
                 throw new StandardException('Failed to set password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
-            }
-
-            // Check if all registration flags are removed
-            if(SessionFlags::isComplete($request->getSession()->getFlags()))
-            {
-                // Set the session as authenticated
-                try
-                {
-                    SessionManager::setAuthenticated($request->getSessionUuid(), true);
-                    SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]);
-                }
-                catch (DatabaseOperationException $e)
-                {
-                    throw new StandardException('Failed to update session due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
-                }
             }
 
             return $rpcRequest->produceResponse(true);
