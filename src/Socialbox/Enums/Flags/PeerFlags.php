@@ -2,8 +2,6 @@
 
 namespace Socialbox\Enums\Flags;
 
-use Socialbox\Classes\Logger;
-
 enum PeerFlags : string
 {
     // Administrative Flags

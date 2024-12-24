@@ -3,10 +3,8 @@
     namespace Socialbox\Objects;
 
     use InvalidArgumentException;
-    use ncc\ThirdParty\nikic\PhpParser\Node\Expr\BinaryOp\BooleanOr;
     use Socialbox\Classes\Logger;
     use Socialbox\Enums\StandardError;
-    use Socialbox\Exceptions\RpcException;
     use Socialbox\Exceptions\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
 

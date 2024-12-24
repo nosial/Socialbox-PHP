@@ -5,7 +5,6 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Resources;
-    use Socialbox\Enums\StandardError;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;

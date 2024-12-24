@@ -2,12 +2,10 @@
 
 namespace Socialbox\Classes;
 
-use DateTime;
 use InvalidArgumentException;
 use JsonException;
 use RuntimeException;
 use Socialbox\Enums\StandardHeaders;
-use Socialbox\Objects\PeerAddress;
 use Throwable;
 
 class Utilities

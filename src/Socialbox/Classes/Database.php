@@ -2,8 +2,6 @@
 
 namespace Socialbox\Classes;
 
-use mysqli;
-use mysqli_sql_exception;
 use PDO;
 use PDOException;
 use Socialbox\Exceptions\DatabaseOperationException;

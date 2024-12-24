@@ -2,6 +2,7 @@
 
     namespace Socialbox\Managers;
 
+    use InvalidArgumentException;
     use PDO;
     use PDOException;
     use Socialbox\Classes\Configuration;
@@ -314,6 +315,50 @@
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to remove the flag from the peer in the database', $e);
+            }
+        }
+
+        /**
+         * Updates the display name of a registered peer based on the given unique identifier or RegisteredPeerRecord object.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @param string $name The new
+         */
+        public static function updateDisplayName(string|RegisteredPeerRecord $peer, string $name): void
+        {
+            if(empty($name))
+            {
+                throw new InvalidArgumentException('The display name cannot be empty');
+            }
+
+            if(strlen($name) > 256)
+            {
+                throw new InvalidArgumentException('The display name cannot exceed 256 characters');
+            }
+
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot update the display name of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Updating display name of peer %s to %s", $peer->getUuid(), $name));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET display_name=? WHERE uuid=?');
+                $statement->bindParam(1, $name);
+                $uuid = $peer->getUuid();
+                $statement->bindParam(2, $uuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to update the display name of the peer in the database', $e);
             }
         }
 

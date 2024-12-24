@@ -5,7 +5,6 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\SecuredPassword;
     use Socialbox\Exceptions\CryptographyException;
-    use Socialbox\Managers\EncryptionRecordsManager;
 
     class EncryptionRecord
     {

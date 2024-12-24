@@ -4,7 +4,6 @@
 
     use InvalidArgumentException;
     use Socialbox\Classes\Cryptography;
-    use Socialbox\Classes\Logger;
     use Socialbox\Classes\Utilities;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardHeaders;

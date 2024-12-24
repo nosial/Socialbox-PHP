@@ -2,7 +2,6 @@
 
     namespace Socialbox\Classes;
 
-    use InvalidArgumentException;
     use Socialbox\Enums\DatabaseObjects;
 
     class Resources

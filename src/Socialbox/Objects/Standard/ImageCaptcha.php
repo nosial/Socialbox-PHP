@@ -3,7 +3,6 @@
 namespace Socialbox\Objects\Standard;
 
 use Socialbox\Interfaces\SerializableInterface;
-use Socialbox\Objects\Database\CaptchaRecord;
 
 class ImageCaptcha implements SerializableInterface
 {

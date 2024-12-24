@@ -460,6 +460,13 @@
          */
         public static function updateFlow(SessionRecord $session): void
         {
+            // Don't do anything if the session is already authenticated
+            if(!in_array(SessionFlags::REGISTRATION_REQUIRED, $session->getFlags()) || !in_array(SessionFlags::AUTHENTICATION_REQUIRED, $session->getFlags()))
+            {
+                return;
+            }
+
+            // Check if all registration/authentication requirements are met
             if(SessionFlags::isComplete($session->getFlags()))
             {
                 SessionManager::setAuthenticated($session->getUuid(), true);

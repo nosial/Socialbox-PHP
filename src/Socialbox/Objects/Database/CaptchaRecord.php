@@ -4,7 +4,6 @@ namespace Socialbox\Objects\Database;
 
 use DateTime;
 use Socialbox\Classes\Configuration;
-use Socialbox\Classes\Logger;
 use Socialbox\Enums\Status\CaptchaStatus;
 use Socialbox\Interfaces\SerializableInterface;
 
