@@ -127,6 +127,12 @@
                      return;
                }
             }
+            else
+            {
+                http_response_code(400);
+                print('External domains are not supported yet');
+                return;
+            }
 
             try
             {
