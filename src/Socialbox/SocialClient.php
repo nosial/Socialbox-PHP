@@ -23,6 +23,7 @@
          *
          * @param string|PeerAddress $peerAddress The address of the peer to connect to.
          * @param ExportedSession|null $exportedSession Optional. The exported session to use for communication.
+         * @param array $options Optional. Additional options to pass to the client.
          * @throws CryptographyException If the public key is invalid.
          * @throws ResolutionException If the domain cannot be resolved.
          * @throws RpcException If the RPC request fails.

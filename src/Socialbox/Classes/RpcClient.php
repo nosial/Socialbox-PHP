@@ -2,6 +2,7 @@
 
     namespace Socialbox\Classes;
 
+    use Socialbox\Enums\Options\ClientOptions;
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\Types\RequestType;
     use Socialbox\Exceptions\CryptographyException;
@@ -60,7 +61,19 @@
 
             // Set the initial properties
             $this->peerAddress = $peerAddress;
-            $this->keyPair = Cryptography::generateKeyPair();
+
+            // If the username is `host` and the domain is the same as this server's domain, we use our keypair
+            // Essentially this is a special case for the server to contact another server
+            if($this->peerAddress->isHost())
+            {
+                $this->keyPair = new KeyPair(Configuration::getInstanceConfiguration()->getPublicKey(), Configuration::getInstanceConfiguration()->getPrivateKey());
+            }
+            // Otherwise we generate a random keypair
+            else
+            {
+                $this->keyPair = Cryptography::generateKeyPair();
+            }
+
             $this->encryptionKey = Cryptography::generateEncryptionKey();
 
             // Resolve the domain and get the server's Public Key & RPC Endpoint
@@ -97,16 +110,25 @@
         {
             $ch = curl_init();
 
-            curl_setopt($ch, CURLOPT_URL, $this->rpcEndpoint);
-            curl_setopt($ch, CURLOPT_HTTPGET, true);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            // Basic session details
+            $headers = [
                 StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::INITIATE_SESSION->value,
                 StandardHeaders::CLIENT_NAME->value . ': ' . self::CLIENT_NAME,
                 StandardHeaders::CLIENT_VERSION->value . ': ' . self::CLIENT_VERSION,
-                StandardHeaders::PUBLIC_KEY->value . ': ' . $this->keyPair->getPublicKey(),
                 StandardHeaders::IDENTIFY_AS->value . ': ' . $this->peerAddress->getAddress(),
-            ]);
+            ];
+
+            // If we're not connecting as the host, we need to provide our public key
+            // Otherwise, the server will obtain the public key itself from DNS records rather than trusting the client
+            if(!$this->peerAddress->isHost())
+            {
+                $headers[] = StandardHeaders::PUBLIC_KEY->value . ': ' . $this->keyPair->getPublicKey();
+            }
+
+            curl_setopt($ch, CURLOPT_URL, $this->rpcEndpoint);
+            curl_setopt($ch, CURLOPT_HTTPGET, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
             $response = curl_exec($ch);
 

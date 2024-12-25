@@ -3,6 +3,7 @@
     namespace Socialbox\Objects;
 
     use InvalidArgumentException;
+    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Validator;
     use Socialbox\Enums\ReservedUsernames;
 
@@ -67,7 +68,7 @@
          */
         public function isHost(): bool
         {
-            return $this->username === ReservedUsernames::HOST->value;
+            return $this->username === ReservedUsernames::HOST->value && $this->domain === Configuration::getInstanceConfiguration()->getDomain();
         }
 
         /**

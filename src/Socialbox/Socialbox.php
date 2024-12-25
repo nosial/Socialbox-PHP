@@ -7,8 +7,10 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Logger;
+    use Socialbox\Classes\ServerResolver;
     use Socialbox\Classes\Utilities;
     use Socialbox\Classes\Validator;
+    use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardHeaders;
@@ -69,6 +71,58 @@
         }
 
         /**
+         * Validates the headers in an initialization request to ensure that all
+         * required information is present and properly formatted. This includes
+         * checking for headers such as Client Name, Client Version, Public Key,
+         * and Identify-As, as well as validating the Identify-As header value.
+         * If any validation fails, a corresponding HTTP response code and message
+         * are returned.
+         *
+         * @param ClientRequest $clientRequest The client request containing headers to validate.
+         *
+         * @return bool Returns true if all required headers are valid, otherwise false.
+         */
+        private static function validateInitHeaders(ClientRequest $clientRequest): bool
+        {
+            if(!$clientRequest->getClientName())
+            {
+                http_response_code(400);
+                print('Missing required header: ' . StandardHeaders::CLIENT_NAME->value);
+                return false;
+            }
+
+            if(!$clientRequest->getClientVersion())
+            {
+                http_response_code(400);
+                print('Missing required header: ' . StandardHeaders::CLIENT_VERSION->value);
+                return false;
+            }
+
+            if(!$clientRequest->headerExists(StandardHeaders::PUBLIC_KEY))
+            {
+                http_response_code(400);
+                print('Missing required header: ' . StandardHeaders::PUBLIC_KEY->value);
+                return false;
+            }
+
+            if(!$clientRequest->headerExists(StandardHeaders::IDENTIFY_AS))
+            {
+                http_response_code(400);
+                print('Missing required header: ' . StandardHeaders::IDENTIFY_AS->value);
+                return false;
+            }
+
+            if(!Validator::validatePeerAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)))
+            {
+                http_response_code(400);
+                print('Invalid Identify-As header: ' . $clientRequest->getHeader(StandardHeaders::IDENTIFY_AS));
+                return false;
+            }
+
+            return true;
+        }
+
+        /**
          * Processes a client request to initiate a session. Validates required headers,
          * ensures the peer is authorized and enabled, and creates a new session UUID
          * if all checks pass. Handles edge cases like missing headers, invalid inputs,
@@ -80,58 +134,66 @@
          */
         private static function handleInitiateSession(ClientRequest $clientRequest): void
         {
-
-            if(!$clientRequest->getClientName())
+            if(!self::validateInitHeaders($clientRequest))
             {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::CLIENT_NAME->value);
                 return;
             }
 
-            if(!$clientRequest->getClientVersion())
-            {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::CLIENT_VERSION->value);
-                return;
-            }
-
-            if(!$clientRequest->headerExists(StandardHeaders::PUBLIC_KEY))
-            {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::PUBLIC_KEY->value);
-                return;
-            }
-
-            if(!$clientRequest->headerExists(StandardHeaders::IDENTIFY_AS))
-            {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::IDENTIFY_AS->value);
-                return;
-            }
-
-            if(!Validator::validatePeerAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)))
-            {
-                http_response_code(400);
-                print('Invalid Identify-As header: ' . $clientRequest->getHeader(StandardHeaders::IDENTIFY_AS));
-                return;
-            }
+            // We always accept the client's public key at first
+            $publicKey = $clientRequest->getHeader(StandardHeaders::PUBLIC_KEY);
 
             // If the peer is identifying as the same domain
             if($clientRequest->getIdentifyAs()->getDomain() === Configuration::getInstanceConfiguration()->getDomain())
             {
                 // Prevent the peer from identifying as the host unless it's coming from an external domain
-               if($clientRequest->getIdentifyAs()->getUsername() === 'host')
+               if($clientRequest->getIdentifyAs()->getUsername() === ReservedUsernames::HOST->value)
                {
                      http_response_code(403);
                      print('Unauthorized: The requested peer is not allowed to identify as the host');
                      return;
                }
             }
+            // If the peer is identifying as an external domain
             else
             {
-                http_response_code(400);
-                print('External domains are not supported yet');
-                return;
+                // Only allow the host to identify as an external peer
+                if($clientRequest->getIdentifyAs()->getUsername() !== ReservedUsernames::HOST->value)
+                {
+                    http_response_code(403);
+                    print('Unauthorized: The requested peer is not allowed to identify as an external peer');
+                    return;
+                }
+
+                try
+                {
+                    // We need to obtain the public key of the host, since we can't trust the client
+                    $resolvedServer = ServerResolver::resolveDomain($clientRequest->getIdentifyAs()->getDomain());
+
+                    // Override the public key with the resolved server's public key
+                    $publicKey = $resolvedServer->getPublicKey();
+                }
+                catch (Exceptions\ResolutionException $e)
+                {
+                    Logger::getLogger()->error('Failed to resolve the host domain', $e);
+                    http_response_code(409);
+                    print('Conflict: Failed to resolve the host domain: ' . $e->getMessage());
+                    return;
+                }
+                catch (Exception $e)
+                {
+                    Logger::getLogger()->error('An internal error occurred while resolving the host domain', $e);
+                    http_response_code(500);
+                    if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions())
+                    {
+                        print(Utilities::throwableToString($e));
+                    }
+                    else
+                    {
+                        print('An internal error occurred');
+                    }
+
+                    return;
+                }
             }
 
             try
@@ -165,7 +227,7 @@
                 }
 
                 // Create the session UUID
-                $sessionUuid = SessionManager::createSession($clientRequest->getHeader(StandardHeaders::PUBLIC_KEY), $registeredPeer, $clientRequest->getClientName(), $clientRequest->getClientVersion());
+                $sessionUuid = SessionManager::createSession($publicKey, $registeredPeer, $clientRequest->getClientName(), $clientRequest->getClientVersion());
                 http_response_code(201); // Created
                 print($sessionUuid); // Return the session UUID
             }
