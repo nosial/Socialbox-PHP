@@ -36,7 +36,7 @@ services:
       SB_CACHE_HOST: redis
       SB_CACHE_PASSWORD: ${REDIS_PASSWORD:-root}
     healthcheck:
-      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_DOMAIN-http://127.0.0.0:8085/}"]
+      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8085/}"]
       interval: 30s
       timeout: 10s
       retries: 3

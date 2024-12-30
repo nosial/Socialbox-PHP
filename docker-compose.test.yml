@@ -1,0 +1,192 @@
+services:
+  alice_socialbox:
+    container_name: alice_socialbox
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8085"
+    depends_on:
+      alice_mariadb:
+        condition: service_healthy
+      alice_redis:
+        condition: service_healthy
+    networks:
+      - alice_network
+    restart: unless-stopped
+    volumes:
+      - ./alice_socialbox/config:/etc/config
+      - ./alice_socialbox/logs:/var/log
+      - ./alice_socialbox/data:/etc/socialbox
+    environment:
+      # No need to change these values
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      CONFIGLIB_PATH: /etc/config
+      LOGGING_DIRECTORY: /var/log
+      SB_MODE: automated
+      SB_STORAGE_PATH: /etc/socialbox
+      # Updated environment variables for Alice
+      SB_INSTANCE_DOMAIN: ${SB_ALICE_DOMAIN:-localhost}
+      SB_INSTANCE_RPC_ENDPOINT: ${SB_ALICE_RPC_ENDPOINT:-http://127.0.0.1:8087/}
+      SB_DATABASE_HOST: alice_mariadb
+      SB_DATABASE_USERNAME: ${MYSQL_USER:-socialbox}
+      SB_DATABASE_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
+      SB_DATABASE_NAME: ${MYSQL_DATABASE:-socialbox}
+      SB_CACHE_ENGINE: redis
+      SB_CACHE_HOST: alice_redis
+      SB_CACHE_PASSWORD: ${REDIS_PASSWORD:-root}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8085/}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  bob_socialbox:
+    container_name: bob_socialbox
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8085"
+    depends_on:
+      bob_mariadb:
+        condition: service_healthy
+      bob_redis:
+        condition: service_healthy
+    networks:
+      - bob_network
+    restart: unless-stopped
+    volumes:
+      - ./bob_socialbox/config:/etc/config
+      - ./bob_socialbox/logs:/var/log
+      - ./bob_socialbox/data:/etc/socialbox
+    environment:
+      # No need to change these values
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      CONFIGLIB_PATH: /etc/config
+      LOGGING_DIRECTORY: /var/log
+      SB_MODE: automated
+      SB_STORAGE_PATH: /etc/socialbox
+      # Updated environment variables for Bob
+      SB_INSTANCE_DOMAIN: ${SB_BOB_DOMAIN:-localhost}
+      SB_INSTANCE_RPC_ENDPOINT: ${SB_BOB_RPC_ENDPOINT:-http://127.0.0.1:8086/}
+      SB_DATABASE_HOST: bob_mariadb
+      SB_DATABASE_USERNAME: ${MYSQL_USER:-socialbox}
+      SB_DATABASE_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
+      SB_DATABASE_NAME: ${MYSQL_DATABASE:-socialbox}
+      SB_CACHE_ENGINE: redis
+      SB_CACHE_HOST: bob_redis
+      SB_CACHE_PASSWORD: ${REDIS_PASSWORD:-root}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8085/}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  alice_mariadb:
+    container_name: alice_mariadb
+    image: mariadb:10.5
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sb_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-socialbox}
+      MYSQL_USER: ${MYSQL_USER:-socialbox}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
+    volumes:
+      - alice_mariadb_data:/var/lib/mysql
+    networks:
+      - alice_network
+    expose:
+      - "3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "alice_mariadb", "-u", "${MYSQL_USER:-socialbox}", "-p${MYSQL_PASSWORD:-socialbox}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  bob_mariadb:
+    container_name: bob_mariadb
+    image: mariadb:10.5
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sb_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-socialbox}
+      MYSQL_USER: ${MYSQL_USER:-socialbox}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
+    volumes:
+      - bob_mariadb_data:/var/lib/mysql
+    networks:
+      - bob_network
+    expose:
+      - "3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "bob_mariadb", "-u", "${MYSQL_USER:-socialbox}", "-p${MYSQL_PASSWORD:-socialbox}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  alice_redis:
+    container_name: alice_redis
+    image: redis:alpine
+    restart: unless-stopped
+    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
+    volumes:
+      - alice_redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - alice_network
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
+      REDIS_DB: 0
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  bob_redis:
+    container_name: bob_redis
+    image: redis:alpine
+    restart: unless-stopped
+    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
+    volumes:
+      - bob_redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - bob_network
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
+      REDIS_DB: 0
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  alice_mariadb_data:
+    driver: local
+  bob_mariadb_data:
+    driver: local
+  alice_redis_data:
+    driver: local
+  bob_redis_data:
+    driver: local
+
+networks:
+  alice_network:
+    driver: bridge
+    name: alice_network
+  bob_network:
+    driver: bridge
+    name: bob_network
