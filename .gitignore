@@ -2,3 +2,5 @@
 /.idea/gbrowser_project.xml
 .phpunit.result.cache
 /socialbox
+/bob_socialbox
+/alice_socialbox
