@@ -80,4 +80,15 @@
         {
             return $this->name;
         }
+
+
+        /**
+         * Constructs and retrieves the Data Source Name (DSN) string.
+         *
+         * @return string The DSN string for the database connection.
+         */
+        public function getDsn(): string
+        {
+            return sprintf('mysql:host=%s;dbname=%s;port=%s;charset=utf8mb4', $this->host, $this->name, $this->port);
+        }
     }
