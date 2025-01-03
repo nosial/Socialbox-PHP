@@ -7,6 +7,7 @@
     use Socialbox\Classes\Configuration\DatabaseConfiguration;
     use Socialbox\Classes\Configuration\InstanceConfiguration;
     use Socialbox\Classes\Configuration\LoggingConfiguration;
+    use Socialbox\Classes\Configuration\PoliciesConfiguration;
     use Socialbox\Classes\Configuration\RegistrationConfiguration;
     use Socialbox\Classes\Configuration\SecurityConfiguration;
     use Socialbox\Classes\Configuration\StorageConfiguration;
@@ -21,6 +22,7 @@
         private static ?LoggingConfiguration $loggingConfiguration = null;
         private static ?CacheConfiguration $cacheConfiguration = null;
         private static ?RegistrationConfiguration $registrationConfiguration = null;
+        private static ?PoliciesConfiguration $policiesConfiguration = null;
         private static ?StorageConfiguration $storageConfiguration = null;
 
         /**
@@ -118,6 +120,10 @@
             $config->setDefault('registration.display_picture_required', false);
             $config->setDefault('registration.image_captcha_verification_required', true);
 
+            // Server Policies
+            // The maximum number of signing keys a peer can register onto the server at once
+            $config->setDefault('policies.max_signing_keys', 20);
+
             // Storage configuration
             $config->setDefault('storage.path', '/etc/socialbox'); // The main path for file storage
             $config->setDefault('storage.user_display_images_path', 'user_profiles'); // eg; `/etc/socialbox/user_profiles`
@@ -133,6 +139,7 @@
             self::$loggingConfiguration = new LoggingConfiguration(self::$configuration->getConfiguration()['logging']);
             self::$cacheConfiguration = new CacheConfiguration(self::$configuration->getConfiguration()['cache']);
             self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration->getConfiguration()['registration']);
+            self::$policiesConfiguration = new PoliciesConfiguration(self::$configuration->getConfiguration()['policies']);
             self::$storageConfiguration = new StorageConfiguration(self::$configuration->getConfiguration()['storage']);
         }
 
@@ -299,6 +306,24 @@
             }
 
             return self::$registrationConfiguration;
+        }
+
+        /**
+         * Retrieves the policies configuration.
+         *
+         * This method returns the current PoliciesConfiguration instance.
+         * If the configuration has not been initialized yet, it initializes it first.
+         *
+         * @return PoliciesConfiguration The policies configuration instance.
+         */
+        public static function getPoliciesConfiguration(): PoliciesConfiguration
+        {
+            if(self::$policiesConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$policiesConfiguration;
         }
 
         /**
