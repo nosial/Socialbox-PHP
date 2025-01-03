@@ -11,6 +11,7 @@
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/RegisteredPeerManager.php" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/ResolvedDnsRecordsManager.php" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/SessionManager.php" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/SigningKeysManager.php" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/VariableManager.php" dialect="MariaDB" />
   </component>
 </project>
