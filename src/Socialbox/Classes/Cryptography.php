@@ -52,7 +52,7 @@
          */
         public static function validatePublicEncryptionKey(string $publicKey): bool
         {
-            if(!str_starts_with($publicKey, 'enc:'))
+            if(!str_starts_with($publicKey, self::KEY_TYPE_ENCRYPTION))
             {
                 return false;
             }
@@ -112,12 +112,11 @@
          *
          * @param string $publicKey The base64-encoded public signing key to be validated.
          * @return bool Returns true if the key is valid, or false if it is invalid.
-         * @throws CryptographyException If the public key is incorrectly formatted or its length is invalid.
          */
         public static function validatePublicSigningKey(string $publicKey): bool
         {
             // Check if the key is prefixed with "sig:"
-            if (!str_starts_with($publicKey, 'sig:'))
+            if (!str_starts_with($publicKey, self::KEY_TYPE_SIGNING))
             {
                 // If it doesn't start with "sig:", consider it invalid
                 return false;

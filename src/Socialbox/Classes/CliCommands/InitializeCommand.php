@@ -46,22 +46,21 @@
                 Logger::getLogger()->info('  configlib --conf socialbox -e nano');
                 Logger::getLogger()->info('Or manually at:');
                 Logger::getLogger()->info(sprintf('  %s', Configuration::getConfigurationLib()->getPath()));
-                Logger::getLogger()->info('Automated Setup Procedure is done using environment variables:');
-                Logger::getLogger()->info(' - SB_MODE=automated');
-                Logger::getLogger()->info(' - SB_INSTANCE_DOMAIN=example.com => The Domain Name');
-                Logger::getLogger()->info(' - SB_INSTANCE_RPC_ENDPOINT=http://localhost => The RPC Endpoint, must be publicly accessible');
-                Logger::getLogger()->info(' - SB_DATABASE_HOST=localhost => The MySQL Host');
-                Logger::getLogger()->info(' - SB_DATABASE_PORT=3306 => The MySQL Port');
-                Logger::getLogger()->info(' - SB_DATABASE_USER=root => The MySQL Username');
-                Logger::getLogger()->info(' - SB_DATABASE_PASSWORD=pass => The MySQL Password');
-                Logger::getLogger()->info(' - SB_DATABASE_DATABASE=socialbox => The MySQL Database');
-                Logger::getLogger()->info(' - SB_CACHE_ENGINE=redis => The Cache engine to use, supports redis, memcached or null');
-                Logger::getLogger()->info(' - SB_CACHE_HOST=localhost => The Cache Host');
-                Logger::getLogger()->info(' - SB_CACHE_PORT=6379 => The Cache Port');
-                Logger::getLogger()->info(' - SB_CACHE_PASSWORD=pass => The Cache Password');
-                Logger::getLogger()->info(' - SB_CACHE_DATABASE=0 => The Cache Database');
-                Logger::getLogger()->info(' - SB_STORAGE_PATH=/etc/socialbox => The Storage Path');
-                Logger::getLogger()->info('Anything omitted will be null or empty in the configuration');
+
+                if(getenv('SB_MODE') === 'automated')
+                {
+                    // Wait & Reload the configuration
+                    while(!Configuration::getInstanceConfiguration()->isEnabled())
+                    {
+                        Logger::getLogger()->info('Waiting for configuration, retrying in 5 seconds...');
+                        sleep(5);
+                        Configuration::reload();
+                    }
+                }
+                else
+                {
+                    return 1;
+                }
 
                 return 1;
             }
@@ -71,144 +70,7 @@
             if(getenv('SB_MODE') === 'automated')
             {
                 Logger::getLogger()->info('Automated Setup Procedure is detected');
-
-                if(getenv('SB_INSTANCE_DOMAIN') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('instance.domain', getenv('SB_INSTANCE_DOMAIN'));
-                    Logger::getLogger()->info('Set instance.domain to ' . getenv('SB_INSTANCE_DOMAIN'));
-                }
-                else
-                {
-                    Logger::getLogger()->warning('instance.domain is required but was not set, expected SB_INSTANCE_DOMAIN environment variable');
-                }
-
-                if(getenv('SB_INSTANCE_RPC_ENDPOINT') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('instance.rpc_endpoint', getenv('SB_INSTANCE_RPC_ENDPOINT'));
-                    Logger::getLogger()->info('Set instance.rpc_endpoint to ' . getenv('SB_INSTANCE_RPC_ENDPOINT'));
-                }
-                else
-                {
-                    Logger::getLogger()->warning('instance.rpc_endpoint is required but was not set, expected SB_INSTANCE_RPC_ENDPOINT environment variable');
-                    Configuration::getConfigurationLib()->set('instance.rpc_endpoint', 'http://127.0.0.0/');
-                    Logger::getLogger()->info('Set instance.rpc_endpoint to http://127.0.0.0/');
-                }
-
-                if(getenv('SB_STORAGE_PATH') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('storage.path', getenv('SB_STORAGE_PATH'));
-                    Logger::getLogger()->info('Set storage.path to ' . getenv('SB_STORAGE_PATH'));
-                }
-                else
-                {
-                    Configuration::getConfigurationLib()->set('storage.path', '/etc/socialbox');
-                    Logger::getLogger()->info('storage.path was not set, defaulting to /etc/socialbox');
-                }
-
-                if(getenv('SB_DATABASE_HOST') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('database.host', getenv('SB_DATABASE_HOST'));
-                    Logger::getLogger()->info('Set database.host to ' . getenv('SB_DATABASE_HOST'));
-                }
-                else
-                {
-                    Logger::getLogger()->warning('database.host is required but was not set, expected SB_DATABASE_HOST environment variable');
-                }
-
-                if(getenv('SB_DATABASE_PORT') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('database.port', getenv('SB_DATABASE_PORT'));
-                    Logger::getLogger()->info('Set database.port to ' . getenv('SB_DATABASE_PORT'));
-                }
-
-                if(getenv('SB_DATABASE_USERNAME') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('database.username', getenv('SB_DATABASE_USERNAME'));
-                    Logger::getLogger()->info('Set database.username to ' . getenv('SB_DATABASE_USERNAME'));
-                }
-                else
-                {
-                    Logger::getLogger()->warning('database.username is required but was not set, expected SB_DATABASE_USERNAME environment variable');
-                }
-
-                if(getenv('SB_DATABASE_PASSWORD') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('database.password', getenv('SB_DATABASE_PASSWORD'));
-                    Logger::getLogger()->info('Set database.password to ' . getenv('SB_DATABASE_PASSWORD'));
-                }
-                else
-                {
-                    Logger::getLogger()->warning('database.password is required but was not set, expected SB_DATABASE_PASSWORD environment variable');
-                }
-
-                if(getenv('SB_DATABASE_NAME') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('database.name', getenv('SB_DATABASE_NAME'));
-                    Logger::getLogger()->info('Set database.name to ' . getenv('SB_DATABASE_NAME'));
-                }
-                else
-                {
-                    Logger::getLogger()->warning('database.name is required but was not set, expected SB_DATABASE_NAME environment variable');
-                }
-
-                if(getenv('SB_CACHE_ENABLED') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('cache.enabled', true);
-                    Logger::getLogger()->info('Set cache.engine to true');
-                }
-                else
-                {
-                    Configuration::getConfigurationLib()->set('cache.enabled', false);
-                    Logger::getLogger()->info('cache.engine is was not set, defaulting to false');
-                }
-
-
-                if(getenv('SB_CACHE_ENGINE') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('cache.engine', getenv('SB_CACHE_ENGINE'));
-                    Logger::getLogger()->info('Set cache.engine to ' . getenv('SB_CACHE_ENGINE'));
-                }
-
-                if(getenv('SB_CACHE_HOST') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('cache.host', getenv('SB_CACHE_HOST'));
-                    Logger::getLogger()->info('Set cache.host to ' . getenv('SB_CACHE_HOST'));
-                }
-                elseif(Configuration::getCacheConfiguration()->isEnabled())
-                {
-                    Logger::getLogger()->warning('cache.host is required but was not set, expected SB_CACHE_HOST environment variable');
-                }
-
-                if(getenv('SB_CACHE_PORT') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('cache.port', getenv('SB_CACHE_PORT'));
-                    Logger::getLogger()->info('Set cache.port to ' . getenv('SB_CACHE_PORT'));
-                }
-
-                if(getenv('SB_CACHE_PASSWORD') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('cache.password', getenv('SB_CACHE_PASSWORD'));
-                    Logger::getLogger()->info('Set cache.password to ' . getenv('SB_CACHE_PASSWORD'));
-                }
-                elseif(Configuration::getCacheConfiguration()->isEnabled())
-                {
-                    Logger::getLogger()->warning('cache.password is required but was not set, expected SB_CACHE_PASSWORD environment variable');
-                }
-
-                if(getenv('SB_CACHE_DATABASE') !== false)
-                {
-                    Configuration::getConfigurationLib()->set('cache.database', getenv('SB_CACHE_DATABASE'));
-                    Logger::getLogger()->info('Set cache.database to ' . getenv('SB_CACHE_DATABASE'));
-                }
-                elseif(Configuration::getCacheConfiguration()->isEnabled())
-                {
-                    Configuration::getConfigurationLib()->set('cache.database', 0);
-                    Logger::getLogger()->info('cache.database defaulting to 0');
-                }
-
-                Logger::getLogger()->info('Updating configuration...');
-                Configuration::getConfigurationLib()->save(); // Save
-                Configuration::reload(); // Reload
+                self::applyEnvironmentVariables();
             }
 
             if(Configuration::getInstanceConfiguration()->getDomain() === null)
@@ -300,22 +162,206 @@
             }
 
             Logger::getLogger()->info('Updating configuration...');
-            Configuration::getConfigurationLib()->save();;
+            Configuration::getConfigurationLib()->save();
             Configuration::reload();
 
             Logger::getLogger()->info('Socialbox has been initialized successfully');
             Logger::getLogger()->info(sprintf('Set the DNS TXT record for the domain %s to the following value:', Configuration::getInstanceConfiguration()->getDomain()));
             Logger::getLogger()->info(Socialbox::getDnsRecord());
 
-            if(getenv('SB_MODE') === 'automated')
-            {
-                Configuration::getConfigurationLib()->set('instance.enabled', true);
-                Configuration::getConfigurationLib()->save(); // Save
+            return 0;
+        }
 
-                Logger::getLogger()->info('Automated Setup Procedure is complete, requests to the RPC server ' . Configuration::getInstanceConfiguration()->getRpcEndpoint() . ' are now accepted');
+        /**
+         * Applies environment variables to the application's configuration system.
+         * This method maps predefined environment variables to their corresponding
+         * configuration keys, validates their values, and updates the configuration
+         * library accordingly. If expected environment variables are missing and
+         * critical for certain components, warning logs are generated.
+         * Additionally, the configuration changes are saved and reloaded after being applied.
+         *
+         * @return void
+         */
+        private static function applyEnvironmentVariables(): void
+        {
+            // Always set the 'instance.enabled' to true if the automated setup procedure is detected
+            Configuration::getConfigurationLib()->set('instance.enabled', true);
+            $configurationMap = [
+                // Instance Configuration
+                'SB_INSTANCE_NAME' => 'instance.name',
+                'SB_INSTANCE_DOMAIN' => 'instance.domain',
+                'SB_INSTANCE_RPC_ENDPOINT' => 'instance.rpc_endpoint',
+                'SB_STORAGE_PATH' => 'storage.path',
+
+                // Logging Configuration
+                'SB_LOGGING_CONSOLE_ENABLED' => 'logging.console_logging_enabled',
+                'SB_LOGGING_CONSOLE_LEVEL' => 'logging.console_logging_level',
+                'SB_LOGGING_FILE_ENABLED' => 'logging.file_logging_enabled',
+                'SB_LOGGING_FILE_LEVEL' => 'logging.file_logging_level',
+
+                // Security & Cryptography Configuration
+                'SB_SECURITY_DISPLAY_INTERNAL_EXCEPTIONS' => 'security.display_internal_exceptions',
+                'SB_CRYPTO_KEYPAIR_EXPIRES' => 'cryptography.host_keypair_expires',
+                'SB_CRYPTO_ENCRYPTION_KEYS_COUNT' => 'cryptography.encryption_keys_count',
+                'SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM' => 'cryptography.encryption_keys_algorithm',
+                'SB_CRYPTO_TRANSPORT_ENCRYPTION_ALGORITHM' => 'cryptography.transport_encryption_algorithm',
+
+                // Database Configuration
+                'SB_DATABASE_HOST' => 'database.host',
+                'SB_DATABASE_PORT' => 'database.port',
+                'SB_DATABASE_USERNAME' => 'database.username',
+                'SB_DATABASE_PASSWORD' => 'database.password',
+                'SB_DATABASE_NAME' => 'database.name',
+
+                'SB_CACHE_ENABLED' => 'cache.enabled',
+                'SB_CACHE_ENGINE' => 'cache.engine',
+                'SB_CACHE_HOST' => 'cache.host',
+                'SB_CACHE_PORT' => 'cache.port',
+                'SB_CACHE_USERNAME' => 'cache.username',
+                'SB_CACHE_PASSWORD' => 'cache.password',
+                'SB_CACHE_DATABASE' => 'cache.database',
+            ];
+
+            foreach($configurationMap as $env => $config)
+            {
+                $variable = getenv($env);
+                Logger::getLogger()->info(sprintf('Checking environment variable %s...', $env));
+
+                switch($env)
+                {
+                    case 'SB_STORAGE_PATH':
+                    case 'SB_LOGGING_FILE_LEVEL':
+                    case 'SB_LOGGING_CONSOLE_LEVEL':
+                    case 'SB_INSTANCE_NAME':
+                    case 'SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM':
+                    case 'SB_CRYPTO_TRANSPORT_ENCRYPTION_ALGORITHM':
+                    case 'SB_CACHE_ENGINE':
+                    case 'SB_CACHE_HOST':
+                    case 'SB_CACHE_USERNAME':
+                    case 'SB_CACHE_PASSWORD':
+                    case 'SB_CACHE_DATABASE':
+                        if($variable !== false)
+                        {
+                            Configuration::getConfigurationLib()->set($config, $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_INSTANCE_DOMAIN':
+                        if($variable === false && Configuration::getInstanceConfiguration()->getDomain() === null)
+                        {
+                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                        }
+                        else
+                        {
+                            Configuration::getConfigurationLib()->set($config, $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_DATABASE_HOST':
+                        if($variable === false && Configuration::getDatabaseConfiguration()->getHost() === null)
+                        {
+                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                        }
+                        else
+                        {
+                            Configuration::getConfigurationLib()->set($config, $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_DATABASE_PORT':
+                        if($variable === false && Configuration::getDatabaseConfiguration()->getPort() === null)
+                        {
+                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                        }
+                        else
+                        {
+                            Configuration::getConfigurationLib()->set($config, (int) $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_DATABASE_USERNAME':
+                        if($variable === false && Configuration::getDatabaseConfiguration()->getUsername() === null)
+                        {
+                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                        }
+                        else
+                        {
+                            Configuration::getConfigurationLib()->set($config, $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_DATABASE_PASSWORD':
+                        if($variable === false && Configuration::getDatabaseConfiguration()->getPassword() === null)
+                        {
+                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                        }
+                        else
+                        {
+                            Configuration::getConfigurationLib()->set($config, $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_DATABASE_NAME':
+                        if($variable === false && Configuration::getDatabaseConfiguration()->getName() === null)
+                        {
+                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                        }
+                        else
+                        {
+                            Configuration::getConfigurationLib()->set($config, $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_INSTANCE_RPC_ENDPOINT':
+                        if($variable === false && Configuration::getInstanceConfiguration()->getRpcEndpoint() === null)
+                        {
+                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                        }
+                        else
+                        {
+                            Configuration::getConfigurationLib()->set($config, $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_LOGGING_CONSOLE_ENABLED':
+                    case 'SB_SECURITY_DISPLAY_INTERNAL_EXCEPTIONS':
+                    case 'SB_LOGGING_FILE_ENABLED':
+                    case 'SB_CACHE_ENABLED':
+                        if($variable !== false)
+                        {
+                            Configuration::getConfigurationLib()->set($config, filter_var($variable, FILTER_VALIDATE_BOOLEAN));
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    case 'SB_CRYPTO_KEYPAIR_EXPIRES':
+                    case 'SB_CRYPTO_ENCRYPTION_KEYS_COUNT':
+                    case 'SB_CACHE_PORT':
+                        if($variable !== false)
+                        {
+                            Configuration::getConfigurationLib()->set($config, (int) $variable);
+                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                        }
+                        break;
+
+                    default:
+                        Logger::getLogger()->warning("Environment variable $env is not supported");
+                        break;
+                }
             }
 
-            return 0;
+            // Apply changes & reload the configuration
+            Logger::getLogger()->info('Updating configuration...');
+            Configuration::getConfigurationLib()->save(); // Save
+            Configuration::reload(); // Reload
         }
 
         /**
@@ -323,10 +369,36 @@
          */
         public static function getHelpMessage(): string
         {
-            return "Initialize Command - Initializes Socialbox for first-runs\n" .
-                   "Usage: socialbox init [arguments]\n\n" .
-                   "Arguments:\n" .
-                   "  --force - Forces the initialization process to run even the instance is disabled\n";
+            return  "Initialize Command - Initializes Socialbox for first-runs\n" .
+                    "Usage: socialbox init [arguments]\n\n" .
+                    "Arguments:\n" .
+                    "  --force - Forces the initialization process to run even the instance is disabled\n\n" .
+                    "Environment Variables:\n"  .
+                    "  SB_MODE - Set to 'automated' to enable automated setup procedure (Must be set to enable environment variables)\n" .
+                    "  SB_INSTANCE_DOMAIN - The domain name of the instance (eg; Socialbox)\n" .
+                    "  SB_INSTANCE_RPC_ENDPOINT - The public RPC endpoint of the instance (eg; https://rpc.teapot.com/)\n" .
+                    "  SB_STORAGE_PATH - The path to store files (default: /etc/socialbox)\n" .
+                    "  SB_LOGGING_CONSOLE_ENABLED - Enable console logging (default: true)\n" .
+                    "  SB_LOGGING_CONSOLE_LEVEL - Console logging level (default: info)\n" .
+                    "  SB_LOGGING_FILE_ENABLED - Enable file logging (default: true)\n" .
+                    "  SB_LOGGING_FILE_LEVEL - File logging level (default: error)\n" .
+                    "  SB_SECURITY_DISPLAY_INTERNAL_EXCEPTIONS - Display internal exceptions (default: false)\n" .
+                    "  SB_CRYPTO_KEYPAIR_EXPIRES - The expiration date of the key pair in Unix timestamp (default: current time + 1 year)\n" .
+                    "  SB_CRYPTO_ENCRYPTION_KEYS_COUNT - The number of internal encryption keys to generate (default: 5)\n" .
+                    "  SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM - The algorithm to use for encryption keys (default: xchacha20)\n" .
+                    "  SB_CRYPTO_TRANSPORT_ENCRYPTION_ALGORITHM - The algorithm to use for transport encryption (default: chacha20)\n" .
+                    "  SB_DATABASE_HOST - The database host (default: localhost)\n" .
+                    "  SB_DATABASE_PORT - The database port (default: 3306)\n" .
+                    "  SB_DATABASE_USERNAME - The database username (default: root)\n" .
+                    "  SB_DATABASE_PASSWORD - The database password (default: null)\n" .
+                    "  SB_DATABASE_NAME - The database name (default: socialbox)\n" .
+                    "  SB_CACHE_ENABLED - Enable cache layer (default: false)\n" .
+                    "  SB_CACHE_ENGINE - The cache engine to use (default: redis)\n" .
+                    "  SB_CACHE_HOST - The cache host (default: localhost)\n" .
+                    "  SB_CACHE_PORT - The cache port (default: 6379)\n" .
+                    "  SB_CACHE_USERNAME - The cache username (default: null)\n" .
+                    "  SB_CACHE_PASSWORD - The cache password (default: null)\n" .
+                    "  SB_CACHE_DATABASE - The cache database (default: 0)\n";
         }
 
         /**
