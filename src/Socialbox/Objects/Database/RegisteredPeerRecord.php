@@ -6,6 +6,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\Flags\PeerFlags;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\SelfUser;
 
     class RegisteredPeerRecord implements SerializableInterface
@@ -189,6 +190,16 @@
         public function toSelfUser(): SelfUser
         {
             return new SelfUser($this);
+        }
+
+        /**
+         * Converts the current instance to a Peer object.
+         *
+         * @return Peer The Peer representation of the current instance.
+         */
+        public function toPeer(): Peer
+        {
+            return Peer::fromArray($this->toArray());
         }
 
         /**
