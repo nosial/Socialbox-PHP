@@ -5,6 +5,11 @@
     enum RequestType : string
     {
         /**
+         * Represents the action of getting server information (Non-RPC Request)
+         */
+        case INFO = 'info';
+
+        /**
          * Represents the action of initiating a session.
          */
         case INITIATE_SESSION = 'init';

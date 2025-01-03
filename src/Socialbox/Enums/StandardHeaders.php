@@ -8,10 +8,12 @@
     enum StandardHeaders : string
     {
         case REQUEST_TYPE = 'Request-Type';
+        case ERROR_CODE = 'Error-Code';
         case IDENTIFY_AS = 'Identify-As';
         case CLIENT_NAME = 'Client-Name';
         case CLIENT_VERSION = 'Client-Version';
-        case PUBLIC_KEY = 'Public-Key';
+        case SIGNING_PUBLIC_KEY = 'Signing-Public-Key';
+        case ENCRYPTION_PUBLIC_KEY = 'Encryption-Public-Key';
 
         case SESSION_UUID = 'Session-UUID';
         case SIGNATURE = 'Signature';

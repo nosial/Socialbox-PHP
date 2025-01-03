@@ -19,34 +19,27 @@
     use Socialbox\Exceptions\StandardException;
     use Socialbox\Objects\Database\RegisteredPeerRecord;
     use Socialbox\Objects\Database\SessionRecord;
+    use Socialbox\Objects\KeyPair;
     use Symfony\Component\Uid\Uuid;
 
     class SessionManager
     {
-        /**
-         * Creates a new session with the given public key.
-         *
-         * @param string $publicKey The public key to associate with the new session.
-         * @param RegisteredPeerRecord $peer
-         *
-         * @throws InvalidArgumentException If the public key is empty or invalid.
-         * @throws DatabaseOperationException If there is an error while creating the session in the database.
-         */
-        public static function createSession(string $publicKey, RegisteredPeerRecord $peer, string $clientName, string $clientVersion): string
+        public static function createSession(RegisteredPeerRecord $peer, string $clientName, string $clientVersion, string $clientPublicSigningKey, string $clientPublicEncryptionKey, KeyPair $serverEncryptionKeyPair): string
         {
-            if($publicKey === '')
+            if($clientPublicSigningKey === '' || Cryptography::validatePublicSigningKey($clientPublicSigningKey) === false)
             {
-                throw new InvalidArgumentException('The public key cannot be empty');
+                throw new InvalidArgumentException('The public key is not a valid Ed25519 public key');
             }
 
-            if(!Cryptography::validatePublicKey($publicKey))
+            if($clientPublicEncryptionKey === '' || Cryptography::validatePublicEncryptionKey($clientPublicEncryptionKey) === false)
             {
-                throw new InvalidArgumentException('The given public key is invalid');
+                throw new InvalidArgumentException('The public key is not a valid X25519 public key');
             }
 
             $uuid = Uuid::v4()->toRfc4122();
             $flags = [];
 
+            // TODO: Update this to support `host` peers
             if($peer->isEnabled())
             {
                 $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
@@ -119,13 +112,18 @@
 
             try
             {
-                $statement = Database::getConnection()->prepare("INSERT INTO sessions (uuid, peer_uuid, client_name, client_version, public_key, flags) VALUES (?, ?, ?, ?, ?, ?)");
-                $statement->bindParam(1, $uuid);
-                $statement->bindParam(2, $peerUuid);
-                $statement->bindParam(3, $clientName);
-                $statement->bindParam(4, $clientVersion);
-                $statement->bindParam(5, $publicKey);
-                $statement->bindParam(6, $implodedFlags);
+                $statement = Database::getConnection()->prepare("INSERT INTO sessions (uuid, peer_uuid, client_name, client_version, client_public_signing_key, client_public_encryption_key, server_public_encryption_key, server_private_encryption_key, flags) VALUES (:uuid, :peer_uuid, :client_name, :client_version, :client_public_signing_key, :client_public_encryption_key, :server_public_encryption_key, :server_private_encryption_key, :flags)");
+                $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':peer_uuid', $peerUuid);
+                $statement->bindParam(':client_name', $clientName);
+                $statement->bindParam(':client_version', $clientVersion);
+                $statement->bindParam(':client_public_signing_key', $clientPublicSigningKey);
+                $statement->bindParam(':client_public_encryption_key', $clientPublicEncryptionKey);
+                $serverPublicEncryptionKey = $serverEncryptionKeyPair->getPublicKey();
+                $statement->bindParam(':server_public_encryption_key', $serverPublicEncryptionKey);
+                $serverPrivateEncryptionKey = $serverEncryptionKeyPair->getPrivateKey();
+                $statement->bindParam(':server_private_encryption_key', $serverPrivateEncryptionKey);
+                $statement->bindParam(':flags', $implodedFlags);
                 $statement->execute();
             }
             catch(PDOException $e)
@@ -186,7 +184,6 @@
 
                 // Convert the timestamp fields to DateTime objects
                 $data['created'] = new DateTime($data['created']);
-
                 if(isset($data['last_request']) && $data['last_request'] !== null)
                 {
                     $data['last_request'] = new DateTime($data['last_request']);
@@ -202,53 +199,6 @@
             catch (PDOException | DateMalformedStringException $e)
             {
                 throw new DatabaseOperationException(sprintf('Failed to retrieve session record %s', $uuid), $e);
-            }
-        }
-
-        /**
-         * Update the authenticated peer associated with the given session UUID.
-         *
-         * @param string $uuid The UUID of the session to update.
-         * @param RegisteredPeerRecord|string $registeredPeerUuid
-         * @return void
-         * @throws DatabaseOperationException
-         */
-        public static function updatePeer(string $uuid, RegisteredPeerRecord|string $registeredPeerUuid): void
-        {
-            if($registeredPeerUuid instanceof RegisteredPeerRecord)
-            {
-                $registeredPeerUuid = $registeredPeerUuid->getUuid();
-            }
-
-            Logger::getLogger()->verbose(sprintf("Assigning peer %s to session %s", $registeredPeerUuid, $uuid));
-
-            try
-            {
-                $statement = Database::getConnection()->prepare("UPDATE sessions SET peer_uuid=? WHERE uuid=?");
-                $statement->bindParam(1, $registeredPeerUuid);
-                $statement->bindParam(2, $uuid);
-                $statement->execute();
-            }
-            catch (PDOException $e)
-            {
-                throw new DatabaseOperationException('Failed to update authenticated peer', $e);
-            }
-        }
-
-        public static function updateAuthentication(string $uuid, bool $authenticated): void
-        {
-            Logger::getLogger()->verbose(sprintf("Marking session %s as authenticated: %s", $uuid, $authenticated ? 'true' : 'false'));
-
-            try
-            {
-                $statement = Database::getConnection()->prepare("UPDATE sessions SET authenticated=? WHERE uuid=?");
-                $statement->bindParam(1, $authenticated);
-                $statement->bindParam(2, $uuid);
-                $statement->execute();
-            }
-            catch (PDOException $e)
-            {
-                throw new DatabaseOperationException('Failed to update authenticated peer', $e);
             }
         }
 
@@ -305,24 +255,28 @@
         }
 
         /**
-         * Updates the encryption key for the specified session.
+         * Updates the encryption keys and session state for a specific session UUID in the database.
          *
-         * @param string $uuid The unique identifier of the session for which the encryption key is to be set.
-         * @param string $encryptionKey The new encryption key to be assigned.
+         * @param string $uuid The unique identifier for the session to update.
+         * @param string $privateSharedSecret The private shared secret to secure communication.
+         * @param string $clientEncryptionKey The client's encryption key used for transport security.
+         * @param string $serverEncryptionKey The server's encryption key used for transport security.
          * @return void
-         * @throws DatabaseOperationException If the database operation fails.
+         * @throws DatabaseOperationException If an error occurs during the database operation.
          */
-        public static function setEncryptionKey(string $uuid, string $encryptionKey): void
+        public static function setEncryptionKeys(string $uuid, string $privateSharedSecret, string $clientEncryptionKey, string $serverEncryptionKey): void
         {
             Logger::getLogger()->verbose(sprintf('Setting the encryption key for %s', $uuid));
 
             try
             {
                 $state_value = SessionState::ACTIVE->value;
-                $statement = Database::getConnection()->prepare('UPDATE sessions SET state=?, encryption_key=? WHERE uuid=?');
-                $statement->bindParam(1, $state_value);
-                $statement->bindParam(2, $encryptionKey);
-                $statement->bindParam(3, $uuid);
+                $statement = Database::getConnection()->prepare('UPDATE sessions SET state=:state, private_shared_secret=:private_shared_secret, client_transport_encryption_key=:client_transport_encryption_key, server_transport_encryption_key=:server_transport_encryption_key WHERE uuid=:uuid');
+                $statement->bindParam(':state', $state_value);
+                $statement->bindParam(':private_shared_secret', $privateSharedSecret);
+                $statement->bindParam(':client_transport_encryption_key', $clientEncryptionKey);
+                $statement->bindParam(':server_transport_encryption_key', $serverEncryptionKey);
+                $statement->bindParam(':uuid', $uuid);
 
                 $statement->execute();
             }

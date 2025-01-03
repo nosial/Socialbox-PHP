@@ -7,16 +7,21 @@ enum StandardError : int
     // Fallback Codes
     case UNKNOWN = -1;
 
+    // Server/Request Errors
+    case INTERNAL_SERVER_ERROR = -100;
+    case SERVER_UNAVAILABLE = -101;
+    case BAD_REQUEST = -102;
+    case FORBIDDEN = -103;
+    case UNAUTHORIZED = -104;
+    case RESOLUTION_FAILED = -105;
+    case CRYPTOGRAPHIC_ERROR = -106;
+
     // RPC Errors
     case RPC_METHOD_NOT_FOUND = -1000;
     case RPC_INVALID_ARGUMENTS = -1001;
-
-    // Server Errors
-    case INTERNAL_SERVER_ERROR = -2000;
-    case SERVER_UNAVAILABLE = -2001;
+    CASE RPC_BAD_REQUEST = -1002;
 
     // Client Errors
-    case BAD_REQUEST = -3000;
     case METHOD_NOT_ALLOWED = -3001;
 
     // Authentication/Cryptography Errors

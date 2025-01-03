@@ -2,13 +2,15 @@
 
     namespace Socialbox\Managers;
     
+    use DateTime;
     use PDO;
+    use PDOException;
+    use Socialbox\Classes\Configuration;
+    use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
-    use Socialbox\Classes\SecuredPassword;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\RegisteredPeerRecord;
-    use Socialbox\Objects\Database\SecurePasswordRecord;
 
     class PasswordManager
     {
@@ -34,154 +36,139 @@
 
                 return $stmt->fetchColumn() > 0;
             }
-            catch (\PDOException $e)
+            catch (PDOException $e)
             {
                 throw new DatabaseOperationException('An error occurred while checking the password usage in the database', $e);
             }
         }
 
         /**
-         * Sets a password for a given user or peer record by securely encrypting it
-         * and storing it in the authentication_passwords database table.
+         * Sets a secured password for the given peer UUID or registered peer record.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The UUID of the peer or an instance of RegisteredPeerRecord.
-         * @param string $password The plaintext password to be securely stored.
-         * @throws CryptographyException If an error occurs while securing the password.
-         * @throws DatabaseOperationException If an error occurs while attempting to store the password in the database.
-         * @throws \DateMalformedStringException If the updated timestamp cannot be formatted.
+         * @param string|RegisteredPeerRecord $peerUuid The unique identifier or registered peer record of the user.
+         * @param string $hash The plaintext password to be securely stored.
          * @return void
+         * @throws DatabaseOperationException If an error occurs while storing the password in the database.
+         * @throws CryptographyException If an error occurs during password encryption or hashing.
          */
-        public static function setPassword(string|RegisteredPeerRecord $peerUuid, string $password): void
+        public static function setPassword(string|RegisteredPeerRecord $peerUuid, string $hash): void
         {
             if($peerUuid instanceof RegisteredPeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
-            
-            $encryptionRecord = EncryptionRecordsManager::getRandomRecord();
-            $securedPassword = SecuredPassword::securePassword($peerUuid, $password, $encryptionRecord);
+
+            // Throws an exception if the hash is invalid
+            Cryptography::validatePasswordHash($hash);
+
+            $encryptionKey = Configuration::getCryptographyConfiguration()->getRandomInternalEncryptionKey();
+            $securedPassword = Cryptography::encryptMessage($hash, $encryptionKey, Configuration::getCryptographyConfiguration()->getEncryptionKeysAlgorithm());
 
             try
             {
-                $stmt = Database::getConnection()->prepare("INSERT INTO authentication_passwords (peer_uuid, iv, encrypted_password, encrypted_tag) VALUES (:peer_uuid, :iv, :encrypted_password, :encrypted_tag)");
+                $stmt = Database::getConnection()->prepare("INSERT INTO authentication_passwords (peer_uuid, hash) VALUES (:peer_uuid, :hash)");
                 $stmt->bindParam(":peer_uuid", $peerUuid);
-
-                $iv = $securedPassword->getIv();
-                $stmt->bindParam(':iv', $iv);
-
-                $encryptedPassword = $securedPassword->getEncryptedPassword();
-                $stmt->bindParam(':encrypted_password', $encryptedPassword);
-
-                $encryptedTag = $securedPassword->getEncryptedTag();
-                $stmt->bindParam(':encrypted_tag', $encryptedTag);
+                $stmt->bindParam(':hash', $securedPassword);
 
                 $stmt->execute();
             }
-            catch(\PDOException $e)
+            catch(PDOException $e)
             {
                 throw new DatabaseOperationException(sprintf('Failed to set password for user %s', $peerUuid), $e);
             }
         }
 
         /**
-         * Updates the password for a given peer identified by their UUID or a RegisteredPeerRecord.
+         * Updates the secured password associated with the given peer UUID.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The UUID of the peer or an instance of RegisteredPeerRecord.
-         * @param string $newPassword The new password to be set for the peer.
-         * @throws CryptographyException If an error occurs while securing the new password.
-         * @throws DatabaseOperationException If the update operation fails due to a database error.
-         * @throws \DateMalformedStringException If the updated timestamp cannot be formatted.
-         * @returns void
+         * @param string|RegisteredPeerRecord $peerUuid The unique identifier or registered peer record of the user.
+         * @param string $hash The new password to be stored securely.
+         * @return void
+         * @throws DatabaseOperationException If an error occurs while updating the password in the database.
+         * @throws CryptographyException If an error occurs while encrypting the password or validating the hash.
          */
-        public static function updatePassword(string|RegisteredPeerRecord $peerUuid, string $newPassword): void
+        public static function updatePassword(string|RegisteredPeerRecord $peerUuid, string $hash): void
         {
             if($peerUuid instanceof RegisteredPeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
 
+            Cryptography::validatePasswordHash($hash);
 
-            $encryptionRecord = EncryptionRecordsManager::getRandomRecord();
-            $securedPassword = SecuredPassword::securePassword($peerUuid, $newPassword, $encryptionRecord);
+            $encryptionKey = Configuration::getCryptographyConfiguration()->getRandomInternalEncryptionKey();
+            $securedPassword = Cryptography::encryptMessage($hash, $encryptionKey, Configuration::getCryptographyConfiguration()->getEncryptionKeysAlgorithm());
 
             try
             {
-                $stmt = Database::getConnection()->prepare("UPDATE authentication_passwords SET iv=:iv, encrypted_password=:encrypted_password, encrypted_tag=:encrypted_tag, updated=:updated WHERE peer_uuid=:peer_uuid");
-                $stmt->bindParam(":peer_uuid", $peerUuid);
-
-                $iv = $securedPassword->getIv();
-                $stmt->bindParam(':iv', $iv);
-
-                $encryptedPassword = $securedPassword->getEncryptedPassword();
-                $stmt->bindParam(':encrypted_password', $encryptedPassword);
-
-                $encryptedTag = $securedPassword->getEncryptedTag();
-                $stmt->bindParam(':encrypted_tag', $encryptedTag);
-
-                $updated = $securedPassword->getUpdated()->format('Y-m-d H:i:s');
+                $stmt = Database::getConnection()->prepare("UPDATE authentication_passwords SET hash=:hash, updated=:updated WHERE peer_uuid=:peer_uuid");
+                $updated = (new DateTime())->setTimestamp(time());
+                $stmt->bindParam(':hash', $securedPassword);
                 $stmt->bindParam(':updated', $updated);
+                $stmt->bindParam(':peer_uuid', $peerUuid);
 
                 $stmt->execute();
             }
-            catch(\PDOException $e)
+            catch(PDOException $e)
             {
                 throw new DatabaseOperationException(sprintf('Failed to update password for user %s', $peerUuid), $e);
             }
         }
 
         /**
-         * Retrieves the password record associated with the given peer UUID.
+         * Verifies a given password against a stored password hash for a specific peer.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The UUID of the peer or an instance of RegisteredPeerRecord.
-         * @return SecurePasswordRecord|null Returns a SecurePasswordRecord if found, or null if no record is present.
-         * @throws DatabaseOperationException If a database operation error occurs during the retrieval process.
+         * @param string|RegisteredPeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.
+         * @param string $hash The password hash to verify.
+         * @return bool Returns true if the password matches the stored hash; false otherwise.
+         * @throws CryptographyException If the password hash is invalid or an error occurs during the cryptographic operation.
+         * @throws DatabaseOperationException If an error occurs during the database operation.
          */
-        private static function getPassword(string|RegisteredPeerRecord $peerUuid): ?SecurePasswordRecord
+        public static function verifyPassword(string|RegisteredPeerRecord $peerUuid, string $hash): bool
         {
             if($peerUuid instanceof RegisteredPeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
 
+            Cryptography::validatePasswordHash($hash);
+
             try
             {
-                $statement = Database::getConnection()->prepare("SELECT * FROM authentication_passwords WHERE peer_uuid=:peer_uuid LIMIT 1");
-                $statement->bindParam(':peer_uuid', $peerUuid);
+                $stmt = Database::getConnection()->prepare('SELECT hash FROM authentication_passwords WHERE peer_uuid=:uuid');
+                $stmt->bindParam(':uuid', $peerUuid);
+                $stmt->execute();
 
-                $statement->execute();
-                $data = $statement->fetch(PDO::FETCH_ASSOC);
-
-                if ($data === false)
+                $record = $stmt->fetch(PDO::FETCH_ASSOC);
+                if($record === false)
                 {
-                    return null;
+                    return false;
                 }
 
-                return SecurePasswordRecord::fromArray($data);
-            }
-            catch(\PDOException $e)
-            {
-                throw new DatabaseOperationException(sprintf('Failed to retrieve password record for user %s', $peerUuid), $e);
-            }
-        }
+                $encryptedHash = $record['hash'];
+                $decryptedHash = null;
+                foreach(Configuration::getCryptographyConfiguration()->getInternalEncryptionKeys() as $key)
+                {
+                    try
+                    {
+                        $decryptedHash = Cryptography::decryptMessage($encryptedHash, $key, Configuration::getCryptographyConfiguration()->getEncryptionKeysAlgorithm());
+                    }
+                    catch(CryptographyException)
+                    {
+                        continue;
+                    }
+                }
 
-        /**
-         * Verifies if the provided password matches the secured password associated with the given peer UUID.
-         *
-         * @param string|RegisteredPeerRecord $peerUuid The unique identifier or registered peer record of the user.
-         * @param string $password The password to be verified.
-         * @return bool Returns true if the password is verified successfully; otherwise, false.
-         * @throws DatabaseOperationException If an error occurs while retrieving the password record from the database.
-         * @throws CryptographyException If an error occurs while verifying the password.
-         */
-        public static function verifyPassword(string|RegisteredPeerRecord $peerUuid, string $password): bool
-        {
-            $securedPassword = self::getPassword($peerUuid);
-            if($securedPassword === null)
-            {
-                return false;
-            }
+                if($decryptedHash === null)
+                {
+                    throw new CryptographyException('Cannot decrypt hashed password');
+                }
 
-            $encryptionRecords = EncryptionRecordsManager::getAllRecords();
-            return SecuredPassword::verifyPassword($password, $securedPassword, $encryptionRecords);
+                return Cryptography::verifyPassword($hash, $decryptedHash);
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('An error occurred while verifying the password', $e);
+            }
         }
     }

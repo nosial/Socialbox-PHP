@@ -1,11 +1,9 @@
 create table authentication_passwords
 (
-    peer_uuid          varchar(36)                           not null comment 'The Universal Unique Identifier for the peer that is associated with this password record'
+    peer_uuid varchar(36)                           not null comment 'The Universal Unique Identifier for the peer that is associated with this password record'
         primary key comment 'The primary unique index of the peer uuid',
-    iv                 mediumtext                            not null comment 'The Initial Vector of the password record',
-    encrypted_password mediumtext                            not null comment 'The encrypted password data',
-    encrypted_tag      mediumtext                            not null comment 'The encrypted tag of the password record',
-    updated            timestamp default current_timestamp() not null comment 'The Timestamp for when this record was last updated',
+    hash      mediumtext                            not null comment 'The encrypted hash of the password',
+    updated   timestamp default current_timestamp() not null comment 'The Timestamp for when this record was last updated',
     constraint authentication_passwords_peer_uuid_uindex
         unique (peer_uuid) comment 'The primary unique index of the peer uuid',
     constraint authentication_passwords_registered_peers_uuid_fk

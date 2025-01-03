@@ -6,6 +6,7 @@
     use InvalidArgumentException;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
+    use Socialbox\Classes\DnsHelper;
     use Socialbox\Classes\Logger;
     use Socialbox\Classes\ServerResolver;
     use Socialbox\Classes\Utilities;
@@ -16,6 +17,7 @@
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Enums\Types\RequestType;
+    use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RequestException;
     use Socialbox\Exceptions\StandardException;
@@ -23,34 +25,37 @@
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\ServerInformation;
+    use Throwable;
 
     class Socialbox
     {
         /**
-         * Handles incoming client requests by validating required headers and processing
-         * the request based on its type. The method ensures proper handling of
-         * specific request types like RPC, session initiation, and DHE exchange,
-         * while returning an appropriate HTTP response for invalid or missing data.
+         * Handles incoming client requests by parsing request headers, determining the request type,
+         * and routing the request to the appropriate handler method. Implements error handling for
+         * missing or invalid request types.
          *
          * @return void
          */
         public static function handleRequest(): void
         {
             $requestHeaders = Utilities::getRequestHeaders();
-
             if(!isset($requestHeaders[StandardHeaders::REQUEST_TYPE->value]))
             {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::REQUEST_TYPE->value);
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::REQUEST_TYPE->value);
                 return;
             }
 
             $clientRequest = new ClientRequest($requestHeaders, file_get_contents('php://input') ?? null);
 
-           // Handle the request type, only `init` and `dhe` are not encrypted using the session's encrypted key
+            // Handle the request type, only `init` and `dhe` are not encrypted using the session's encrypted key
             // RPC Requests must be encrypted and signed by the client, vice versa for server responses.
-            switch(RequestType::tryFrom($clientRequest->getHeader(StandardHeaders::REQUEST_TYPE)))
+            switch($clientRequest->getRequestType())
             {
+                case RequestType::INFO:
+                    self::handleInformationRequest();
+                    break;
+
                 case RequestType::INITIATE_SESSION:
                     self::handleInitiateSession($clientRequest);
                     break;
@@ -64,58 +69,66 @@
                     break;
 
                 default:
-                    http_response_code(400);
-                    print('Invalid Request-Type header');
-                    break;
+                    self::returnError(400, StandardError::BAD_REQUEST, 'Invalid Request-Type header');
             }
         }
 
         /**
-         * Validates the headers in an initialization request to ensure that all
-         * required information is present and properly formatted. This includes
-         * checking for headers such as Client Name, Client Version, Public Key,
-         * and Identify-As, as well as validating the Identify-As header value.
-         * If any validation fails, a corresponding HTTP response code and message
-         * are returned.
+         * Handles an information request by setting the appropriate HTTP response code,
+         * content type headers, and printing the server information in JSON format.
          *
-         * @param ClientRequest $clientRequest The client request containing headers to validate.
+         * @return void
+         */
+        private static function handleInformationRequest(): void
+        {
+            http_response_code(200);
+            header('Content-Type: application/json');
+            Logger::getLogger()->info(json_encode(self::getServerInformation()->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            print(json_encode(self::getServerInformation()->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        }
+
+        /**
+         * Validates the initial headers of a client request to ensure all required headers exist
+         * and contain valid values. If any validation fails, an error response is returned.
          *
+         * @param ClientRequest $clientRequest The client request containing headers to be validated.
          * @return bool Returns true if all required headers are valid, otherwise false.
          */
         private static function validateInitHeaders(ClientRequest $clientRequest): bool
         {
             if(!$clientRequest->getClientName())
             {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::CLIENT_NAME->value);
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::CLIENT_NAME->value);
                 return false;
             }
 
             if(!$clientRequest->getClientVersion())
             {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::CLIENT_VERSION->value);
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::CLIENT_VERSION->value);
                 return false;
             }
 
-            if(!$clientRequest->headerExists(StandardHeaders::PUBLIC_KEY))
+            if(!$clientRequest->headerExists(StandardHeaders::SIGNING_PUBLIC_KEY))
             {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::PUBLIC_KEY->value);
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::SIGNING_PUBLIC_KEY->value);
+                return false;
+            }
+
+            if(!$clientRequest->headerExists(StandardHeaders::ENCRYPTION_PUBLIC_KEY))
+            {
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::ENCRYPTION_PUBLIC_KEY->value);
                 return false;
             }
 
             if(!$clientRequest->headerExists(StandardHeaders::IDENTIFY_AS))
             {
-                http_response_code(400);
-                print('Missing required header: ' . StandardHeaders::IDENTIFY_AS->value);
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::IDENTIFY_AS->value);
                 return false;
             }
 
             if(!Validator::validatePeerAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)))
             {
-                http_response_code(400);
-                print('Invalid Identify-As header: ' . $clientRequest->getHeader(StandardHeaders::IDENTIFY_AS));
+                self::returnError(400, StandardError::BAD_REQUEST, 'Invalid Identify-As header: ' . $clientRequest->getHeader(StandardHeaders::IDENTIFY_AS));
                 return false;
             }
 
@@ -123,24 +136,25 @@
         }
 
         /**
-         * Processes a client request to initiate a session. Validates required headers,
-         * ensures the peer is authorized and enabled, and creates a new session UUID
-         * if all checks pass. Handles edge cases like missing headers, invalid inputs,
-         * or unauthorized peers.
+         * Handles the initiation of a session for a client request. This involves validating headers,
+         * verifying peer identities, resolving domains, registering peers if necessary, and finally
+         * creating a session while providing the required session UUID as a response.
          *
-         * @param ClientRequest $clientRequest The request from the client containing
-         *                                      the required headers and information.
+         * @param ClientRequest $clientRequest The incoming client request containing all necessary headers
+         *                                      and identification information required to initiate the session.
          * @return void
          */
         private static function handleInitiateSession(ClientRequest $clientRequest): void
         {
+            // This is only called for the `init` request type
             if(!self::validateInitHeaders($clientRequest))
             {
                 return;
             }
 
             // We always accept the client's public key at first
-            $publicKey = $clientRequest->getHeader(StandardHeaders::PUBLIC_KEY);
+            $clientPublicSigningKey = $clientRequest->getHeader(StandardHeaders::SIGNING_PUBLIC_KEY);
+            $clientPublicEncryptionKey = $clientRequest->getHeader(StandardHeaders::ENCRYPTION_PUBLIC_KEY);
 
             // If the peer is identifying as the same domain
             if($clientRequest->getIdentifyAs()->getDomain() === Configuration::getInstanceConfiguration()->getDomain())
@@ -148,9 +162,8 @@
                 // Prevent the peer from identifying as the host unless it's coming from an external domain
                if($clientRequest->getIdentifyAs()->getUsername() === ReservedUsernames::HOST->value)
                {
-                     http_response_code(403);
-                     print('Unauthorized: The requested peer is not allowed to identify as the host');
-                     return;
+                   self::returnError(403, StandardError::FORBIDDEN, 'Unauthorized: Not allowed to identify as the host');
+                   return;
                }
             }
             // If the peer is identifying as an external domain
@@ -159,64 +172,49 @@
                 // Only allow the host to identify as an external peer
                 if($clientRequest->getIdentifyAs()->getUsername() !== ReservedUsernames::HOST->value)
                 {
-                    http_response_code(403);
-                    print('Unauthorized: The requested peer is not allowed to identify as an external peer');
+                    self::returnError(403, StandardError::FORBIDDEN, 'Forbidden: Any external peer must identify as the host, only the host can preform actions on behalf of it\'s peers');
                     return;
                 }
 
                 try
                 {
-                    // We need to obtain the public key of the host, since we can't trust the client
+                    // We need to obtain the public key of the host, since we can't trust the client (Use database)
                     $resolvedServer = ServerResolver::resolveDomain($clientRequest->getIdentifyAs()->getDomain());
 
-                    // Override the public key with the resolved server's public key
-                    $publicKey = $resolvedServer->getPublicKey();
-                }
-                catch (Exceptions\ResolutionException $e)
-                {
-                    Logger::getLogger()->error('Failed to resolve the host domain', $e);
-                    http_response_code(409);
-                    print('Conflict: Failed to resolve the host domain: ' . $e->getMessage());
-                    return;
+                    // Override the public signing key with the resolved server's public key
+                    // Encryption key can be left as is.
+                    $clientPublicSigningKey = $resolvedServer->getPublicSigningKey();
                 }
                 catch (Exception $e)
                 {
-                    Logger::getLogger()->error('An internal error occurred while resolving the host domain', $e);
-                    http_response_code(500);
-                    if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions())
-                    {
-                        print(Utilities::throwableToString($e));
-                    }
-                    else
-                    {
-                        print('An internal error occurred');
-                    }
-
+                    self::returnError(502, StandardError::RESOLUTION_FAILED, 'Conflict: Failed to resolve the host domain: ' . $e->getMessage(), $e);
                     return;
                 }
             }
 
             try
             {
+                // Check if we have a registered peer with the same address
                 $registeredPeer = RegisteredPeerManager::getPeerByAddress($clientRequest->getIdentifyAs());
 
                 // If the peer is registered, check if it is enabled
                 if($registeredPeer !== null && !$registeredPeer->isEnabled())
                 {
-                    // Refuse to create a session if the peer is disabled/banned
-                    // This also prevents multiple sessions from being created for the same peer
-                    // A cron job should be used to clean up disabled peers
-                    http_response_code(403);
-                    print('Unauthorized: The requested peer is disabled/banned');
+                    // Refuse to create a session if the peer is disabled/banned, this usually happens when
+                    // a peer gets banned or more commonly when a client attempts to register as this peer but
+                    // destroyed the session before it was created.
+                    // This is to prevent multiple sessions from being created for the same peer, this is cleaned up
+                    // with a cron job using `socialbox clean-sessions`
+                    self::returnError(403, StandardError::FORBIDDEN, 'Unauthorized: The requested peer is disabled/banned');
                     return;
                 }
+                // Otherwise the peer isn't registered, so we need to register it
                 else
                 {
                     // Check if registration is enabled
                     if(!Configuration::getRegistrationConfiguration()->isRegistrationEnabled())
                     {
-                        http_response_code(403);
-                        print('Unauthorized: Registration is disabled');
+                        self::returnError(401, StandardError::UNAUTHORIZED, 'Unauthorized: Registration is disabled');
                         return;
                     }
 
@@ -226,141 +224,220 @@
                     $registeredPeer = RegisteredPeerManager::getPeer($peerUuid);
                 }
 
-                // Create the session UUID
-                $sessionUuid = SessionManager::createSession($publicKey, $registeredPeer, $clientRequest->getClientName(), $clientRequest->getClientVersion());
+                // Generate server's encryption keys for this session
+                $serverEncryptionKey = Cryptography::generateEncryptionKeyPair();
+
+                // Create the session passing on the registered peer, client name, version, and public keys
+                $sessionUuid = SessionManager::createSession($registeredPeer, $clientRequest->getClientName(), $clientRequest->getClientVersion(), $clientPublicSigningKey, $clientPublicEncryptionKey, $serverEncryptionKey);
+
+                // The server responds back with the session UUID & The server's public encryption key as the header
                 http_response_code(201); // Created
+                header('Content-Type: text/plain');
+                header(StandardHeaders::ENCRYPTION_PUBLIC_KEY->value . ': ' . $serverEncryptionKey->getPublicKey());
                 print($sessionUuid); // Return the session UUID
             }
             catch(InvalidArgumentException $e)
             {
-                http_response_code(412); // Precondition failed
-                print($e->getMessage()); // Why the request failed
+                // This is usually thrown due to an invalid input
+                self::returnError(400, StandardError::BAD_REQUEST, $e->getMessage(), $e);
             }
             catch(Exception $e)
             {
-                Logger::getLogger()->error('An internal error occurred while initiating the session', $e);
-                http_response_code(500); // Internal server error
-                if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions())
-                {
-                    print(Utilities::throwableToString($e));
-                }
-                else
-                {
-                    print('An internal error occurred');
-                }
+                self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'An internal error occurred while initiating the session', $e);
             }
         }
 
         /**
-         * Handles the Diffie-Hellman key exchange by decrypting the encrypted key passed on from the client using
-         * the server's private key and setting the encryption key to the session.
+         * Handles the Diffie-Hellman Ephemeral (DHE) key exchange process between the client and server,
+         * ensuring secure transport encryption key negotiation. The method validates request headers,
+         * session state, and cryptographic operations, and updates the session with the resulting keys
+         * and state upon successful negotiation.
          *
-         *  412: Headers malformed
-         *  400: Bad request
-         *  500: Internal server error
-         *  204: Success, no content.
+         * @param ClientRequest $clientRequest The request object containing headers, body, and session details
+         *                                     required to perform the DHE exchange.
          *
-         * @param ClientRequest $clientRequest
          * @return void
          */
         private static function handleDheExchange(ClientRequest $clientRequest): void
         {
-            // Check if the session UUID is set in the headers
+            // Check if the session UUID is set in the headers, bad request if not
             if(!$clientRequest->headerExists(StandardHeaders::SESSION_UUID))
             {
-                Logger::getLogger()->verbose('Missing required header: ' . StandardHeaders::SESSION_UUID->value);
-
-                http_response_code(412);
-                print('Missing required header: ' . StandardHeaders::SESSION_UUID->value);
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::SESSION_UUID->value);
                 return;
             }
 
-            // Check if the request body is empty
+            if(!$clientRequest->headerExists(StandardHeaders::SIGNATURE))
+            {
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::SIGNATURE->value);
+                return;
+            }
+
+            if(empty($clientRequest->getHeader(StandardHeaders::SIGNATURE)))
+            {
+                self::returnError(400, StandardError::BAD_REQUEST, 'Bad request: The signature is empty');
+                return;
+            }
+
+            // Check if the request body is empty, bad request if so
             if(empty($clientRequest->getRequestBody()))
             {
-                Logger::getLogger()->verbose('Bad request: The key exchange request body is empty');
-
-                http_response_code(400);
-                print('Bad request: The key exchange request body is empty');
+                self::returnError(400, StandardError::BAD_REQUEST, 'Bad request: The key exchange request body is empty');
                 return;
             }
 
-            // Check if the session is awaiting a DHE exchange
-            if($clientRequest->getSession()->getState() !== SessionState::AWAITING_DHE)
+            // Check if the session is awaiting a DHE exchange, forbidden if not
+            $session = $clientRequest->getSession();
+            if($session->getState() !== SessionState::AWAITING_DHE)
             {
-                Logger::getLogger()->verbose('Bad request: The session is not awaiting a DHE exchange');
-
-                http_response_code(400);
-                print('Bad request: The session is not awaiting a DHE exchange');
+                self::returnError(403, StandardError::FORBIDDEN, 'Bad request: The session is not awaiting a DHE exchange');
                 return;
             }
 
+
+            // DHE STAGE: CLIENT -> SERVER
+            // Server & Client: Begin the DHE exchange using the exchanged public keys.
+            // On the client's side, same method but with the server's public key & client's private key
             try
             {
-                // Attempt to decrypt the encrypted key passed on from the client
-                $encryptionKey = Cryptography::decryptContent($clientRequest->getRequestBody(), Configuration::getInstanceConfiguration()->getPrivateKey());
+                $sharedSecret = Cryptography::performDHE($session->getClientPublicEncryptionKey(), $session->getServerPrivateEncryptionKey());
             }
-            catch (Exceptions\CryptographyException $e)
+            catch (CryptographyException $e)
             {
-                Logger::getLogger()->error(sprintf('Bad Request: Failed to decrypt the key for session %s', $clientRequest->getSessionUuid()), $e);
-
-                http_response_code(400);
-                print('Bad Request: Cryptography error, make sure you have encrypted the key using the server\'s public key; ' . $e->getMessage());
+                Logger::getLogger()->error('Failed to perform DHE exchange', $e);
+                self::returnError(422, StandardError::CRYPTOGRAPHIC_ERROR, 'DHE exchange failed', $e);
                 return;
             }
 
+            // STAGE 1: CLIENT -> SERVER
             try
             {
-                // Finally set the encryption key to the session
-                SessionManager::setEncryptionKey($clientRequest->getSessionUuid(), $encryptionKey);
+                // Attempt to decrypt the encrypted key passed on from the client using the shared secret
+                $clientTransportEncryptionKey = Cryptography::decryptShared($clientRequest->getRequestBody(), $sharedSecret);
+            }
+            catch (CryptographyException $e)
+            {
+                self::returnError(400, StandardError::CRYPTOGRAPHIC_ERROR, 'Failed to decrypt the key', $e);
+                return;
+            }
+
+            // Get the signature from the client and validate it against the decrypted key
+            $clientSignature = $clientRequest->getHeader(StandardHeaders::SIGNATURE);
+            if(!Cryptography::verifyMessage($clientTransportEncryptionKey, $clientSignature, $session->getClientPublicSigningKey()))
+            {
+                self::returnError(401, StandardError::UNAUTHORIZED, 'Invalid signature');
+                return;
+            }
+
+            // Validate the encryption key given by the client
+            if(!Cryptography::validateEncryptionKey($clientTransportEncryptionKey, Configuration::getCryptographyConfiguration()->getTransportEncryptionAlgorithm()))
+            {
+                self::returnError(400, StandardError::BAD_REQUEST, 'The transport encryption key is invalid and does not meet the server\'s requirements');
+                return;
+            }
+
+            // Receive stage complete, now we move on to the server's response
+
+            // STAGE 2: SERVER -> CLIENT
+            try
+            {
+                // Generate the server's transport encryption key (our side)
+                $serverTransportEncryptionKey = Cryptography::generateEncryptionKey(Configuration::getCryptographyConfiguration()->getTransportEncryptionAlgorithm());
+
+                // Sign the shared secret using the server's private key
+                $signature = Cryptography::signMessage($serverTransportEncryptionKey, Configuration::getCryptographyConfiguration()->getHostPrivateKey());
+                // Encrypt the server's transport key using the shared secret
+                $encryptedServerTransportKey = Cryptography::encryptShared($serverTransportEncryptionKey, $sharedSecret);
+            }
+            catch (CryptographyException $e)
+            {
+                Logger::getLogger()->error('Failed to generate the server\'s transport encryption key', $e);
+                self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'There was an error while trying to process the DHE exchange', $e);
+                return;
+            }
+
+            // Now update the session details with all the encryption keys and the state
+            try
+            {
+                SessionManager::setEncryptionKeys($clientRequest->getSessionUuid(), $sharedSecret, $clientTransportEncryptionKey, $serverTransportEncryptionKey);
+                SessionManager::updateState($clientRequest->getSessionUuid(), SessionState::ACTIVE);
             }
             catch (DatabaseOperationException $e)
             {
                 Logger::getLogger()->error('Failed to set the encryption key for the session', $e);
-                http_response_code(500);
-
-                if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions())
-                {
-                    print(Utilities::throwableToString($e));
-                }
-                else
-                {
-                    print('Internal Server Error: Failed to set the encryption key for the session');
-                }
-
+                self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to set the encryption key for the session', $e);
                 return;
             }
 
-            Logger::getLogger()->info(sprintf('DHE exchange completed for session %s', $clientRequest->getSessionUuid()));
-            http_response_code(204); // Success, no content
+            // Return the encrypted transport key for the server back to the client.
+            http_response_code(200);
+            header('Content-Type: application/octet-stream');
+            header(StandardHeaders::SIGNATURE->value . ': ' . $signature);
+            print($encryptedServerTransportKey);
         }
 
         /**
-         * Handles incoming RPC requests from a client, processes each request,
-         * and returns the appropriate response(s) or error(s).
+         * Handles a Remote Procedure Call (RPC) request, ensuring proper decryption,
+         * signature verification, and response encryption, while processing one or more
+         * RPC methods as specified in the request.
          *
-         * @param ClientRequest $clientRequest The client's request containing one or multiple RPC calls.
+         * @param ClientRequest $clientRequest The RPC client request containing headers, body, and session information.
+         *
          * @return void
          */
         private static function handleRpc(ClientRequest $clientRequest): void
         {
+            // Client: Encrypt the request body using the server's encryption key & sign it using the client's private key
+            // Server: Decrypt the request body using the servers's encryption key & verify the signature using the client's public key
+            // Server: Encrypt the response using the client's encryption key & sign it using the server's private key
+
             if(!$clientRequest->headerExists(StandardHeaders::SESSION_UUID))
             {
-                Logger::getLogger()->verbose('Missing required header: ' . StandardHeaders::SESSION_UUID->value);
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::SESSION_UUID->value);
+                return;
+            }
 
-                http_response_code(412);
-                print('Missing required header: ' . StandardHeaders::SESSION_UUID->value);
+            if(!$clientRequest->headerExists(StandardHeaders::SIGNATURE))
+            {
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::SIGNATURE->value);
+                return;
+            }
+
+            // Get the client session
+            $session = $clientRequest->getSession();
+
+            // Verify if the session is active
+            if($session->getState() !== SessionState::ACTIVE)
+            {
+                self::returnError(403, StandardError::FORBIDDEN, 'Session is not active');
                 return;
             }
 
             try
             {
-                $clientRequests = $clientRequest->getRpcRequests();
+                // Attempt to decrypt the request body using the server's encryption key
+                $decryptedContent = Cryptography::decryptMessage($clientRequest->getRequestBody(), $session->getServerTransportEncryptionKey(), Configuration::getCryptographyConfiguration()->getTransportEncryptionAlgorithm());
+            }
+            catch(CryptographyException $e)
+            {
+                self::returnError(400, StandardError::CRYPTOGRAPHIC_ERROR, 'Failed to decrypt request', $e);
+                return;
+            }
+
+            // Attempt to verify the decrypted content using the client's public signing key
+            if(!Cryptography::verifyMessage($decryptedContent, $clientRequest->getSignature(), $session->getClientPublicSigningKey()))
+            {
+                self::returnError(400, StandardError::CRYPTOGRAPHIC_ERROR, 'Signature verification failed');
+                return;
+            }
+
+            try
+            {
+                $clientRequests = $clientRequest->getRpcRequests($decryptedContent);
             }
             catch (RequestException $e)
             {
-                http_response_code($e->getCode());
-                print($e->getMessage());
+                self::returnError($e->getCode(), $e->getStandardError(), $e->getMessage());
                 return;
             }
 
@@ -442,16 +519,24 @@
                 return;
             }
 
+            $session = $clientRequest->getSession();
+
             try
             {
-                $encryptedResponse = Cryptography::encryptTransport($response, $clientRequest->getSession()->getEncryptionKey());
-                $signature = Cryptography::signContent($response, Configuration::getInstanceConfiguration()->getPrivateKey(), true);
+                $encryptedResponse = Cryptography::encryptMessage(
+                    message: $response,
+                    encryptionKey: $session->getClientTransportEncryptionKey(),
+                    algorithm: Configuration::getCryptographyConfiguration()->getTransportEncryptionAlgorithm()
+                );
+
+                $signature = Cryptography::signMessage(
+                    message: $response,
+                    privateKey: Configuration::getCryptographyConfiguration()->getHostPrivateKey()
+                );
             }
             catch (Exceptions\CryptographyException $e)
             {
-                Logger::getLogger()->error('Failed to encrypt the response', $e);
-                http_response_code(500);
-                print('Internal Server Error: Failed to encrypt the response');
+                self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to encrypt the server response', $e);
                 return;
             }
 
@@ -459,5 +544,70 @@
             header('Content-Type: application/octet-stream');
             header(StandardHeaders::SIGNATURE->value . ': ' . $signature);
             print($encryptedResponse);
+        }
+
+        /**
+         * Sends an error response by setting the HTTP response code, headers, and printing an error message.
+         * Optionally includes exception details in the response if enabled in the configuration.
+         * Logs the error message and any associated exception.
+         *
+         * @param int $responseCode The HTTP response code to send.
+         * @param StandardError $standardError The standard error containing error details.
+         * @param string|null $message An optional error message to display. Defaults to the message from the StandardError instance.
+         * @param Throwable|null $e An optional throwable to include in logs and the response, if enabled.
+         *
+         * @return void
+         */
+        private static function returnError(int $responseCode, StandardError $standardError, ?string $message=null, ?Throwable $e=null): void
+        {
+            if($message === null)
+            {
+                $message = $standardError->getMessage();
+            }
+
+            http_response_code($responseCode);
+            header('Content-Type: text/plain');
+            header(StandardHeaders::ERROR_CODE->value . ': ' . $standardError->value);
+            print($message);
+
+            if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions() && $e !== null)
+            {
+                print(PHP_EOL . PHP_EOL . Utilities::throwableToString($e));
+            }
+
+            if($e !== null)
+            {
+                Logger::getLogger()->error($message, $e);
+            }
+        }
+
+        /**
+         * Retrieves the server information by assembling data from the configuration settings.
+         *
+         * @return ServerInformation An instance of ServerInformation containing details such as server name, hashing algorithm,
+         * transport AES mode, and AES key length.
+         */
+        public static function getServerInformation(): ServerInformation
+        {
+            return ServerInformation::fromArray([
+                'server_name' => Configuration::getInstanceConfiguration()->getName(),
+                'server_keypair_expires' => Configuration::getCryptographyConfiguration()->getHostKeyPairExpires(),
+                'transport_encryption_algorithm' => Configuration::getCryptographyConfiguration()->getTransportEncryptionAlgorithm()
+            ]);
+        }
+
+        /**
+         * Retrieves the DNS record by generating a TXT record using the RPC endpoint,
+         * host public key, and host key pair expiration from the configuration.
+         *
+         * @return string The generated DNS TXT record.
+         */
+        public static function getDnsRecord(): string
+        {
+            return DnsHelper::generateTxt(
+                Configuration::getInstanceConfiguration()->getRpcEndpoint(),
+                Configuration::getCryptographyConfiguration()->getHostPublicKey(),
+                Configuration::getCryptographyConfiguration()->getHostKeyPairExpires()
+            );
         }
     }

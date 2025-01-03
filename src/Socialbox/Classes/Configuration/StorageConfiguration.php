@@ -1,6 +1,6 @@
 <?php
 
-    namespace Socialbox\Classes\ClientCommands;
+    namespace Socialbox\Classes\Configuration;
 
     class StorageConfiguration
     {

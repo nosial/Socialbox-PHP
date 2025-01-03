@@ -1,25 +1,11 @@
 <?php
 
-namespace Socialbox\Objects;
+    namespace Socialbox\Objects;
 
-class ResolvedServer
-{
-    private string $endpoint;
-    private string $publicKey;
+    use Socialbox\Objects\Standard\ServerInformation;
 
-    public function __construct(string $endpoint, string $publicKey)
+    class ResolvedServer
     {
-        $this->endpoint = $endpoint;
-        $this->publicKey = $publicKey;
+        private DnsRecord $dnsRecord;
+        private ServerInformation $serverInformation;
     }
-
-    public function getEndpoint(): string
-    {
-        return $this->endpoint;
-    }
-
-    public function getPublicKey(): string
-    {
-        return $this->publicKey;
-    }
-}

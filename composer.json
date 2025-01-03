@@ -15,6 +15,7 @@
     "ext-redis": "*",
     "ext-memcached": "*",
     "ext-curl": "*",
-    "ext-gd": "*"
+    "ext-gd": "*",
+    "ext-sodium": "*"
   }
 }

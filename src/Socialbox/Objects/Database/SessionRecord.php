@@ -15,9 +15,13 @@
         private string $clientName;
         private string $clientVersion;
         private bool $authenticated;
-        private string $publicKey;
+        private string $clientPublicSigningKey;
+        public string $clientPublicEncryptionKey;
+        private string $serverPublicEncryptionKey;
+        private string $serverPrivateEncryptionKey;
+        private ?string $clientTransportEncryptionKey;
+        private ?string $serverTransportEncryptionKey;
         private SessionState $state;
-        private ?string $encryptionKey;
         /**
          * @var SessionFlags[]
          */
@@ -42,10 +46,14 @@
             $this->clientName = $data['client_name'];
             $this->clientVersion = $data['client_version'];
             $this->authenticated = $data['authenticated'] ?? false;
-            $this->publicKey = $data['public_key'];
+            $this->clientPublicSigningKey = $data['client_public_signing_key'];
+            $this->clientPublicEncryptionKey = $data['client_public_encryption_key'];
+            $this->serverPublicEncryptionKey = $data['server_public_encryption_key'];
+            $this->serverPrivateEncryptionKey = $data['server_private_encryption_key'];
+            $this->clientTransportEncryptionKey = $data['client_transport_encryption_key'] ?? null;
+            $this->serverTransportEncryptionKey = $data['server_transport_encryption_key'] ?? null;
             $this->created = $data['created'];
             $this->lastRequest = $data['last_request'];
-            $this->encryptionKey = $data['encryption_key'] ?? null;
             $this->flags = SessionFlags::fromString($data['flags']);
 
             if(SessionState::tryFrom($data['state']) == null)
@@ -99,9 +107,55 @@
          *
          * @return string Returns the public key as a string.
          */
-        public function getPublicKey(): string
+        public function getClientPublicSigningKey(): string
         {
-            return $this->publicKey;
+            return $this->clientPublicSigningKey;
+        }
+
+        /**
+         * Retrieves the encryption key associated with the instance.
+         *
+         * @return string|null Returns the encryption key as a string, or null if not set.
+         */
+        public function getClientPublicEncryptionKey(): ?string
+        {
+            return $this->clientPublicEncryptionKey;
+        }
+
+        /**
+         * @return string
+         */
+        public function getServerPublicEncryptionKey(): string
+        {
+            return $this->serverPublicEncryptionKey;
+        }
+
+        /**
+         * @return string
+         */
+        public function getServerPrivateEncryptionKey(): string
+        {
+            return $this->serverPrivateEncryptionKey;
+        }
+
+        /**
+         * Retrieves the client encryption key associated with the instance.
+         *
+         * @return string|null Returns the client encryption key as a string, or null if not set.
+         */
+        public function getClientTransportEncryptionKey(): ?string
+        {
+            return $this->clientTransportEncryptionKey;
+        }
+
+        /**
+         * Retrieves the server encryption key associated with the instance.
+         *
+         * @return string|null Returns the server encryption key as a string, or null if not set.
+         */
+        public function getServerTransportEncryptionKey(): ?string
+        {
+            return $this->serverTransportEncryptionKey;
         }
 
         /**
@@ -112,16 +166,6 @@
         public function getState(): SessionState
         {
             return $this->state;
-        }
-
-        /**
-         * Retrieves the encryption key associated with the instance.
-         *
-         * @return string|null Returns the encryption key as a string.
-         */
-        public function getEncryptionKey(): ?string
-        {
-            return $this->encryptionKey;
         }
 
         /**
@@ -194,6 +238,11 @@
             return $this->clientVersion;
         }
 
+        /**
+         * Converts the current session state into a standard session state object.
+         *
+         * @return \Socialbox\Objects\Standard\SessionState The standardized session state object.
+         */
         public function toStandardSessionState(): \Socialbox\Objects\Standard\SessionState
         {
             return new \Socialbox\Objects\Standard\SessionState([
@@ -207,10 +256,7 @@
         
         
         /**
-         * Creates a new instance of the class using the provided array data.
-         *
-         * @param array $data An associative array of data used to initialize the object properties.
-         * @return object Returns a newly created object instance.
+         * @inheritDoc
          */
         public static function fromArray(array $data): object
         {
@@ -218,10 +264,7 @@
         }
 
         /**
-         * Converts the object's properties to an associative array.
-         *
-         * @return array An associative array representing the object's data, including keys 'uuid', 'peer_uuid',
-         *               'authenticated', 'public_key', 'state', 'flags', 'created', and 'last_request'.
+         * @inheritDoc
          */
         public function toArray(): array
         {
@@ -229,7 +272,12 @@
                 'uuid' => $this->uuid,
                 'peer_uuid' => $this->peerUuid,
                 'authenticated' => $this->authenticated,
-                'public_key' => $this->publicKey,
+                'client_public_signing_key' => $this->clientPublicSigningKey,
+                'client_public_encryption_key' => $this->clientPublicEncryptionKey,
+                'server_public_encryption_key' => $this->serverPublicEncryptionKey,
+                'server_private_encryption_key' => $this->serverPrivateEncryptionKey,
+                'client_transport_encryption_key' => $this->clientTransportEncryptionKey,
+                'server_transport_encryption_key' => $this->serverTransportEncryptionKey,
                 'state' => $this->state->value,
                 'flags' => SessionFlags::toString($this->flags),
                 'created' => $this->created,

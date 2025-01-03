@@ -2,19 +2,21 @@
 
     namespace Socialbox\Classes;
 
-    use Socialbox\Classes\ClientCommands\StorageConfiguration;
     use Socialbox\Classes\Configuration\CacheConfiguration;
+    use Socialbox\Classes\Configuration\CryptographyConfiguration;
     use Socialbox\Classes\Configuration\DatabaseConfiguration;
     use Socialbox\Classes\Configuration\InstanceConfiguration;
     use Socialbox\Classes\Configuration\LoggingConfiguration;
     use Socialbox\Classes\Configuration\RegistrationConfiguration;
     use Socialbox\Classes\Configuration\SecurityConfiguration;
+    use Socialbox\Classes\Configuration\StorageConfiguration;
 
     class Configuration
     {
         private static ?\ConfigLib\Configuration $configuration = null;
         private static ?InstanceConfiguration $instanceConfiguration = null;
         private static ?SecurityConfiguration $securityConfiguration = null;
+        private static ?CryptographyConfiguration $cryptographyConfiguration = null;
         private static ?DatabaseConfiguration $databaseConfiguration = null;
         private static ?LoggingConfiguration $loggingConfiguration = null;
         private static ?CacheConfiguration $cacheConfiguration = null;
@@ -33,18 +35,46 @@
 
             // Instance configuration
             $config->setDefault('instance.enabled', false); // False by default, requires the user to enable it.
+            $config->setDefault('instance.name', "Socialbox Server");
             $config->setDefault('instance.domain', null);
             $config->setDefault('instance.rpc_endpoint', null);
-            $config->setDefault('instance.encryption_keys_count', 5);
-            $config->setDefault('instance.encryption_records_count', 5);
-            $config->setDefault('instance.private_key', null);
-            $config->setDefault('instance.public_key', null);
-            $config->setDefault('instance.encryption_keys', null);
 
             // Security Configuration
             $config->setDefault('security.display_internal_exceptions', false);
             $config->setDefault('security.resolved_servers_ttl', 600);
             $config->setDefault('security.captcha_ttl', 200);
+
+            // Cryptography Configuration
+            // The Unix Timestamp for when the host's keypair should expire
+            // Setting this value to 0 means the keypair never expires
+            // Setting this value to null will automatically set the current unix timestamp + 1 year as the value
+            // This means at initialization, the key is automatically set to expire in a year.
+            $config->setDefault('cryptography.host_keypair_expires', null);
+            // The host's public/private keypair in base64 encoding, when null; the initialization process
+            // will automatically generate a new keypair
+            $config->setDefault('cryptography.host_public_key', null);
+            $config->setDefault('cryptography.host_private_key', null);
+
+            // The internal encryption keys used for encrypting data in the database when needed.
+            // When null, the initialization process will automatically generate a set of keys
+            // based on the `encryption_keys_count` and `encryption_keys_algorithm` configuration.
+            // This is an array of base64 encoded keys.
+            $config->setDefault('cryptography.internal_encryption_keys', null);
+
+            // The number of encryption keys to generate and set to `instance.encryption_keys` this will be used
+            // to randomly encrypt/decrypt sensitive data in the database, this includes hashes.
+            // The higher the number the higher performance impact it will have on the server
+            $config->setDefault('cryptography.encryption_keys_count', 10);
+            // The host's encryption algorithm, this will be used to generate a set of encryption keys
+            // This is for internal encryption, these keys are never shared outside this configuration.
+            // Recommendation: Higher security over performance
+            $config->setDefault('cryptography.encryption_keys_algorithm', 'xchacha20');
+
+            // The encryption algorithm to use for encrypted message transport between the client aand the server
+            // This is the encryption the server tells the client to use and the client must support it.
+            // Recommendation: Good balance between security and performance
+            // For universal support & performance, use aes256gcm for best performance or for best security use xchacha20
+            $config->setDefault('cryptography.transport_encryption_algorithm', 'chacha20');
 
             // Database configuration
             $config->setDefault('database.host', '127.0.0.1');
@@ -98,6 +128,7 @@
             self::$configuration = $config;
             self::$instanceConfiguration = new InstanceConfiguration(self::$configuration->getConfiguration()['instance']);
             self::$securityConfiguration = new SecurityConfiguration(self::$configuration->getConfiguration()['security']);
+            self::$cryptographyConfiguration = new CryptographyConfiguration(self::$configuration->getConfiguration()['cryptography']);
             self::$databaseConfiguration = new DatabaseConfiguration(self::$configuration->getConfiguration()['database']);
             self::$loggingConfiguration = new LoggingConfiguration(self::$configuration->getConfiguration()['logging']);
             self::$cacheConfiguration = new CacheConfiguration(self::$configuration->getConfiguration()['cache']);
@@ -140,6 +171,14 @@
             return self::$configuration->getConfiguration();
         }
 
+        /**
+         * Retrieves the configuration library instance.
+         *
+         * This method returns the current Configuration instance from the ConfigLib namespace.
+         * If the configuration has not been initialized yet, it initializes it first.
+         *
+         * @return \ConfigLib\Configuration The configuration library instance.
+         */
         public static function getConfigurationLib(): \ConfigLib\Configuration
         {
             if(self::$configuration === null)
@@ -178,6 +217,24 @@
             }
 
             return self::$securityConfiguration;
+        }
+
+        /**
+         * Retrieves the cryptography configuration.
+         *
+         * This method returns the current CryptographyConfiguration instance.
+         * If the configuration has not been initialized yet, it initializes it first.
+         *
+         * @return CryptographyConfiguration|null The cryptography configuration instance or null if not available.
+         */
+        public static function getCryptographyConfiguration(): ?CryptographyConfiguration
+        {
+            if(self::$cryptographyConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$cryptographyConfiguration;
         }
 
         /**

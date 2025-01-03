@@ -5,8 +5,7 @@
     enum DatabaseObjects : string
     {
         case VARIABLES = 'variables.sql';
-        case ENCRYPTION_RECORDS = 'encryption_records.sql';
-        case RESOLVED_SERVERS = 'resolved_servers.sql';
+        case RESOLVED_DNS_RECORDS = 'resolved_dns_records.sql';
 
         case REGISTERED_PEERS = 'registered_peers.sql';
 
@@ -24,7 +23,7 @@
         {
             return match ($this)
             {
-                self::VARIABLES, self::ENCRYPTION_RECORDS, self::RESOLVED_SERVERS => 0,
+                self::VARIABLES, self::RESOLVED_DNS_RECORDS => 0,
                 self::REGISTERED_PEERS => 1,
                 self::AUTHENTICATION_PASSWORDS, self::CAPTCHA_IMAGES, self::SESSIONS, self::EXTERNAL_SESSIONS => 2,
             };

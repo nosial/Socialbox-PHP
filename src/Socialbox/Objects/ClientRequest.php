@@ -2,10 +2,7 @@
 
     namespace Socialbox\Objects;
 
-    use InvalidArgumentException;
     use Socialbox\Classes\Cryptography;
-    use Socialbox\Classes\Utilities;
-    use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\Types\RequestType;
     use Socialbox\Exceptions\CryptographyException;
@@ -18,7 +15,7 @@
     class ClientRequest
     {
         private array $headers;
-        private RequestType $requestType;
+        private ?RequestType $requestType;
         private ?string $requestBody;
 
         private ?string $clientName;
@@ -27,6 +24,14 @@
         private ?string $sessionUuid;
         private ?string $signature;
 
+        /**
+         * Initializes the instance with the provided request headers and optional request body.
+         *
+         * @param array $headers An associative array of request headers used to set properties such as client name, version, and others.
+         * @param string|null $requestBody The optional body of the request, or null if not provided.
+         *
+         * @return void
+         */
         public function __construct(array $headers, ?string $requestBody)
         {
             $this->headers = $headers;
@@ -34,17 +39,28 @@
 
             $this->clientName = $headers[StandardHeaders::CLIENT_NAME->value] ?? null;
             $this->clientVersion = $headers[StandardHeaders::CLIENT_VERSION->value] ?? null;
-            $this->requestType = RequestType::from($headers[StandardHeaders::REQUEST_TYPE->value]);
+            $this->requestType = RequestType::tryFrom($headers[StandardHeaders::REQUEST_TYPE->value]);
             $this->identifyAs = $headers[StandardHeaders::IDENTIFY_AS->value] ?? null;
             $this->sessionUuid = $headers[StandardHeaders::SESSION_UUID->value] ?? null;
             $this->signature = $headers[StandardHeaders::SIGNATURE->value] ?? null;
         }
 
+        /**
+         * Retrieves the headers.
+         *
+         * @return array Returns an array of headers.
+         */
         public function getHeaders(): array
         {
             return $this->headers;
         }
 
+        /**
+         * Checks if the specified header exists in the collection of headers.
+         *
+         * @param StandardHeaders|string $header The header to check, either as a StandardHeaders enum or a string.
+         * @return bool Returns true if the header exists, otherwise false.
+         */
         public function headerExists(StandardHeaders|string $header): bool
         {
             if(is_string($header))
@@ -55,6 +71,12 @@
             return isset($this->headers[$header->value]);
         }
 
+        /**
+         * Retrieves the value of a specified header.
+         *
+         * @param StandardHeaders|string $header The header to retrieve, provided as either a StandardHeaders enum or a string key.
+         * @return string|null Returns the header value if it exists, or null if the header does not exist.
+         */
         public function getHeader(StandardHeaders|string $header): ?string
         {
             if(!$this->headerExists($header))
@@ -70,26 +92,51 @@
             return $this->headers[$header->value];
         }
 
+        /**
+         * Retrieves the request body.
+         *
+         * @return string|null Returns the request body as a string if available, or null if not set.
+         */
         public function getRequestBody(): ?string
         {
             return $this->requestBody;
         }
 
+        /**
+         * Retrieves the name of the client.
+         *
+         * @return string|null Returns the client's name if set, or null if not available.
+         */
         public function getClientName(): ?string
         {
             return $this->clientName;
         }
 
+        /**
+         * Retrieves the client version.
+         *
+         * @return string|null Returns the client version if available, or null if not set.
+         */
         public function getClientVersion(): ?string
         {
             return $this->clientVersion;
         }
 
-        public function getRequestType(): RequestType
+        /**
+         * Retrieves the request type associated with the current instance.
+         *
+         * @return RequestType|null Returns the associated RequestType if available, or null if not set.
+         */
+        public function getRequestType(): ?RequestType
         {
             return $this->requestType;
         }
 
+        /**
+         * Retrieves the peer address the instance identifies as.
+         *
+         * @return PeerAddress|null Returns a PeerAddress instance if the identification address is set, or null otherwise.
+         */
         public function getIdentifyAs(): ?PeerAddress
         {
             if($this->identifyAs === null)
@@ -100,11 +147,21 @@
             return PeerAddress::fromAddress($this->identifyAs);
         }
 
+        /**
+         * Retrieves the UUID of the current session.
+         *
+         * @return string|null Returns the session UUID if available, or null if it is not set.
+         */
         public function getSessionUuid(): ?string
         {
             return $this->sessionUuid;
         }
 
+        /**
+         * Retrieves the current session associated with the session UUID.
+         *
+         * @return SessionRecord|null Returns the associated SessionRecord if the session UUID exists, or null if no session UUID is set.
+         */
         public function getSession(): ?SessionRecord
         {
             if($this->sessionUuid === null)
@@ -115,6 +172,11 @@
             return SessionManager::getSession($this->sessionUuid);
         }
 
+        /**
+         * Retrieves the associated peer for the current session.
+         *
+         * @return RegisteredPeerRecord|null Returns the associated RegisteredPeerRecord if available, or null if no session exists.
+         */
         public function getPeer(): ?RegisteredPeerRecord
         {
             $session = $this->getSession();
@@ -127,11 +189,22 @@
             return RegisteredPeerManager::getPeer($session->getPeerUuid());
         }
 
+        /**
+         * Retrieves the signature value.
+         *
+         * @return string|null The signature value or null if not set
+         */
         public function getSignature(): ?string
         {
             return $this->signature;
         }
 
+        /**
+         * Verifies the signature of the provided decrypted content.
+         *
+         * @param string $decryptedContent The decrypted content to verify the signature against.
+         * @return bool True if the signature is valid, false otherwise.
+         */
         private function verifySignature(string $decryptedContent): bool
         {
             if($this->getSignature() == null || $this->getSessionUuid() == null)
@@ -141,7 +214,11 @@
 
             try
             {
-                return Cryptography::verifyContent($decryptedContent, $this->getSignature(), $this->getSession()->getPublicKey(), true);
+                return Cryptography::verifyMessage(
+                    message: $decryptedContent,
+                    signature: $this->getSignature(),
+                    publicKey: $this->getSession()->getClientPublicSigningKey()
+                );
             }
             catch(CryptographyException)
             {
@@ -156,52 +233,12 @@
          * @return RpcRequest[] The parsed RpcRequest objects
          * @throws RequestException Thrown if the request is invalid
          */
-        public function getRpcRequests(): array
+        public function getRpcRequests(string $json): array
         {
-            if($this->getSessionUuid() === null)
+            $body = json_decode($json, true);
+            if($body === false)
             {
-                throw new RequestException("Session UUID required", 400);
-            }
-
-            // Get the existing session
-            $session = $this->getSession();
-
-            // If we're awaiting a DHE, encryption is not possible at this point
-            if($session->getState() === SessionState::AWAITING_DHE)
-            {
-                throw new RequestException("DHE exchange required", 400);
-            }
-
-            // If the session is not active, we can't serve these requests
-            if($session->getState() !== SessionState::ACTIVE)
-            {
-                throw new RequestException("Session is not active", 400);
-            }
-
-            // Attempt to decrypt the content and verify the signature of the request
-            try
-            {
-                $decrypted = Cryptography::decryptTransport($this->requestBody, $session->getEncryptionKey());
-
-                if(!$this->verifySignature($decrypted))
-                {
-                    throw new RequestException("Invalid request signature", 401);
-                }
-            }
-            catch (CryptographyException $e)
-            {
-                throw new RequestException("Failed to decrypt request body", 400, $e);
-            }
-
-            // At this stage, all checks has passed; we can try parsing the RPC request
-            try
-            {
-                // Decode the request body
-                $body = Utilities::jsonDecode($decrypted);
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new RequestException("Invalid JSON in request body: " . $e->getMessage(), 400, $e);
+                throw new RequestException('Malformed JSON', 400);
             }
 
             // If the body only contains a method, we assume it's a single request

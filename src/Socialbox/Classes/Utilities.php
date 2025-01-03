@@ -122,22 +122,37 @@
             return $headers;
         }
 
-        /**
-         * Converts a Throwable object into a formatted string.
-         *
-         * @param Throwable $e The throwable to be converted into a string.
-         * @return string The formatted string representation of the throwable, including the exception class, message, file, line, and stack trace.
-         */
-        public static function throwableToString(Throwable $e): string
+        public static function throwableToString(Throwable $e, int $level=0): string
         {
-            return sprintf(
-                "%s: %s in %s:%d\nStack trace:\n%s",
-                get_class($e),
-                $e->getMessage(),
-                $e->getFile(),
-                $e->getLine(),
-                $e->getTraceAsString()
+            // Indentation for nested exceptions
+            $indentation = str_repeat('  ', $level);
+
+            // Basic information about the Throwable
+            $type = get_class($e);
+            $message = $e->getMessage() ?: 'No message';
+            $file = $e->getFile() ?: 'Unknown file';
+            $line = $e->getLine() ?? 'Unknown line';
+
+            // Compose the base string representation of this Throwable
+            $result = sprintf("%s%s: %s\n%s  in %s on line %s\n",
+                $indentation, $type, $message, $indentation, $file, $line
             );
+
+            // Append stack trace if available
+            $stackTrace = $e->getTraceAsString();
+            if (!empty($stackTrace))
+            {
+                $result .= $indentation . "  Stack trace:\n" . $indentation . "  " . str_replace("\n", "\n" . $indentation . "  ", $stackTrace) . "\n";
+            }
+
+            // Recursively append the cause if it exists
+            $previous = $e->getPrevious();
+            if ($previous)
+            {
+                $result .= $indentation . "Caused by:\n" . self::throwableToString($previous, $level + 1);
+            }
+
+            return $result;
         }
 
         /**

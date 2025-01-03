@@ -2,32 +2,31 @@
 
     namespace Socialbox\Classes;
 
-    use Socialbox\Exceptions\DatabaseOperationException;
+    use InvalidArgumentException;
     use Socialbox\Exceptions\ResolutionException;
-    use Socialbox\Managers\ResolvedServersManager;
-    use Socialbox\Objects\ResolvedServer;
+    use Socialbox\Managers\ResolvedDnsRecordsManager;
+    use Socialbox\Objects\DnsRecord;
 
     class ServerResolver
     {
-        private const string PATTERN = '/v=socialbox;sb-rpc=(https?:\/\/[^;]+);sb-key=([^;]+)/';
-
         /**
-         * Resolves a given domain to fetch the RPC endpoint and public key from its DNS TXT records.
+         * Resolves a domain by retrieving and parsing its DNS TXT records.
+         * Optionally checks a database for cached resolution data before performing a DNS query.
          *
-         * @param string $domain The domain to be resolved.
-         * @return ResolvedServer An instance of ResolvedServer containing the endpoint and public key.
-         * @throws ResolutionException If the DNS TXT records cannot be resolved or if required information is missing.
-         * @throws DatabaseOperationException
+         * @param string $domain The domain name to resolve.
+         * @param bool $useDatabase Whether to check the database for cached resolution data; defaults to true.
+         * @return DnsRecord The parsed DNS record for the given domain.
+         * @throws ResolutionException If the DNS TXT records cannot be retrieved or parsed.
          */
-        public static function resolveDomain(string $domain, bool $useDatabase=true): ResolvedServer
+        public static function resolveDomain(string $domain, bool $useDatabase=true): DnsRecord
         {
-            // First query the database to check if the domain is already resolved
-            if($useDatabase)
+            // Check the database if enabled
+            if ($useDatabase)
             {
-                $resolvedServer = ResolvedServersManager::getResolvedServer($domain);
-                if($resolvedServer !== null)
+                $resolvedServer = ResolvedDnsRecordsManager::getDnsRecord($domain);
+                if ($resolvedServer !== null)
                 {
-                    return $resolvedServer->toResolvedServer();
+                    return $resolvedServer;
                 }
             }
 
@@ -38,23 +37,23 @@
             }
 
             $fullRecord = self::concatenateTxtRecords($txtRecords);
-            if (preg_match(self::PATTERN, $fullRecord, $matches))
+
+            try
             {
-                $endpoint = trim($matches[1]);
-                $publicKey = trim(str_replace(' ', '', $matches[2]));
-                if (empty($endpoint))
+                // Parse the TXT record using DnsHelper
+                $record = DnsHelper::parseTxt($fullRecord);
+
+                // Cache the resolved server record in the database
+                if($useDatabase)
                 {
-                    throw new ResolutionException(sprintf("Failed to resolve RPC endpoint for %s", $domain));
+                    ResolvedDnsRecordsManager::addResolvedServer($domain, $record);
                 }
-                if (empty($publicKey))
-                {
-                    throw new ResolutionException(sprintf("Failed to resolve public key for %s", $domain));
-                }
-                return new ResolvedServer($endpoint, $publicKey);
+
+                return $record;
             }
-            else
+            catch (InvalidArgumentException $e)
             {
-                throw new ResolutionException(sprintf("Failed to find valid SocialBox record for %s", $domain));
+                throw new ResolutionException(sprintf("Failed to find valid SocialBox record for %s: %s", $domain, $e->getMessage()));
             }
         }
 
@@ -64,9 +63,9 @@
          * @param string $domain The domain name to fetch TXT records for.
          * @return array|false An array of DNS TXT records on success, or false on failure.
          */
-        private static function dnsGetTxtRecords(string $domain)
+        private static function dnsGetTxtRecords(string $domain): array|false
         {
-            return dns_get_record($domain, DNS_TXT);
+            return @dns_get_record($domain, DNS_TXT);
         }
 
         /**

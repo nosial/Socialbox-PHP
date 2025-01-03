@@ -3,7 +3,6 @@
     namespace Socialbox\Classes\CliCommands;
 
     use Exception;
-    use LogLib\Log;
     use PDOException;
     use Socialbox\Abstracts\CacheLayer;
     use Socialbox\Classes\Configuration;
@@ -13,9 +12,8 @@
     use Socialbox\Classes\Resources;
     use Socialbox\Enums\DatabaseObjects;
     use Socialbox\Exceptions\CryptographyException;
-    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Interfaces\CliCommandInterface;
-    use Socialbox\Managers\EncryptionRecordsManager;
+    use Socialbox\Socialbox;
 
     class InitializeCommand implements CliCommandInterface
     {
@@ -208,6 +206,7 @@
                     Logger::getLogger()->info('cache.database defaulting to 0');
                 }
 
+                Logger::getLogger()->info('Updating configuration...');
                 Configuration::getConfigurationLib()->save(); // Save
                 Configuration::reload(); // Reload
             }
@@ -261,16 +260,17 @@
             }
 
             if(
-                !Configuration::getInstanceConfiguration()->getPublicKey() ||
-                !Configuration::getInstanceConfiguration()->getPrivateKey() ||
-                !Configuration::getInstanceConfiguration()->getEncryptionKeys()
+                !Configuration::getCryptographyConfiguration()->getHostPublicKey() ||
+                !Configuration::getCryptographyConfiguration()->getHostPrivateKey() ||
+                !Configuration::getCryptographyConfiguration()->getHostPublicKey()
             )
             {
+                $expires = time() + 31536000;
+
                 try
                 {
-                    Logger::getLogger()->info('Generating new key pair...');
-                    $keyPair = Cryptography::generateKeyPair();
-                    $encryptionKeys = Cryptography::randomKeyS(230, 314, Configuration::getInstanceConfiguration()->getEncryptionKeysCount());
+                    Logger::getLogger()->info('Generating new key pair (expires ' . date('Y-m-d H:i:s', $expires) . ')...');
+                    $signingKeyPair = Cryptography::generateSigningKeyPair();
                 }
                 catch (CryptographyException $e)
                 {
@@ -278,40 +278,35 @@
                     return 1;
                 }
 
-                Logger::getLogger()->info('Updating configuration...');
-                Configuration::getConfigurationLib()->set('instance.private_key', $keyPair->getPrivateKey());
-                Configuration::getConfigurationLib()->set('instance.public_key', $keyPair->getPublicKey());
-                Configuration::getConfigurationLib()->set('instance.encryption_keys', $encryptionKeys);
-                Configuration::getConfigurationLib()->save(); // Save
-                Configuration::reload(); // Reload
-
-                Logger::getLogger()->info(sprintf('Set the DNS TXT record for the domain %s to the following value:', Configuration::getInstanceConfiguration()->getDomain()));
-                Logger::getLogger()->info(sprintf("v=socialbox;sb-rpc=%s;sb-key=%s;",
-                    Configuration::getInstanceConfiguration()->getRpcEndpoint(), $keyPair->getPublicKey()
-                ));
+                Configuration::getConfigurationLib()->set('cryptography.host_keypair_expires', $expires);
+                Configuration::getConfigurationLib()->set('cryptography.host_private_key', $signingKeyPair->getPrivateKey());
+                Configuration::getConfigurationLib()->set('cryptography.host_public_key', $signingKeyPair->getPublicKey());
             }
 
-            try
+            // If Internal Encryption keys are null or has less keys than configured, populate the configuration
+            // property with encryption keys.
+            if(
+                Configuration::getCryptographyConfiguration()->getInternalEncryptionKeys() === null ||
+                count(Configuration::getCryptographyConfiguration()->getInternalEncryptionKeys()) < Configuration::getCryptographyConfiguration()->getEncryptionKeysCount())
             {
-                if(EncryptionRecordsManager::getRecordCount() < Configuration::getInstanceConfiguration()->getEncryptionRecordsCount())
+                Logger::getLogger()->info('Generating internal encryption keys...');
+                $encryptionKeys = Configuration::getCryptographyConfiguration()->getInternalEncryptionKeys() ?? [];
+                while(count($encryptionKeys) < Configuration::getCryptographyConfiguration()->getEncryptionKeysCount())
                 {
-                    Logger::getLogger()->info('Generating encryption records...');
-                    EncryptionRecordsManager::generateRecords(Configuration::getInstanceConfiguration()->getEncryptionRecordsCount());
+                    $encryptionKeys[] = Cryptography::generateEncryptionKey(Configuration::getCryptographyConfiguration()->getEncryptionKeysAlgorithm());
                 }
-            }
-            catch (CryptographyException $e)
-            {
-                Logger::getLogger()->error('Failed to generate encryption records due to a cryptography exception', $e);
-                return 1;
-            }
-            catch (DatabaseOperationException $e)
-            {
-                Logger::getLogger()->error('Failed to generate encryption records due to a database error', $e);
-                return 1;
+
+                Configuration::getConfigurationLib()->set('cryptography.internal_encryption_keys', $encryptionKeys);
             }
 
-            // TODO: Create a host peer here?
+            Logger::getLogger()->info('Updating configuration...');
+            Configuration::getConfigurationLib()->save();;
+            Configuration::reload();
+
             Logger::getLogger()->info('Socialbox has been initialized successfully');
+            Logger::getLogger()->info(sprintf('Set the DNS TXT record for the domain %s to the following value:', Configuration::getInstanceConfiguration()->getDomain()));
+            Logger::getLogger()->info(Socialbox::getDnsRecord());
+
             if(getenv('SB_MODE') === 'automated')
             {
                 Configuration::getConfigurationLib()->set('instance.enabled', true);

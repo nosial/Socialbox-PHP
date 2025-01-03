@@ -38,14 +38,14 @@
 
                 if($decodedImage === false)
                 {
-                    return $rpcRequest->produceError(StandardError::BAD_REQUEST, "Failed to decode JPEG image base64 data");
+                    return $rpcRequest->produceError(StandardError::RPC_BAD_REQUEST, "Failed to decode JPEG image base64 data");
                 }
 
                 $sanitizedImage = Utilities::resizeImage(Utilities::sanitizeJpeg($decodedImage), 126, 126);
             }
             catch(Exception $e)
             {
-                throw new StandardException('Failed to process JPEG image: ' . $e->getMessage(), StandardError::BAD_REQUEST, $e);
+                throw new StandardException('Failed to process JPEG image: ' . $e->getMessage(), StandardError::RPC_BAD_REQUEST, $e);
             }
 
             try

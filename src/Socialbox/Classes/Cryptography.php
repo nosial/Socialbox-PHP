@@ -1,397 +1,724 @@
 <?php
 
-namespace Socialbox\Classes;
+    namespace Socialbox\Classes;
 
-use Exception;
-use InvalidArgumentException;
-use Random\RandomException;
-use Socialbox\Exceptions\CryptographyException;
-use Socialbox\Objects\KeyPair;
+    use Exception;
+    use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Objects\KeyPair;
 
-class Cryptography
-{
-    private const int TIME_BLOCK = 60;
-    private const int KEY_SIZE = 2048;
-    private const int ALGORITHM = OPENSSL_KEYTYPE_RSA;
-    private const int HASH_ALGORITHM = OPENSSL_ALGO_SHA256;
-    private const int PADDING = OPENSSL_PKCS1_OAEP_PADDING;
-    private const string PEM_PRIVATE_HEADER = 'PRIVATE';
-    private const string PEM_PUBLIC_HEADER = 'PUBLIC';
-    private const string TRANSPORT_ENCRYPTION = 'aes-256-cbc';
-
-    /**
-     * Generates a new public-private key pair.
-     *
-     * @return KeyPair The generated key pair, with the keys encoded in base64 DER format.
-     * @throws CryptographyException If an error occurs during key generation.
-     */
-    public static function generateKeyPair(): KeyPair
+    class Cryptography
     {
-        $config = [
-            "private_key_type" => self::ALGORITHM,
-            "private_key_bits" => self::KEY_SIZE,
-        ];
+        private const KEY_TYPE_ENCRYPTION = 'enc:';
+        private const KEY_TYPE_SIGNING = 'sig:';
+        private const BASE64_VARIANT = SODIUM_BASE64_VARIANT_URLSAFE_NO_PADDING;
 
-        $res = openssl_pkey_new($config);
-        if (!$res)
+        /**
+         * Generates a new encryption key pair consisting of a public key and a secret key.
+         * The generated keys are encoded in a specific format and securely handled in memory.
+         *
+         * @return KeyPair Returns an instance of KeyPair containing the encoded public and secret keys.
+         * @throws CryptographyException If key pair generation fails.
+         */
+        public static function generateEncryptionKeyPair(): KeyPair
         {
-            throw new CryptographyException('Failed to generate private key: ' . openssl_error_string());
-        }
-
-        openssl_pkey_export($res, $privateKeyPem);
-        $publicKeyPem = openssl_pkey_get_details($res)['key'];
-
-        return new KeyPair(
-            Utilities::base64encode(self::pemToDer($publicKeyPem)),
-            Utilities::base64encode(self::pemToDer($privateKeyPem))
-        );
-    }
-
-    /**
-     * Converts a PEM formatted key to DER format.
-     *
-     * @param string $pemKey The PEM formatted key as a string.
-     *
-     * @return string The DER formatted key as a binary string.
-     */
-    private static function pemToDer(string $pemKey): string
-    {
-        $pemKey = preg_replace('/-----(BEGIN|END) [A-Z ]+-----/', '', $pemKey);
-        return Utilities::base64decode(str_replace(["\n", "\r", " "], '', $pemKey));
-    }
-
-    /**
-     * Converts a DER formatted key to PEM format.
-     *
-     * @param string $derKey The DER formatted key.
-     * @param string $type The type of key, either private or public. Default is private.
-     * @return string The PEM formatted key.
-     */
-    private static function derToPem(string $derKey, string $type): string
-    {
-        $formattedKey = chunk_split(Utilities::base64encode($derKey), 64);
-        $headerFooter = strtoupper($type) === self::PEM_PUBLIC_HEADER
-            ? "PUBLIC KEY" : "PRIVATE KEY";
-
-        return "-----BEGIN $headerFooter-----\n$formattedKey-----END $headerFooter-----\n";
-    }
-
-    /**
-     * Signs the given content using the provided private key.
-     *
-     * @param string $content The content to be signed.
-     * @param string $privateKey The private key used to sign the content.
-     * @param bool $hashContent Whether to hash the content using SHA1 before signing it. Default is false.
-     * @return string The Base64 encoded signature of the content.
-     * @throws CryptographyException If the private key is invalid or if the content signing fails.
-     */
-    public static function signContent(string $content, string $privateKey, bool $hashContent=false): string
-    {
-        $privateKey = openssl_pkey_get_private(self::derToPem(Utilities::base64decode($privateKey), self::PEM_PRIVATE_HEADER));
-        if (!$privateKey)
-        {
-            throw new CryptographyException('Invalid private key: ' . openssl_error_string());
-        }
-
-        if($hashContent)
-        {
-            $content = hash('sha1', $content);
-        }
-
-        if (!openssl_sign($content, $signature, $privateKey, self::HASH_ALGORITHM))
-        {
-            throw new CryptographyException('Failed to sign content: ' . openssl_error_string());
-        }
-
-        return base64_encode($signature);
-    }
-
-    /**
-     * Verifies the integrity of the given content using the provided digital signature and public key.
-     *
-     * @param string $content The content to be verified.
-     * @param string $signature The digital signature to verify against.
-     * @param string $publicKey The public key to use for verification.
-     * @param bool $hashContent Whether to hash the content using SHA1 before verifying it. Default is false.
-     * @return bool Returns true if the content verification is successful, false otherwise.
-     * @throws CryptographyException If the public key is invalid or if the signature verification fails.
-     */
-    public static function verifyContent(string $content, string $signature, string $publicKey, bool $hashContent=false): bool
-    {
-        try
-        {
-            $publicKey = openssl_pkey_get_public(self::derToPem(Utilities::base64decode($publicKey), self::PEM_PUBLIC_HEADER));
-        }
-        catch(InvalidArgumentException $e)
-        {
-            throw new CryptographyException('Failed to decode public key: ' . $e->getMessage());
-        }
-
-        if (!$publicKey)
-        {
-            throw new CryptographyException('Invalid public key: ' . openssl_error_string());
-        }
-
-        if($hashContent)
-        {
-            $content = hash('sha1', $content);
-        }
-
-        try
-        {
-            return openssl_verify($content, Utilities::base64decode($signature), $publicKey, self::HASH_ALGORITHM) === 1;
-        }
-        catch(InvalidArgumentException $e)
-        {
-            throw new CryptographyException('Failed to verify content: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Temporarily signs the provided content by appending a timestamp-based value and signing it.
-     *
-     * @param string $content The content to be signed.
-     * @param string $privateKey The private key used to sign the content.
-     * @return string The base64 encoded signature of the content with the appended timestamp.
-     * @throws CryptographyException If the private key is invalid or if the content signing fails.
-     */
-    public static function temporarySignContent(string $content, string $privateKey): string
-    {
-        return self::signContent(sprintf('%s|%d', $content, time() / self::TIME_BLOCK), $privateKey);
-    }
-
-    /**
-     * Verify the provided temporary signature for the given content using the public key.
-     *
-     * @param string $content The content whose signature needs to be verified.
-     * @param string $signature The signature associated with the content.
-     * @param string $publicKey The public key to be used for verifying the signature.
-     * @param int $frames The number of time frames to consider for validating the signature (default is 1).
-     * @return bool Returns true if the signature is valid within the provided time frames, otherwise false.
-     * @throws CryptographyException If the public key is invalid or the signature verification fails.
-     */
-    public static function verifyTemporarySignature(string $content, string $signature, string $publicKey, int $frames = 1): bool
-    {
-        $currentTime = time() / self::TIME_BLOCK;
-        for ($i = 0; $i < max(1, $frames); $i++)
-        {
-            if (self::verifyContent(sprintf('%s|%d', $content, $currentTime - $i), $signature, $publicKey))
+            try
             {
-                return true;
+                $keyPair = sodium_crypto_box_keypair();
+                $publicKey = sodium_crypto_box_publickey($keyPair);
+                $secretKey = sodium_crypto_box_secretkey($keyPair);
+
+                $result = new KeyPair(
+                    self::KEY_TYPE_ENCRYPTION . sodium_bin2base64($publicKey, self::BASE64_VARIANT),
+                    self::KEY_TYPE_ENCRYPTION . sodium_bin2base64($secretKey, self::BASE64_VARIANT)
+                );
+
+                // Clean up sensitive data
+                sodium_memzero($keyPair);
+                sodium_memzero($secretKey);
+
+                return $result;
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Failed to generate encryption keypair: " . $e->getMessage());
             }
         }
-        return false;
+
+        /**
+         * Validates a public encryption key to ensure it is properly formatted and of the correct length.
+         *
+         * @param string $publicKey The base64-encoded public key to validate.
+         * @return bool True if the public key is valid, false otherwise.
+         */
+        public static function validatePublicEncryptionKey(string $publicKey): bool
+        {
+            if(!str_starts_with($publicKey, 'enc:'))
+            {
+                return false;
+            }
+
+            $base64Key = substr($publicKey, 4);
+
+            try
+            {
+                $decodedKey = sodium_base642bin($base64Key, self::BASE64_VARIANT, true);
+
+                if (strlen($decodedKey) !== SODIUM_CRYPTO_BOX_PUBLICKEYBYTES)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /**
+         * Generates a new signing key pair consisting of a public key and a secret key.
+         *
+         * @return KeyPair An object containing the base64-encoded public and secret keys, each prefixed with the signing key type identifier.
+         * @throws CryptographyException If the key pair generation process fails.
+         */
+        public static function generateSigningKeyPair(): KeyPair
+        {
+            try
+            {
+                $keyPair = sodium_crypto_sign_keypair();
+                $publicKey = sodium_crypto_sign_publickey($keyPair);
+                $secretKey = sodium_crypto_sign_secretkey($keyPair);
+
+                $result = new KeyPair(
+                    self::KEY_TYPE_SIGNING . sodium_bin2base64($publicKey, self::BASE64_VARIANT),
+                    self::KEY_TYPE_SIGNING . sodium_bin2base64($secretKey, self::BASE64_VARIANT)
+                );
+
+                // Clean up sensitive data
+                sodium_memzero($keyPair);
+                sodium_memzero($secretKey);
+
+                return $result;
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Failed to generate signing keypair: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Validates a public signing key for proper format and length.
+         *
+         * @param string $publicKey The base64-encoded public signing key to be validated.
+         * @return bool Returns true if the key is valid, or false if it is invalid.
+         * @throws CryptographyException If the public key is incorrectly formatted or its length is invalid.
+         */
+        public static function validatePublicSigningKey(string $publicKey): bool
+        {
+            // Check if the key is prefixed with "sig:"
+            if (!str_starts_with($publicKey, 'sig:'))
+            {
+                // If it doesn't start with "sig:", consider it invalid
+                return false;
+            }
+
+            // Remove the "sig:" prefix
+            $base64Key = substr($publicKey, 4);
+
+            try
+            {
+                // Decode the base64 key
+                $decodedKey = sodium_base642bin($base64Key, self::BASE64_VARIANT, true);
+
+                // Validate the length of the decoded key
+                return strlen($decodedKey) === SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES;
+            }
+            catch (Exception)
+            {
+                // If decoding fails, consider the key invalid
+                return false;
+            }
+        }
+
+        /**
+         * Performs a Diffie-Hellman Exchange (DHE) to derive a shared secret key using the provided public and private keys.
+         *
+         * @param string $publicKey The base64-encoded public key of the other party.
+         * @param string $privateKey The base64-encoded private key of the local party.
+         * @return string The base64-encoded derived shared secret key.
+         * @throws CryptographyException If the provided keys are invalid or the key exchange process fails.
+         */
+        public static function performDHE(string $publicKey, string $privateKey): string
+        {
+            try
+            {
+                if (empty($publicKey) || empty($privateKey))
+                {
+                    throw new CryptographyException("Empty key(s) provided");
+                }
+
+                $publicKey = self::validateAndExtractKey($publicKey, self::KEY_TYPE_ENCRYPTION);
+                $privateKey = self::validateAndExtractKey($privateKey, self::KEY_TYPE_ENCRYPTION);
+
+                $decodedPublicKey = sodium_base642bin($publicKey, self::BASE64_VARIANT, true);
+                $decodedPrivateKey = sodium_base642bin($privateKey, self::BASE64_VARIANT, true);
+
+                if (strlen($decodedPublicKey) !== SODIUM_CRYPTO_BOX_PUBLICKEYBYTES)
+                {
+                    throw new CryptographyException("Invalid public key length");
+                }
+
+                if (strlen($decodedPrivateKey) !== SODIUM_CRYPTO_BOX_SECRETKEYBYTES)
+                {
+                    throw new CryptographyException("Invalid private key length");
+                }
+
+                $sharedSecret = sodium_crypto_scalarmult($decodedPrivateKey, $decodedPublicKey);
+                $derivedKey = sodium_crypto_generichash($sharedSecret, null, SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
+                $result = sodium_bin2base64($derivedKey, self::BASE64_VARIANT);
+
+                // Clean up sensitive data
+                sodium_memzero($sharedSecret);
+                sodium_memzero($derivedKey);
+                sodium_memzero($decodedPrivateKey);
+
+                return $result;
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Failed to perform DHE: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Encrypts a message using the provided shared secret.
+         *
+         * @param string $message The message to be encrypted.
+         * @param string $sharedSecret The base64-encoded shared secret used for encryption.
+         * @return string The base64-encoded encrypted message, including a randomly generated nonce.
+         * @throws CryptographyException If the message or shared secret is invalid or the encryption fails.
+         */
+        public static function encryptShared(string $message, string $sharedSecret): string
+        {
+            try
+            {
+                if (empty($message))
+                {
+                    throw new CryptographyException("Empty message provided");
+                }
+
+                if (empty($sharedSecret))
+                {
+                    throw new CryptographyException("Empty shared secret provided");
+                }
+
+                $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+                $key = sodium_base642bin($sharedSecret, self::BASE64_VARIANT, true);
+
+                if (strlen($key) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES)
+                {
+                    throw new CryptographyException("Invalid shared secret length");
+                }
+
+                $encrypted = sodium_crypto_secretbox($message, $nonce, $key);
+                $result = sodium_bin2base64($nonce . $encrypted, self::BASE64_VARIANT);
+
+                // Clean up sensitive data
+                sodium_memzero($key);
+
+                return $result;
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Encryption failed: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Decrypts an encrypted message using the provided shared secret.
+         *
+         * @param string $encryptedMessage The base64-encoded encrypted message to be decrypted.
+         * @param string $sharedSecret The base64-encoded shared secret used to decrypt the message.
+         * @return string The decrypted message.
+         * @throws CryptographyException If the encrypted message or shared secret is invalid, or the decryption process fails.
+         */
+        public static function decryptShared(string $encryptedMessage, string $sharedSecret): string
+        {
+            try
+            {
+                if (empty($encryptedMessage))
+                {
+                    throw new CryptographyException("Empty encrypted message provided");
+                }
+
+                if (empty($sharedSecret))
+                {
+                    throw new CryptographyException("Empty shared secret provided");
+                }
+
+                $decoded = sodium_base642bin($encryptedMessage, self::BASE64_VARIANT, true);
+                $key = sodium_base642bin($sharedSecret, self::BASE64_VARIANT, true);
+
+                if (strlen($key) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES)
+                {
+                    throw new CryptographyException("Invalid shared secret length");
+                }
+
+                if (strlen($decoded) < SODIUM_CRYPTO_SECRETBOX_NONCEBYTES)
+                {
+                    throw new CryptographyException("Encrypted message too short");
+                }
+
+                $nonce = mb_substr($decoded, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, '8bit');
+                $ciphertext = mb_substr($decoded, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, null, '8bit');
+
+                $decrypted = sodium_crypto_secretbox_open($ciphertext, $nonce, $key);
+
+                if ($decrypted === false)
+                {
+                    throw new CryptographyException("Decryption failed: Invalid message or shared secret");
+                }
+
+                sodium_memzero($key);
+                return $decrypted;
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Decryption failed: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Signs a message using the provided private key.
+         *
+         * @param string $message The message to be signed.
+         * @param string $privateKey The base64-encoded private key used for signing.
+         * @return string The base64-encoded digital signature.
+         * @throws CryptographyException If the message or private key is invalid, or if signing fails.
+         */
+        public static function signMessage(string $message, string $privateKey): string
+        {
+            try
+            {
+                if (empty($message))
+                {
+                    throw new CryptographyException("Empty message provided");
+                }
+
+                if (empty($privateKey))
+                {
+                    throw new CryptographyException("Empty private key provided");
+                }
+
+                $privateKey = self::validateAndExtractKey($privateKey, self::KEY_TYPE_SIGNING);
+                $decodedKey = sodium_base642bin($privateKey, self::BASE64_VARIANT, true);
+
+                if (strlen($decodedKey) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES)
+                {
+                    throw new CryptographyException("Invalid private key length");
+                }
+
+                $signature = sodium_crypto_sign_detached($message, $decodedKey);
+
+                sodium_memzero($decodedKey);
+                return sodium_bin2base64($signature, self::BASE64_VARIANT);
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Failed to sign message: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Verifies the validity of a given signature for a message using the provided public key.
+         *
+         * @param string $message The original message that was signed.
+         * @param string $signature The base64-encoded signature to be verified.
+         * @param string $publicKey The base64-encoded public key used to verify the signature.
+         * @return bool True if the signature is valid; false otherwise.
+         * @throws CryptographyException If any parameter is empty, if the public key or signature is invalid, or if the verification process fails.
+         */
+        public static function verifyMessage(string $message, string $signature, string $publicKey): bool
+        {
+            try
+            {
+                if (empty($message) || empty($signature) || empty($publicKey))
+                {
+                    throw new CryptographyException("Empty parameter(s) provided");
+                }
+
+                $publicKey = self::validateAndExtractKey($publicKey, self::KEY_TYPE_SIGNING);
+                $decodedKey = sodium_base642bin($publicKey, self::BASE64_VARIANT, true);
+                $decodedSignature = sodium_base642bin($signature, self::BASE64_VARIANT, true);
+
+                if (strlen($decodedKey) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES)
+                {
+                    throw new CryptographyException("Invalid public key length");
+                }
+
+                if (strlen($decodedSignature) !== SODIUM_CRYPTO_SIGN_BYTES)
+                {
+                    throw new CryptographyException("Invalid signature length");
+                }
+
+                return sodium_crypto_sign_verify_detached($decodedSignature, $message, $decodedKey);
+            }
+            catch (Exception $e)
+            {
+                if($e instanceof CryptographyException)
+                {
+                    throw $e;
+                }
+
+                throw new CryptographyException("Failed to verify signature: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Determines if the provided algorithm is supported.
+         *
+         * @param string $algorithm The name of the algorithm to check.
+         * @return bool True if the algorithm is supported, false otherwise.
+         */
+        public static function isSupportedAlgorithm(string $algorithm): bool
+        {
+            return match($algorithm)
+            {
+                'xchacha20', 'chacha20', 'aes256gcm' => true,
+                default => false
+            };
+        }
+
+        /**
+         * Generates a new encryption key for the specified algorithm.
+         *
+         * @param string $algorithm The encryption algorithm for which the key is generated.
+         *                          Supported values are 'xchacha20', 'chacha20', and 'aes256gcm'.
+         * @return string The base64-encoded encryption key.
+         * @throws CryptographyException If the algorithm is unsupported or if key generation fails.
+         */
+        public static function generateEncryptionKey(string $algorithm): string
+        {
+            if(!self::isSupportedAlgorithm($algorithm))
+            {
+                throw new CryptographyException('Unsupported Algorithm: ' . $algorithm);
+            }
+
+            try
+            {
+                $keygenMethod = match ($algorithm)
+                {
+                    'xchacha20' => 'sodium_crypto_aead_xchacha20poly1305_ietf_keygen',
+                    'chacha20' => 'sodium_crypto_aead_chacha20poly1305_keygen',
+                    'aes256gcm' => 'sodium_crypto_aead_aes256gcm_keygen',
+                };
+
+                return sodium_bin2base64($keygenMethod(), self::BASE64_VARIANT);
+            }
+            catch (Exception $e)
+            {
+                if($e instanceof CryptographyException)
+                {
+                    throw $e;
+                }
+
+                throw new CryptographyException("Failed to generate encryption key: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Validates the provided encryption key against the specified algorithm.
+         *
+         * @param string $encryptionKey The encryption key to be validated, encoded in Base64.
+         * @param string $algorithm The encryption algorithm that the key should match.
+         *                          Supported algorithms include 'xchacha20', 'chacha20', and 'aes256gcm'.
+         * @return bool Returns true if the encryption key is valid for the given algorithm, otherwise false.
+         */
+        public static function validateEncryptionKey(string $encryptionKey, string $algorithm): bool
+        {
+            if (empty($encryptionKey))
+            {
+                return false;
+            }
+
+            if(!self::isSupportedAlgorithm($algorithm))
+            {
+                return false;
+            }
+
+            try
+            {
+                $key = sodium_base642bin($encryptionKey, self::BASE64_VARIANT, true);
+                $keyLength = match ($algorithm)
+                {
+                    'xchacha20' => SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES,
+                    'chacha20' => SODIUM_CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES,
+                    'aes256gcm' => SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES
+                };
+
+                if (strlen($key) !== $keyLength)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                if (isset($key))
+                {
+                    sodium_memzero($key);
+                }
+            }
+        }
+
+        /**
+         * Encrypts a message using the specified encryption algorithm and key.
+         *
+         * @param string $message The plaintext message to be encrypted.
+         * @param string $encryptionKey A base64-encoded encryption key.
+         * @param string $algorithm The name of the encryption algorithm to be used (e.g., 'xchacha20', 'chacha20', 'aes256gcm').
+         * @return string The base64-encoded encrypted message including the nonce.
+         * @throws CryptographyException If the message, encryption key, or algorithm is invalid, or if encryption fails.
+         */
+        public static function encryptMessage(string $message, string $encryptionKey, string $algorithm): string
+        {
+            try
+            {
+                if (empty($message))
+                {
+                    throw new CryptographyException("Empty message provided");
+                }
+
+                if (empty($encryptionKey))
+                {
+                    throw new CryptographyException("Empty encryption key provided");
+                }
+
+                if(!self::isSupportedAlgorithm($algorithm))
+                {
+                    throw new CryptographyException('Unsupported Algorithm: ' . $algorithm);
+                }
+
+                $key = sodium_base642bin($encryptionKey, self::BASE64_VARIANT, true);
+
+                [$nonceLength, $encryptMethod, $keyLength] = match ($algorithm)
+                {
+                    'xchacha20' => [SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES, 'sodium_crypto_aead_xchacha20poly1305_ietf_encrypt', SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES],
+                    'chacha20' => [SODIUM_CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES, 'sodium_crypto_aead_chacha20poly1305_encrypt', SODIUM_CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES],
+                    'aes256gcm' => [SODIUM_CRYPTO_AEAD_AES256GCM_NPUBBYTES, 'sodium_crypto_aead_aes256gcm_encrypt', SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES],
+                };
+
+                if (strlen($key) !== $keyLength)
+                {
+                    throw new CryptographyException("Invalid encryption key length for $algorithm");
+                }
+
+                $nonce = random_bytes($nonceLength);
+                $encrypted = $encryptMethod($message, '', $nonce, $key);
+                return sodium_bin2base64($nonce . $encrypted, self::BASE64_VARIANT);
+            }
+            catch (Exception $e)
+            {
+                if($e instanceof CryptographyException)
+                {
+                    throw $e;
+                }
+
+                throw new CryptographyException("Message encryption failed: " . $e->getMessage());
+            }
+            finally
+            {
+                if (isset($key))
+                {
+                    sodium_memzero($key);
+                }
+            }
+        }
+
+        /**
+         * Decrypts an encrypted message using the specified encryption key and algorithm.
+         *
+         * @param string $encryptedMessage The base64-encoded encrypted message to be decrypted.
+         * @param string $encryptionKey The base64-encoded encryption key used for decryption.
+         * @param string $algorithm The encryption algorithm used to encrypt the message (e.g., 'xchacha20', 'chacha20', 'aes256gcm').
+         * @return string The decrypted plaintext message.
+         * @throws CryptographyException If the encrypted message, encryption key, or algorithm is invalid, or if decryption fails.
+         */
+        public static function decryptMessage(string $encryptedMessage, string $encryptionKey, string $algorithm): string
+        {
+            if (empty($encryptedMessage))
+            {
+                throw new CryptographyException("Empty encrypted message provided");
+            }
+
+            if (empty($encryptionKey))
+            {
+                throw new CryptographyException("Empty encryption key provided");
+            }
+
+            if(!self::isSupportedAlgorithm($algorithm))
+            {
+                throw new CryptographyException('Unsupported Algorithm: ' . $algorithm);
+            }
+
+            try
+            {
+
+                $key = sodium_base642bin($encryptionKey, self::BASE64_VARIANT, true);
+                [$nonceLength, $decryptMethod, $keyLength] = match ($algorithm)
+                {
+                    'xchacha20' => [SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES, 'sodium_crypto_aead_xchacha20poly1305_ietf_decrypt', SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES],
+                    'chacha20' => [SODIUM_CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES, 'sodium_crypto_aead_chacha20poly1305_decrypt', SODIUM_CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES],
+                    'aes256gcm' => [SODIUM_CRYPTO_AEAD_AES256GCM_NPUBBYTES, 'sodium_crypto_aead_aes256gcm_decrypt', SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES]
+                };
+
+                if (strlen($key) !== $keyLength)
+                {
+                    throw new CryptographyException("Invalid encryption key length for $algorithm");
+                }
+
+                $decoded = sodium_base642bin($encryptedMessage, self::BASE64_VARIANT, true);
+
+                if (strlen($decoded) < $nonceLength)
+                {
+                    throw new CryptographyException("Encrypted message is too short");
+                }
+
+                $nonce = mb_substr($decoded, 0, $nonceLength, '8bit');
+                $ciphertext = mb_substr($decoded, $nonceLength, null, '8bit');
+                $decrypted = $decryptMethod($ciphertext, '', $nonce, $key);
+
+                if ($decrypted === false)
+                {
+                    throw new CryptographyException("Invalid message or encryption key");
+                }
+
+                return $decrypted;
+            }
+            catch (Exception $e)
+            {
+                if($e instanceof CryptographyException)
+                {
+                    throw $e;
+                }
+
+                throw new CryptographyException("Message decryption failed: " . $e->getMessage());
+            }
+            finally
+            {
+                if (isset($key))
+                {
+                    sodium_memzero($key);
+                }
+            }
+        }
+
+        /**
+         * Hashes a password securely using a memory-hard, CPU-intensive hashing algorithm.
+         *
+         * @param string $password The plaintext password to be hashed.
+         * @return string The hashed password in a secure format.
+         * @throws CryptographyException If password hashing fails.
+         */
+        public static function hashPassword(string $password): string
+        {
+            try
+            {
+                return sodium_crypto_pwhash_str($password, SODIUM_CRYPTO_PWHASH_OPSLIMIT_INTERACTIVE, SODIUM_CRYPTO_PWHASH_MEMLIMIT_INTERACTIVE);
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Failed to hash password: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Validates the given Argon2id hash string based on its format and current security requirements.
+         *
+         * @param string $hash The hash string to be validated.
+         * @return bool Returns true if the hash is valid and meets current security standards.
+         * @throws CryptographyException If the hash format is invalid or does not meet security requirements.
+         */
+        public static function validatePasswordHash(string $hash): bool
+        {
+            try
+            {
+                // Step 1: Check the format
+                $argon2id_pattern = '/^\$argon2id\$v=\d+\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+\/=]+\$[A-Za-z0-9+\/=]+$/D';
+                if (!preg_match($argon2id_pattern, $hash))
+                {
+                    throw new CryptographyException("Invalid hash format");
+                }
+
+                // Step 2: Check if it needs rehashing (validates the hash structure)
+                if (sodium_crypto_pwhash_str_needs_rehash($hash, SODIUM_CRYPTO_PWHASH_OPSLIMIT_INTERACTIVE, SODIUM_CRYPTO_PWHASH_MEMLIMIT_INTERACTIVE))
+                {
+                    throw new CryptographyException("Hash does not meet current security requirements");
+                }
+
+                // If all checks pass, the hash is valid.
+                return true;
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Invalid hash: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Verifies a password against a stored hash.
+         *
+         * @param string $password The password to be verified.
+         * @param string $hash The stored password hash to be compared against.
+         * @return bool True if the password matches the hash; false otherwise.
+         * @throws CryptographyException If the password verification process fails.
+         */
+        public static function verifyPassword(string $password, string $hash): bool
+        {
+            self::validatePasswordHash($hash);
+
+            try
+            {
+                return sodium_crypto_pwhash_str_verify($hash, $password);
+            }
+            catch (Exception $e)
+            {
+                throw new CryptographyException("Failed to verify password: " . $e->getMessage());
+            }
+        }
+
+        /**
+         * Validates a key by ensuring it is not empty, matches the expected type, and extracts the usable portion.
+         *
+         * @param string $key The key to be validated and processed.
+         * @param string $expectedType The expected prefix type of the key.
+         * @return string The extracted portion of the key after the expected type.
+         * @throws CryptographyException If the key is empty, the key type is invalid, or the extracted portion is empty.
+         */
+        private static function validateAndExtractKey(string $key, string $expectedType): string
+        {
+            if (empty($key))
+            {
+                throw new CryptographyException("Empty key provided");
+            }
+
+            if (!str_starts_with($key, $expectedType))
+            {
+                throw new CryptographyException("Invalid key type. Expected {$expectedType}");
+            }
+
+            $extractedKey = substr($key, strlen($expectedType));
+            if (empty($extractedKey))
+            {
+                throw new CryptographyException("Empty key after type extraction");
+            }
+
+            return $extractedKey;
+        }
     }
-
-    /**
-     * Encrypts the given content using the provided public key.
-     *
-     * @param string $content The content to be encrypted.
-     * @param string $publicKey The public key used for encryption, in DER-encoded format.
-     * @return string The encrypted content, encoded in base64 format.
-     * @throws CryptographyException If the public key is invalid or the encryption fails.
-     */
-    public static function encryptContent(string $content, string $publicKey): string
-    {
-        try
-        {
-            $publicKey = openssl_pkey_get_public(self::derToPem(Utilities::base64decode($publicKey), self::PEM_PUBLIC_HEADER));
-        }
-        catch(Exception $e)
-        {
-            throw new CryptographyException('Failed to decode public key: ' . $e->getMessage());
-        }
-
-        if (!$publicKey)
-        {
-            throw new CryptographyException('Invalid public key: ' . openssl_error_string());
-        }
-
-        if (!openssl_public_encrypt($content, $encrypted, $publicKey, self::PADDING))
-        {
-            throw new CryptographyException('Failed to encrypt content: ' . openssl_error_string());
-        }
-
-        try
-        {
-            return base64_encode($encrypted);
-        }
-        catch(Exception $e)
-        {
-            throw new CryptographyException('Failed to encode encrypted content: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Decrypts the provided content using the specified private key.
-     *
-     * @param string $content The content to be decrypted, encoded in base64.
-     * @param string $privateKey The private key for decryption, encoded in base64.
-     * @return string The decrypted content, encoded in UTF-8.
-     * @throws CryptographyException If the private key is invalid or the decryption fails.
-     */
-    public static function decryptContent(string $content, string $privateKey): string
-    {
-        $privateKey = openssl_pkey_get_private(self::derToPem(Utilities::base64decode($privateKey), self::PEM_PRIVATE_HEADER));
-
-        if (!$privateKey)
-        {
-            throw new CryptographyException('Invalid private key: ' . openssl_error_string());
-        }
-
-        if (!openssl_private_decrypt(base64_decode($content), $decrypted, $privateKey, self::PADDING))
-        {
-            throw new CryptographyException('Failed to decrypt content: ' . openssl_error_string());
-        }
-
-        return mb_convert_encoding($decrypted, 'UTF-8', 'auto');
-    }
-
-    public static function validatePublicKey(string $publicKey): bool
-    {
-        try
-        {
-            $result = openssl_pkey_get_public(self::derToPem(Utilities::base64decode($publicKey), self::PEM_PUBLIC_HEADER));
-        }
-        catch(InvalidArgumentException)
-        {
-            return false;
-        }
-
-        if($result === false)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    public static function validatePrivateKey(string $privateKey): bool
-    {
-        try
-        {
-            $result = openssl_pkey_get_private(self::derToPem(Utilities::base64decode($privateKey), self::PEM_PRIVATE_HEADER));
-        }
-        catch(InvalidArgumentException)
-        {
-            return false;
-        }
-
-        if($result === false)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Generates a random sequence of bytes with a length determined between the specified minimum and maximum.
-     *
-     * @param int $minLength The minimum length of the generated byte sequence.
-     * @param int $maxLength The maximum length of the generated byte sequence.
-     * @return string A hexadecimal string representing the random byte sequence.
-     * @throws CryptographyException If the random byte generation fails.
-     */
-    public static function randomKey(int $minLength, int $maxLength): string
-    {
-        try
-        {
-            return bin2hex(random_bytes(random_int($minLength, $maxLength)));
-        }
-        catch(RandomException $e)
-        {
-            throw new CryptographyException('Failed to generate random bytes: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Generates an array of random keys, each with a length within the specified range.
-     *
-     * @param int $minLength The minimum length for each random key.
-     * @param int $maxLength The maximum length for each random key.
-     * @param int $amount The number of random keys to generate.
-     * @return array An array of randomly generated keys.
-     * @throws CryptographyException If the random key generation fails.
-     */
-    public static function randomKeys(int $minLength, int $maxLength, int $amount): array
-    {
-        $keys = [];
-        for($i = 0; $i < $amount; $i++)
-        {
-            $keys[] = self::randomKey($minLength, $maxLength);
-        }
-
-        return $keys;
-    }
-
-    public static function generateEncryptionKey(): string
-    {
-        try
-        {
-            return base64_encode(random_bytes(32));
-        }
-        catch (RandomException $e)
-        {
-            throw new CryptographyException('Failed to generate encryption key: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Encrypts the given content for transport using the provided encryption key.
-     *
-     * @param string $content The content to be encrypted.
-     * @param string $encryptionKey The encryption key used for encrypting the content.
-     * @return string The Base64 encoded string containing the IV and the encrypted content.
-     * @throws CryptographyException If the IV generation or encryption process fails.
-     */
-    public static function encryptTransport(string $content, string $encryptionKey): string
-    {
-        try
-        {
-            $iv = random_bytes(openssl_cipher_iv_length('aes-256-cbc'));
-        }
-        catch (RandomException $e)
-        {
-            throw new CryptographyException('Failed to generate IV: ' . $e->getMessage());
-        }
-
-        $encrypted = openssl_encrypt($content, self::TRANSPORT_ENCRYPTION, base64_decode($encryptionKey), OPENSSL_RAW_DATA, $iv);
-
-        if($encrypted === false)
-        {
-            throw new CryptographyException('Failed to encrypt transport content: ' . openssl_error_string());
-        }
-
-        return base64_encode($iv . $encrypted);
-    }
-
-    /**
-     * Decrypts the given encrypted transport content using the provided encryption key.
-     *
-     * @param string $encryptedContent The Base64 encoded encrypted content to be decrypted.
-     * @param string $encryptionKey The Base64 encoded encryption key used for decryption.
-     * @return string The decrypted content as a string.
-     * @throws CryptographyException If the decryption process fails.
-     */
-    public static function decryptTransport(string $encryptedContent, string $encryptionKey): string
-    {
-        $decodedData = base64_decode($encryptedContent);
-        $ivLength = openssl_cipher_iv_length(self::TRANSPORT_ENCRYPTION);
-
-        // Perform decryption
-        $decryption = openssl_decrypt(substr($decodedData, $ivLength),
-            self::TRANSPORT_ENCRYPTION,
-            base64_decode($encryptionKey),
-            OPENSSL_RAW_DATA,
-            substr($decodedData, 0, $ivLength)
-        );
-
-        if($decryption === false)
-        {
-            throw new CryptographyException('Failed to decrypt transport content: ' . openssl_error_string());
-        }
-
-        return $decryption;
-    }
-}
