@@ -55,6 +55,26 @@
                 return $data->toArray();
             }
 
+            // If the data is an array, recursively call this function on each element
+            if(is_array($data))
+            {
+                foreach($data as $key => $value)
+                {
+                    if(is_array($value))
+                    {
+                        $data[$key] = $this->convertToArray($value);
+                    }
+                    elseif($value instanceof SerializableInterface)
+                    {
+                        $data[$key] = $value->toArray();
+                    }
+                    else
+                    {
+                        $data[$key] = $value;
+                    }
+                }
+            }
+
             return $data;
         }
 
