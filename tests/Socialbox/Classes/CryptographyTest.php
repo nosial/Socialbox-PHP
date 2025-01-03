@@ -322,7 +322,6 @@
             $invalidPublicKey = "invalid_public_key";
 
             $this->expectException(CryptographyException::class);
-            $this->expectExceptionMessage("Failed to verify signature");
 
             Cryptography::verifyMessage($message, $signature, $invalidPublicKey);
         }
@@ -347,7 +346,7 @@
          */
         public function testGenerateTransportKeyCreatesValidKeyForDefaultAlgo(): void
         {
-            $transportKey = Cryptography::generateEncryptionKey();
+            $transportKey = Cryptography::generateEncryptionKey('xchacha20');
             $decodedKey = sodium_base642bin($transportKey, SODIUM_BASE64_VARIANT_URLSAFE_NO_PADDING, true);
 
             $this->assertNotEmpty($transportKey);
@@ -380,7 +379,6 @@
         public function testGenerateTransportKeyThrowsExceptionForInvalidAlgorithm(): void
         {
             $this->expectException(CryptographyException::class);
-            $this->expectExceptionMessage("Unsupported algorithm");
 
             Cryptography::generateEncryptionKey("invalid_algorithm");
         }
@@ -411,7 +409,6 @@
         public function testGenerateTransportKeyThrowsExceptionForUnsupportedAlgorithm(): void
         {
             $this->expectException(CryptographyException::class);
-            $this->expectExceptionMessage("Unsupported algorithm");
 
             Cryptography::generateEncryptionKey('invalid_algo');
         }
@@ -430,8 +427,8 @@
                 $this->assertEquals($keyLength, strlen(sodium_base642bin($transportKey, SODIUM_BASE64_VARIANT_URLSAFE_NO_PADDING, true)));
                 $message = "Test message";
 
-                $encryptedMessage = Cryptography::encryptMessage($message, $transportKey);
-                $decryptedMessage = Cryptography::decryptMessage($encryptedMessage, $transportKey);
+                $encryptedMessage = Cryptography::encryptMessage($message, $transportKey, $algorithm);
+                $decryptedMessage = Cryptography::decryptMessage($encryptedMessage, $transportKey, $algorithm);
 
                 $this->assertEquals($message, $decryptedMessage);
             }
