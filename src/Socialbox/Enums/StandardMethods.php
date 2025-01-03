@@ -10,6 +10,8 @@
     use Socialbox\Classes\StandardMethods\GetSessionState;
     use Socialbox\Classes\StandardMethods\GetTermsOfService;
     use Socialbox\Classes\StandardMethods\Ping;
+    use Socialbox\Classes\StandardMethods\SettingsAddSigningKey;
+    use Socialbox\Classes\StandardMethods\SettingsGetSigningKeys;
     use Socialbox\Classes\StandardMethods\SettingsSetDisplayName;
     use Socialbox\Classes\StandardMethods\SettingsSetPassword;
     use Socialbox\Classes\StandardMethods\VerificationAnswerImageCaptcha;
@@ -58,6 +60,9 @@
         case SETTINGS_SET_PHONE = 'settingsSetPhone';
         case SETTINGS_SET_BIRTHDAY = 'settingsSetBirthday';
 
+        case SETTINGS_ADD_SIGNING_KEY = 'settingsAddSigningKey';
+        case SETTINGS_GET_SIGNING_KEYS = 'settingsGetSigningKeys';
+
         /**
          * Executes the appropriate operation based on the current context and requests provided.
          *
@@ -85,6 +90,9 @@
 
                 self::SETTINGS_SET_PASSWORD => SettingsSetPassword::execute($request, $rpcRequest),
                 self::SETTINGS_SET_DISPLAY_NAME => SettingsSetDisplayName::execute($request, $rpcRequest),
+
+                self::SETTINGS_ADD_SIGNING_KEY => SettingsAddSigningKey::execute($request, $rpcRequest),
+                self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),
 
                 default => $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, sprintf("The method %s is not supported by the server", $rpcRequest->getMethod()))
             };
@@ -158,9 +166,13 @@
                 $methods[] = self::SETTINGS_SET_PASSWORD;
             }
 
-            // If the user is authenticated, then preform additional method calls
+            // If the user is authenticated, then allow additional method calls
             if($session->isAuthenticated())
             {
+                // Authenticated users can always manage their signing keys
+                $methods[] = self::SETTINGS_ADD_SIGNING_KEY;
+                $methods[] = self::SETTINGS_GET_SIGNING_KEYS;
+
                 // Always allow the authenticated user to change their password
                 if(!in_array(SessionFlags::SET_PASSWORD, $session->getFlags()))
                 {
