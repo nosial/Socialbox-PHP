@@ -24,6 +24,21 @@
 
     class SessionManager
     {
+        /**
+         * Creates a new session for a given peer and client details, and stores it in the database.
+         *
+         * @param RegisteredPeerRecord $peer The peer record for which the session is being created.
+         * @param string $clientName The name of the client application.
+         * @param string $clientVersion The version of the client application.
+         * @param string $clientPublicSigningKey The client's public signing key, which must be a valid Ed25519 key.
+         * @param string $clientPublicEncryptionKey The client's public encryption key, which must be a valid X25519 key.
+         * @param KeyPair $serverEncryptionKeyPair The server's key pair for encryption, including both public and private keys.
+         *
+         * @return string The UUID of the newly created session.
+         *
+         * @throws InvalidArgumentException If the provided public signing key or encryption key is invalid.
+         * @throws DatabaseOperationException If there is an error during the session creation in the database.
+         */
         public static function createSession(RegisteredPeerRecord $peer, string $clientName, string $clientVersion, string $clientPublicSigningKey, string $clientPublicEncryptionKey, KeyPair $serverEncryptionKeyPair): string
         {
             if($clientPublicSigningKey === '' || Cryptography::validatePublicSigningKey($clientPublicSigningKey) === false)
@@ -44,7 +59,7 @@
             {
                 $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
 
-                if(RegisteredPeerManager::getPasswordAuthentication($peer))
+                if(PasswordManager::usesPassword($peer->getUuid()))
                 {
                     $flags[] = SessionFlags::VER_PASSWORD;
                 }
