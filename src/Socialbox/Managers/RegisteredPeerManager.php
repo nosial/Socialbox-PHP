@@ -2,6 +2,8 @@
 
     namespace Socialbox\Managers;
 
+    use DateMalformedStringException;
+    use Exception;
     use InvalidArgumentException;
     use PDO;
     use PDOException;
@@ -140,7 +142,7 @@
 
                 return new RegisteredPeerRecord($result);
             }
-            catch(PDOException | \DateMalformedStringException $e)
+            catch(Exception $e)
             {
                 throw new DatabaseOperationException('Failed to get the peer from the database', $e);
             }
@@ -175,7 +177,7 @@
 
                 return new RegisteredPeerRecord($result);
             }
-            catch(PDOException | \DateMalformedStringException $e)
+            catch(PDOException | DateMalformedStringException $e)
             {
                 throw new DatabaseOperationException('Failed to get the peer from the database', $e);
             }
@@ -446,7 +448,7 @@
 
                 return new SecurePasswordRecord($result);
             }
-            catch(PDOException | \DateMalformedStringException $e)
+            catch(PDOException | DateMalformedStringException $e)
             {
                 throw new DatabaseOperationException('Failed to get the secure password record from the database', $e);
             }

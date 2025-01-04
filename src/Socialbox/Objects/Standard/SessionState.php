@@ -5,6 +5,8 @@
     use DateTime;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Managers\RegisteredPeerManager;
+    use Socialbox\Objects\Database\SessionRecord;
 
     class SessionState implements SerializableInterface
     {
@@ -16,6 +18,7 @@
          */
         private ?array $flags;
         private int $created;
+        private int $expires;
 
         /**
          * Constructor for initializing the object with the provided data.
@@ -56,6 +59,19 @@
             else
             {
                 $this->created = time();
+            }
+
+            if(is_int($data['expires']))
+            {
+                $this->expires = $data['expires'];
+            }
+            elseif($data['expires'] instanceof DateTime)
+            {
+                $this->expires = $data['expires']->getTimestamp();
+            }
+            else
+            {
+                $this->expires = time();
             }
         }
 
@@ -131,6 +147,16 @@
         }
 
         /**
+         * Retrieves the expiration timestamp of the current instance.
+         *
+         * @return int The expiration timestamp as an integer.
+         */
+        public function getExpires(): int
+        {
+            return $this->expires;
+        }
+
+        /**
          * Creates a new instance of SessionState from the provided array.
          *
          * @param array $data The input array containing data to initialize the SessionState instance.
@@ -142,9 +168,22 @@
         }
 
         /**
-         * Converts the current instance into an associative array.
-         *
-         * @return array An associative array representation of the instance, including UUID, identification, authentication status, flags, and creation date.
+         * @inheritDoc
+         */
+        public static function fromSessionRecord(SessionRecord $sessionRecord): SessionState
+        {
+            return new self([
+                'uuid' => $sessionRecord->getUuid(),
+                'identified_as' => RegisteredPeerManager::getPeer($sessionRecord->getPeerUuid())->getAddress(),
+                'authenticated' => $sessionRecord->isAuthenticated(),
+                'flags' => $sessionRecord->getFlags(true),
+                'created' => $sessionRecord->getCreated()->getTimestamp(),
+                'expires' => $sessionRecord->getExpires()->getTimestamp()
+            ]);
+        }
+
+        /**
+         * @inheritDoc
          */
         public function toArray(): array
         {
@@ -154,6 +193,7 @@
                 'authenticated' => $this->authenticated,
                 'flags' => $this->flags,
                 'created' => $this->created,
+                'expires' => $this->expires
             ];
         }
     }

@@ -6,6 +6,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\SessionState;
+    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\RegisteredPeerManager;
 
@@ -186,12 +187,25 @@
         }
 
         /**
+         * @return DateTime
+         */
+        public function getExpires(): DateTime
+        {
+            return new DateTime('@' . time() + Configuration::getPoliciesConfiguration()->getSessionInactivityExpires());
+        }
+
+        /**
          * Retrieves the list of flags associated with the current instance.
          *
          * @return array Returns an array of flags.
          */
-        public function getFlags(): array
+        public function getFlags(bool $asString): array
         {
+            if($asString)
+            {
+                return array_map(fn(SessionFlags $flag) => $flag->value, $this->flags);
+            }
+
             return $this->flags;
         }
 
@@ -252,16 +266,9 @@
          */
         public function toStandardSessionState(): \Socialbox\Objects\Standard\SessionState
         {
-            return new \Socialbox\Objects\Standard\SessionState([
-                'uuid' => $this->uuid,
-                'identified_as' => RegisteredPeerManager::getPeer($this->peerUuid)->getAddress(),
-                'authenticated' => $this->authenticated,
-                'flags' => $this->flags,
-                'created' => $this->created
-            ]);
+            return \Socialbox\Objects\Standard\SessionState::fromSessionRecord($this);
         }
-        
-        
+
         /**
          * @inheritDoc
          */
