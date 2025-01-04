@@ -16,6 +16,9 @@
         private string $server;
         private ?string $displayName;
         private ?string $displayPicture;
+        private ?string $emailAddress;
+        private ?string $phoneNumber;
+        private ?DateTime $birthday;
         /**
          * @var PeerFlags[]
          */
@@ -27,7 +30,6 @@
          * Constructor for initializing class properties from provided data.
          *
          * @param array $data Array containing initialization data.
-         * @throws \DateMalformedStringException
          */
         public function __construct(array $data)
         {
@@ -36,6 +38,25 @@
             $this->server = $data['server'];
             $this->displayName = $data['display_name'] ?? null;
             $this->displayPicture = $data['display_picture'] ?? null;
+            $this->emailAddress = $data['email_address'] ?? null;
+            $this->phoneNumber = $data['phone_number'] ?? null;
+
+            if(is_int($data['birthday']))
+            {
+                $this->birthday = (new DateTime())->setTimestamp($data['birthday']);
+            }
+            elseif(is_string($data['birthday']))
+            {
+                $this->birthday = new DateTime($data['birthday']);
+            }
+            elseif($data['birthday'] instanceof DateTime)
+            {
+                $this->birthday = $data['birthday'];
+            }
+            else
+            {
+                $this->birthday = null;
+            }
 
             if($data['flags'])
             {
@@ -48,13 +69,17 @@
 
             $this->enabled = $data['enabled'];
 
-            if (is_string($data['created']))
+            if(is_int($data['created']))
+            {
+                $this->created = (new DateTime())->setTimestamp($data['created']);
+            }
+            elseif(is_string($data['created']))
             {
                 $this->created = new DateTime($data['created']);
             }
             else
             {
-                $this->created = $data['created'];
+                throw new \InvalidArgumentException("The created field must be a valid timestamp or date string.");
             }
         }
 
@@ -116,6 +141,36 @@
         public function getDisplayPicture(): ?string
         {
             return $this->displayPicture;
+        }
+
+        /**
+         * Retrieves the email address.
+         *
+         * @return string|null The email address if set, or null otherwise.
+         */
+        public function getEmailAddress(): ?string
+        {
+            return $this->emailAddress;
+        }
+
+        /**
+         * Retrieves the phone number.
+         *
+         * @return string|null The phone number if set, or null otherwise.
+         */
+        public function getPhoneNumber(): ?string
+        {
+            return $this->phoneNumber;
+        }
+
+        /**
+         * Retrieves the birthday.
+         *
+         * @return DateTime|null The birthday if set, or null otherwise.
+         */
+        public function getBirthday(): ?DateTime
+        {
+            return $this->birthday;
         }
 
         /**
@@ -221,6 +276,9 @@
                 'server' => $this->server,
                 'display_name' => $this->displayName,
                 'display_picture' => $this->displayPicture,
+                'email_address' => $this->emailAddress,
+                'phone_number' => $this->phoneNumber,
+                'birthday' => $this->birthday?->getTimestamp(),
                 'flags' => PeerFlags::toString($this->flags),
                 'enabled' => $this->enabled,
                 'created' => $this->created

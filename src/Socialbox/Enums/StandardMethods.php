@@ -11,6 +11,7 @@
     use Socialbox\Classes\StandardMethods\GetTermsOfService;
     use Socialbox\Classes\StandardMethods\Ping;
     use Socialbox\Classes\StandardMethods\SettingsAddSigningKey;
+    use Socialbox\Classes\StandardMethods\SettingsDeleteDisplayName;
     use Socialbox\Classes\StandardMethods\SettingsGetSigningKeys;
     use Socialbox\Classes\StandardMethods\SettingsSetDisplayName;
     use Socialbox\Classes\StandardMethods\SettingsSetPassword;
@@ -55,6 +56,7 @@
         case SETTINGS_SET_PASSWORD = 'settingsSetPassword';
         case SETTINGS_SET_OTP = 'settingsSetOtp';
         case SETTINGS_SET_DISPLAY_NAME = 'settingsSetDisplayName';
+        case SETTINGS_DELETE_DISPLAY_NAME = 'settingsDeleteDisplayName';
         case SETTINGS_SET_DISPLAY_PICTURE = 'settingsSetDisplayPicture';
         case SETTINGS_SET_EMAIL = 'settingsSetEmail';
         case SETTINGS_SET_PHONE = 'settingsSetPhone';
@@ -90,6 +92,7 @@
 
                 self::SETTINGS_SET_PASSWORD => SettingsSetPassword::execute($request, $rpcRequest),
                 self::SETTINGS_SET_DISPLAY_NAME => SettingsSetDisplayName::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_DISPLAY_NAME => SettingsDeleteDisplayName::execute($request, $rpcRequest),
 
                 self::SETTINGS_ADD_SIGNING_KEY => SettingsAddSigningKey::execute($request, $rpcRequest),
                 self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),

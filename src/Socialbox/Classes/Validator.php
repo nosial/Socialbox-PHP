@@ -34,4 +34,14 @@ class Validator
         return preg_match(self::USERNAME_PATTERN, $username) === 1;
     }
 
+    /**
+     * Validates whether a given phone number conforms to the required format.
+     *
+     * @param string $phoneNumber The phone number to validate. Must start with a "+" followed by 1 to 15 digits.
+     * @return bool Returns true if the phone number is valid according to the format, otherwise false.
+     */
+    public static function validatePhoneNumber(string $phoneNumber): bool
+    {
+        return preg_match("/^\+[0-9]{1,15}$/", $phoneNumber) === 1;
+    }
 }

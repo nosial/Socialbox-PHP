@@ -2,7 +2,6 @@
 
     namespace Socialbox\Managers;
 
-    use DateMalformedStringException;
     use Exception;
     use InvalidArgumentException;
     use PDO;
@@ -10,10 +9,10 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Logger;
+    use Socialbox\Classes\Validator;
     use Socialbox\Enums\Flags\PeerFlags;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\RegisteredPeerRecord;
-    use Socialbox\Objects\Database\SecurePasswordRecord;
     use Socialbox\Objects\PeerAddress;
     use Symfony\Component\Uid\Uuid;
 
@@ -177,7 +176,7 @@
 
                 return new RegisteredPeerRecord($result);
             }
-            catch(PDOException | DateMalformedStringException $e)
+            catch(Exception $e)
             {
                 throw new DatabaseOperationException('Failed to get the peer from the database', $e);
             }
@@ -366,6 +365,41 @@
         }
 
         /**
+         * Deletes the display name of a registered peer identified by a unique identifier or RegisteredPeerRecord object.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @return void
+         * @throws InvalidArgumentException If the peer is external and its display name cannot be deleted.
+         * @throws DatabaseOperationException If there is an error during the database operation.
+         */
+        public static function deleteDisplayName(string|RegisteredPeerRecord $peer): void
+        {
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot delete the display name of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Deleting display name of peer %s", $peer->getUuid()));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET display_name=NULL WHERE uuid=?');
+                $uuid = $peer->getUuid();
+                $statement->bindParam(1, $uuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to delete the display name of the peer in the database', $e);
+            }
+        }
+
+        /**
          * Updates the display picture of a registered peer in the database.
          *
          * @param string|RegisteredPeerRecord $peer The unique identifier of the peer or an instance of RegisteredPeerRecord.
@@ -420,37 +454,211 @@
         }
 
         /**
-         * Retrieves the password authentication record associated with the given unique peer identifier or a RegisteredPeerRecord object.
+         * Deletes the display picture of a registered peer based on the given unique identifier or RegisteredPeerRecord object.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.
-         * @return SecurePasswordRecord|null Returns a SecurePasswordRecord object if a password authentication record exists, otherwise null.
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @return void
+         * @throws InvalidArgumentException If the peer is external and its display picture cannot be deleted.
          * @throws DatabaseOperationException If there is an error during the database operation.
          */
-        public static function getPasswordAuthentication(string|RegisteredPeerRecord $peerUuid): ?SecurePasswordRecord
+        public static function deleteDisplayPicture(string|RegisteredPeerRecord $peer): void
         {
-            if($peerUuid instanceof RegisteredPeerRecord)
+            if(is_string($peer))
             {
-                $peerUuid = $peerUuid->getUuid();
+                $peer = self::getPeer($peer);
             }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot delete the display picture of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Deleting display picture of peer %s", $peer->getUuid()));
 
             try
             {
-                $statement = Database::getConnection()->prepare('SELECT * FROM `authentication_passwords` WHERE peer_uuid=?');
-                $statement->bindParam(1, $peerUuid);
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET display_picture=NULL WHERE uuid=?');
+                $uuid = $peer->getUuid();
+                $statement->bindParam(1, $uuid);
                 $statement->execute();
-
-                $result = $statement->fetch(PDO::FETCH_ASSOC);
-
-                if($result === false)
-                {
-                    return null;
-                }
-
-                return new SecurePasswordRecord($result);
             }
-            catch(PDOException | DateMalformedStringException $e)
+            catch(PDOException $e)
             {
-                throw new DatabaseOperationException('Failed to get the secure password record from the database', $e);
+                throw new DatabaseOperationException('Failed to delete the display picture of the peer in the database', $e);
+            }
+        }
+
+        /**
+         * Updates the email address of a registered peer.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the peer, or an instance of RegisteredPeerRecord.
+         * @param string $emailAddress The new email address to be assigned to the peer.
+         * @return void
+         * @throws InvalidArgumentException If the email address is empty, exceeds 256 characters, is not a valid email format, or if the peer is external.
+         * @throws DatabaseOperationException If there is an error during the database operation.
+         */
+        public static function updateEmailAddress(string|RegisteredPeerRecord $peer, string $emailAddress): void
+        {
+            if(empty($emailAddress))
+            {
+                throw new InvalidArgumentException('The email address cannot be empty');
+            }
+
+            if(strlen($emailAddress) > 256)
+            {
+                throw new InvalidArgumentException('The email address cannot exceed 256 characters');
+            }
+
+            if(filter_var($emailAddress, FILTER_VALIDATE_EMAIL) === false)
+            {
+                throw new InvalidArgumentException('The email address is not valid');
+            }
+
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot update the email address of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Updating email address of peer %s to %s", $peer->getUuid(), $emailAddress));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET email_address=? WHERE uuid=?');
+                $statement->bindParam(1, $emailAddress);
+                $uuid = $peer->getUuid();
+                $statement->bindParam(2, $uuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to update the email address of the peer in the database', $e);
+            }
+        }
+
+        /**
+         * Deletes the email address of a registered peer identified by either a unique identifier or a RegisteredPeerRecord object.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @return void
+         * @throws InvalidArgumentException If the peer is external and its email address cannot be deleted.
+         * @throws DatabaseOperationException If there is an error during the database operation.
+         */
+        public static function deleteEmailAddress(string|RegisteredPeerRecord $peer): void
+        {
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot delete the email address of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Deleting email address of peer %s", $peer->getUuid()));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET email_address=NULL WHERE uuid=?');
+                $uuid = $peer->getUuid();
+                $statement->bindParam(1, $uuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to delete the email address of the peer in the database', $e);
+            }
+        }
+
+        /**
+         * Updates the phone number of the specified registered peer.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @param string $phoneNumber The new phone number to be set for the peer.
+         * @return void
+         * @throws InvalidArgumentException If the phone number is empty, exceeds 16 characters, is invalid, or if the peer is external.
+         * @throws DatabaseOperationException If there is an error during the database operation.
+         */
+        public static function updatePhoneNumber(string|RegisteredPeerRecord $peer, string $phoneNumber): void
+        {
+            if(empty($phoneNumber))
+            {
+                throw new InvalidArgumentException('The phone number cannot be empty');
+            }
+
+            if(strlen($phoneNumber) > 16)
+            {
+                throw new InvalidArgumentException('The phone number cannot exceed 16 characters');
+            }
+            
+            if(!Validator::validatePhoneNumber($phoneNumber))
+            {
+                throw new InvalidArgumentException('The phone number is not valid');
+            }
+
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot update the phone number of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Updating phone number of peer %s to %s", $peer->getUuid(), $phoneNumber));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET phone_number=? WHERE uuid=?');
+                $statement->bindParam(1, $phoneNumber);
+                $uuid = $peer->getUuid();
+                $statement->bindParam(2, $uuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to update the phone number of the peer in the database', $e);
+            }
+        }
+
+        /**
+         * Deletes the phone number of a registered peer based on the given unique identifier or RegisteredPeerRecord object.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @return void This method does not return a value.
+         * @throws InvalidArgumentException If the peer is external and its phone number cannot be deleted.
+         * @throws DatabaseOperationException If there is an error during the database operation.
+         */
+        public static function deletePhoneNumber(string|RegisteredPeerRecord $peer): void
+        {
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot delete the phone number of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Deleting phone number of peer %s", $peer->getUuid()));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET phone_number=NULL WHERE uuid=?');
+                $uuid = $peer->getUuid();
+                $statement->bindParam(1, $uuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to delete the phone number of the peer in the database', $e);
             }
         }
     }
