@@ -3,6 +3,7 @@
     namespace Socialbox\Objects\Database;
 
     use DateTime;
+    use Socialbox\Classes\Configuration;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\SessionState;
     use Socialbox\Interfaces\SerializableInterface;
@@ -165,6 +166,12 @@
          */
         public function getState(): SessionState
         {
+            $expires = time() + Configuration::getPoliciesConfiguration()->getSessionInactivityExpires();
+            if($this->lastRequest !== null && $this->lastRequest->getTimestamp() > $expires)
+            {
+                return SessionState::EXPIRED;
+            }
+
             return $this->state;
         }
 

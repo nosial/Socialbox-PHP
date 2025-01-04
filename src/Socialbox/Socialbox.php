@@ -409,7 +409,18 @@
             // Verify if the session is active
             if($session->getState() !== SessionState::ACTIVE)
             {
-                self::returnError(403, StandardError::FORBIDDEN, 'Session is not active');
+                self::returnError(403, StandardError::FORBIDDEN, 'Session is not active (' . $session->getState()->value . ')');
+                return;
+            }
+
+            try
+            {
+                SessionManager::updateLastRequest($session->getUuid());
+            }
+            catch (DatabaseOperationException $e)
+            {
+                Logger::getLogger()->error('Failed to update the last request time for the session', $e);
+                self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to update the session', $e);
                 return;
             }
 

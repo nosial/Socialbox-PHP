@@ -123,6 +123,9 @@
             // Server Policies
             // The maximum number of signing keys a peer can register onto the server at once
             $config->setDefault('policies.max_signing_keys', 20);
+            // The amount of time in seconds it takes before a session is considered expired due to inactivity
+            // Default: 12hours
+            $config->setDefault('policies.session_inactivity_expires', 43200);
 
             // Storage configuration
             $config->setDefault('storage.path', '/etc/socialbox'); // The main path for file storage
