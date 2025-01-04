@@ -167,7 +167,7 @@
         public function getState(): SessionState
         {
             $expires = time() + Configuration::getPoliciesConfiguration()->getSessionInactivityExpires();
-            if($this->lastRequest !== null && $this->lastRequest->getTimestamp() > $expires)
+            if($this->lastRequest !== null && $this->lastRequest->getTimestamp() < $expires)
             {
                 return SessionState::EXPIRED;
             }
