@@ -195,11 +195,12 @@
         }
 
         /**
-         * Retrieves the list of flags associated with the current instance.
+         * Retrieves the flags associated with the session.
          *
-         * @return array Returns an array of flags.
+         * @param bool $asString Determines whether the flags should be returned as strings.
+         * @return array An array of session flags, either as objects or strings depending on the $asString parameter.
          */
-        public function getFlags(bool $asString): array
+        public function getFlags(bool $asString=false): array
         {
             if($asString)
             {
