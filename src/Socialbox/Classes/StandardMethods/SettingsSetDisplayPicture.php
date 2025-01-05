@@ -34,8 +34,7 @@
 
             try
             {
-                $decodedImage = base64_decode($rpcRequest->getParameter('image'));
-
+                $decodedImage = @base64_decode($rpcRequest->getParameter('image'));
                 if($decodedImage === false)
                 {
                     return $rpcRequest->produceError(StandardError::RPC_BAD_REQUEST, "Failed to decode JPEG image base64 data");
@@ -53,11 +52,11 @@
                 // Set the password
                 RegisteredPeerManager::updateDisplayPicture($request->getPeer(), $sanitizedImage);
 
-                // Remove the SET_DISPLAY_PICTURE flag
-                SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::SET_DISPLAY_PICTURE]);
-
                 // Check & update the session flow
-                SessionManager::updateFlow($request->getSession());
+                if($request->getSession()->flagExists(SessionFlags::SET_DISPLAY_PICTURE))
+                {
+                    SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_DISPLAY_PICTURE]);
+                }
             }
             catch(Exception $e)
             {

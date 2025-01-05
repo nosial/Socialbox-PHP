@@ -432,6 +432,7 @@
                 $peer = self::getPeer($peer);
             }
 
+            // TODO: Handle for external peers, needs a way to resolve peers to their external counterparts
             if($peer->isExternal())
             {
                 throw new InvalidArgumentException('Cannot update the display picture of an external peer');

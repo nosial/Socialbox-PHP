@@ -13,9 +13,11 @@
     use Socialbox\Classes\StandardMethods\Ping;
     use Socialbox\Classes\StandardMethods\SettingsAddSigningKey;
     use Socialbox\Classes\StandardMethods\SettingsDeleteDisplayName;
+    use Socialbox\Classes\StandardMethods\SettingsDeleteDisplayPicture;
     use Socialbox\Classes\StandardMethods\SettingsDeletePassword;
     use Socialbox\Classes\StandardMethods\SettingsGetSigningKeys;
     use Socialbox\Classes\StandardMethods\SettingsSetDisplayName;
+    use Socialbox\Classes\StandardMethods\SettingsSetDisplayPicture;
     use Socialbox\Classes\StandardMethods\SettingsSetPassword;
     use Socialbox\Classes\StandardMethods\SettingsUpdatePassword;
     use Socialbox\Classes\StandardMethods\VerificationAnswerImageCaptcha;
@@ -63,6 +65,7 @@
         case SETTINGS_SET_DISPLAY_NAME = 'settingsSetDisplayName';
         case SETTINGS_DELETE_DISPLAY_NAME = 'settingsDeleteDisplayName';
         case SETTINGS_SET_DISPLAY_PICTURE = 'settingsSetDisplayPicture';
+        case SETTINGS_DELETE_DISPLAY_PICTURE = 'settingsDeleteDisplayPicture';
         case SETTINGS_SET_EMAIL = 'settingsSetEmail';
         case SETTINGS_SET_PHONE = 'settingsSetPhone';
         case SETTINGS_SET_BIRTHDAY = 'settingsSetBirthday';
@@ -100,6 +103,8 @@
                 self::SETTINGS_DELETE_PASSWORD => SettingsDeletePassword::execute($request, $rpcRequest),
                 self::SETTINGS_SET_DISPLAY_NAME => SettingsSetDisplayName::execute($request, $rpcRequest),
                 self::SETTINGS_DELETE_DISPLAY_NAME => SettingsDeleteDisplayName::execute($request, $rpcRequest),
+                self::SETTINGS_SET_DISPLAY_PICTURE => SettingsSetDisplayPicture::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_DISPLAY_PICTURE => SettingsDeleteDisplayPicture::execute($request, $rpcRequest),
 
                 self::SETTINGS_ADD_SIGNING_KEY => SettingsAddSigningKey::execute($request, $rpcRequest),
                 self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),
@@ -159,7 +164,9 @@
                     self::SETTINGS_ADD_SIGNING_KEY,
                     self::SETTINGS_GET_SIGNING_KEYS,
                     self::SETTINGS_SET_DISPLAY_NAME,
+                    self::SETTINGS_SET_DISPLAY_PICTURE,
                     self::SETTINGS_SET_PASSWORD,
+                    self::SETTINGS_UPDATE_PASSWORD,
                 ]);
 
                 // Prevent the user from deleting their display name if it is required
@@ -168,10 +175,14 @@
                     $methods[] = self::SETTINGS_DELETE_DISPLAY_NAME;
                 }
 
-                // Always allow the authenticated user to change their password
-                if(!in_array(SessionFlags::SET_PASSWORD, $session->getFlags()))
+                if(!Configuration::getRegistrationConfiguration()->isPasswordRequired())
                 {
-                    $methods[] = self::SETTINGS_SET_PASSWORD;
+                    $methods[] = self::SETTINGS_DELETE_PASSWORD;
+                }
+
+                if(!Configuration::getRegistrationConfiguration()->isDisplayPictureRequired())
+                {
+                    $methods[] = self::SETTINGS_DELETE_DISPLAY_PICTURE;
                 }
             }
             // If the session isn't authenticated nor a host, a limited set of methods is available
@@ -212,6 +223,12 @@
                 if($session->flagExists(SessionFlags::SET_DISPLAY_NAME))
                 {
                     $methods[] = self::SETTINGS_SET_DISPLAY_NAME;
+                }
+
+                // If the flag `SET_DISPLAY_PICTURE` is set, then the user has to set a display picture
+                if($session->flagExists(SessionFlags::SET_DISPLAY_PICTURE))
+                {
+                    $methods[] = self::SETTINGS_DELETE_DISPLAY_PICTURE;
                 }
             }
 
