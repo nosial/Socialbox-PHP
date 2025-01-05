@@ -423,17 +423,21 @@
          * Marks the session as complete if all necessary conditions are met.
          *
          * @param SessionRecord $session The session record to evaluate and potentially mark as complete.
+         * @param array $flagsToRemove An array of flags to remove from the session if it is marked as complete.
+         * @return void
          * @throws DatabaseOperationException If there is an error while updating the session in the database.
          * @throws StandardException If the session record cannot be found or if there is an error during retrieval.
-         * @return void
          */
-        public static function updateFlow(SessionRecord $session): void
+        public static function updateFlow(SessionRecord $session, array $flagsToRemove=[]): void
         {
             // Don't do anything if the session is already authenticated
             if(!in_array(SessionFlags::REGISTRATION_REQUIRED, $session->getFlags()) || !in_array(SessionFlags::AUTHENTICATION_REQUIRED, $session->getFlags()))
             {
                 return;
             }
+
+            self::removeFlags($session->getUuid(), $flagsToRemove);
+            $session = self::getSession($session->getUuid());
 
             // Check if all registration/authentication requirements are met
             if(SessionFlags::isComplete($session->getFlags()))

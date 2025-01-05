@@ -642,7 +642,6 @@
          *
          * @param string $hash The hash string to be validated.
          * @return bool Returns true if the hash is valid and meets current security standards.
-         * @throws CryptographyException If the hash format is invalid or does not meet security requirements.
          */
         public static function validatePasswordHash(string $hash): bool
         {
@@ -652,22 +651,21 @@
                 $argon2id_pattern = '/^\$argon2id\$v=\d+\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+\/=]+\$[A-Za-z0-9+\/=]+$/D';
                 if (!preg_match($argon2id_pattern, $hash))
                 {
-                    throw new CryptographyException("Invalid hash format");
+                    return false;
                 }
 
                 // Step 2: Check if it needs rehashing (validates the hash structure)
                 if (sodium_crypto_pwhash_str_needs_rehash($hash, SODIUM_CRYPTO_PWHASH_OPSLIMIT_INTERACTIVE, SODIUM_CRYPTO_PWHASH_MEMLIMIT_INTERACTIVE))
                 {
-                    throw new CryptographyException("Hash does not meet current security requirements");
+                    return false;
                 }
-
-                // If all checks pass, the hash is valid.
-                return true;
             }
-            catch (Exception $e)
+            catch (Exception)
             {
-                throw new CryptographyException("Invalid hash: " . $e->getMessage());
+                return false;
             }
+
+            return true;
         }
 
         /**

@@ -5,17 +5,15 @@
     use Exception;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Cryptography;
-    use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
-    use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
 
-    class SettingsSetPassword extends Method
+    class SettingsUpdatePassword extends Method
     {
         /**
          * @inheritDoc
@@ -34,9 +32,9 @@
 
             try
             {
-                if (PasswordManager::usesPassword($request->getPeer()->getUuid()))
+                if (!PasswordManager::usesPassword($request->getPeer()->getUuid()))
                 {
-                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Cannot set password when one is already set, use 'settingsUpdatePassword' instead");
+                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Cannot update password when one isn't already set, use 'settingsSetPassword' instead");
                 }
             }
             catch (DatabaseOperationException $e)
@@ -47,13 +45,7 @@
             try
             {
                 // Set the password
-                PasswordManager::setPassword($request->getPeer(), $rpcRequest->getParameter('password'));
-
-                // Remove the SET_PASSWORD flag & update the session flow if necessary
-                if($request->getSession()->flagExists(SessionFlags::SET_PASSWORD))
-                {
-                    SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_PASSWORD]);
-                }
+                PasswordManager::updatePassword($request->getPeer(), $rpcRequest->getParameter('password'));
             }
             catch(Exception $e)
             {

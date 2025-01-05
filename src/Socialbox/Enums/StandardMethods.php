@@ -2,6 +2,7 @@
 
     namespace Socialbox\Enums;
 
+    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\StandardMethods\AcceptCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\AcceptTermsOfService;
@@ -12,9 +13,11 @@
     use Socialbox\Classes\StandardMethods\Ping;
     use Socialbox\Classes\StandardMethods\SettingsAddSigningKey;
     use Socialbox\Classes\StandardMethods\SettingsDeleteDisplayName;
+    use Socialbox\Classes\StandardMethods\SettingsDeletePassword;
     use Socialbox\Classes\StandardMethods\SettingsGetSigningKeys;
     use Socialbox\Classes\StandardMethods\SettingsSetDisplayName;
     use Socialbox\Classes\StandardMethods\SettingsSetPassword;
+    use Socialbox\Classes\StandardMethods\SettingsUpdatePassword;
     use Socialbox\Classes\StandardMethods\VerificationAnswerImageCaptcha;
     use Socialbox\Classes\StandardMethods\VerificationGetImageCaptcha;
     use Socialbox\Enums\Flags\SessionFlags;
@@ -54,6 +57,8 @@
         case VERIFICATION_ANSWER_EXTERNAL_URL = 'verificationAnswerExternalUrl';
 
         case SETTINGS_SET_PASSWORD = 'settingsSetPassword';
+        case SETTINGS_UPDATE_PASSWORD = 'settingsUpdatePassword';
+        case SETTINGS_DELETE_PASSWORD = 'settingsDeletePassword';
         case SETTINGS_SET_OTP = 'settingsSetOtp';
         case SETTINGS_SET_DISPLAY_NAME = 'settingsSetDisplayName';
         case SETTINGS_DELETE_DISPLAY_NAME = 'settingsDeleteDisplayName';
@@ -91,6 +96,8 @@
                 self::VERIFICATION_ANSWER_IMAGE_CAPTCHA => VerificationAnswerImageCaptcha::execute($request, $rpcRequest),
 
                 self::SETTINGS_SET_PASSWORD => SettingsSetPassword::execute($request, $rpcRequest),
+                self::SETTINGS_UPDATE_PASSWORD => SettingsUpdatePassword::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_PASSWORD => SettingsDeletePassword::execute($request, $rpcRequest),
                 self::SETTINGS_SET_DISPLAY_NAME => SettingsSetDisplayName::execute($request, $rpcRequest),
                 self::SETTINGS_DELETE_DISPLAY_NAME => SettingsDeleteDisplayName::execute($request, $rpcRequest),
 
@@ -138,48 +145,73 @@
 
             $session = $clientRequest->getSession();
 
-            // If the flag `VER_PRIVACY_POLICY` is set, then the user can accept the privacy policy
-            if($session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
+            // If the session is external (eg; coming from a different server)
+            // Servers will have their own access control mechanisms
+            if($session->isExternal())
             {
-                $methods[] = self::ACCEPT_PRIVACY_POLICY;
+                // TODO: Implement server access control
             }
-
-            // If the flag `VER_TERMS_OF_SERVICE` is set, then the user can accept the terms of service
-            if($session->flagExists(SessionFlags::VER_TERMS_OF_SERVICE))
+            // If the session is authenticated, then allow additional method calls
+            elseif($session->isAuthenticated())
             {
-                $methods[] = self::ACCEPT_TERMS_OF_SERVICE;
-            }
+                // These methods are always allowed for authenticated users
+                $methods = array_merge($methods, [
+                    self::SETTINGS_ADD_SIGNING_KEY,
+                    self::SETTINGS_GET_SIGNING_KEYS,
+                    self::SETTINGS_SET_DISPLAY_NAME,
+                    self::SETTINGS_SET_PASSWORD,
+                ]);
 
-            // If the flag `VER_COMMUNITY_GUIDELINES` is set, then the user can accept the community guidelines
-            if($session->flagExists(SessionFlags::VER_COMMUNITY_GUIDELINES))
-            {
-                $methods[] = self::ACCEPT_COMMUNITY_GUIDELINES;
-            }
-
-            // If the flag `VER_IMAGE_CAPTCHA` is set, then the user has to get and answer an image captcha
-            if($session->flagExists(SessionFlags::VER_IMAGE_CAPTCHA))
-            {
-                $methods[] = self::VERIFICATION_GET_IMAGE_CAPTCHA;
-                $methods[] = self::VERIFICATION_ANSWER_IMAGE_CAPTCHA;
-            }
-
-            // If the flag `SET_PASSWORD` is set, then the user has to set a password
-            if(in_array(SessionFlags::SET_PASSWORD, $session->getFlags()))
-            {
-                $methods[] = self::SETTINGS_SET_PASSWORD;
-            }
-
-            // If the user is authenticated, then allow additional method calls
-            if($session->isAuthenticated())
-            {
-                // Authenticated users can always manage their signing keys
-                $methods[] = self::SETTINGS_ADD_SIGNING_KEY;
-                $methods[] = self::SETTINGS_GET_SIGNING_KEYS;
+                // Prevent the user from deleting their display name if it is required
+                if(!Configuration::getRegistrationConfiguration()->isDisplayNameRequired())
+                {
+                    $methods[] = self::SETTINGS_DELETE_DISPLAY_NAME;
+                }
 
                 // Always allow the authenticated user to change their password
                 if(!in_array(SessionFlags::SET_PASSWORD, $session->getFlags()))
                 {
                     $methods[] = self::SETTINGS_SET_PASSWORD;
+                }
+            }
+            // If the session isn't authenticated nor a host, a limited set of methods is available
+            else
+            {
+                // If the flag `VER_PRIVACY_POLICY` is set, then the user can accept the privacy policy
+                if($session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
+                {
+                    $methods[] = self::ACCEPT_PRIVACY_POLICY;
+                }
+
+                // If the flag `VER_TERMS_OF_SERVICE` is set, then the user can accept the terms of service
+                if($session->flagExists(SessionFlags::VER_TERMS_OF_SERVICE))
+                {
+                    $methods[] = self::ACCEPT_TERMS_OF_SERVICE;
+                }
+
+                // If the flag `VER_COMMUNITY_GUIDELINES` is set, then the user can accept the community guidelines
+                if($session->flagExists(SessionFlags::VER_COMMUNITY_GUIDELINES))
+                {
+                    $methods[] = self::ACCEPT_COMMUNITY_GUIDELINES;
+                }
+
+                // If the flag `VER_IMAGE_CAPTCHA` is set, then the user has to get and answer an image captcha
+                if($session->flagExists(SessionFlags::VER_IMAGE_CAPTCHA))
+                {
+                    $methods[] = self::VERIFICATION_GET_IMAGE_CAPTCHA;
+                    $methods[] = self::VERIFICATION_ANSWER_IMAGE_CAPTCHA;
+                }
+
+                // If the flag `SET_PASSWORD` is set, then the user has to set a password
+                if($session->flagExists(SessionFlags::SET_PASSWORD))
+                {
+                    $methods[] = self::SETTINGS_SET_PASSWORD;
+                }
+
+                // If the flag `SET_DISPLAY_NAME` is set, then the user has to set a display name
+                if($session->flagExists(SessionFlags::SET_DISPLAY_NAME))
+                {
+                    $methods[] = self::SETTINGS_SET_DISPLAY_NAME;
                 }
             }
 

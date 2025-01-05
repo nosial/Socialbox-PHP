@@ -7,7 +7,7 @@ enum StandardError : int
     // Fallback Codes
     case UNKNOWN = -1;
 
-    // Server/Request Errors
+    // Generic Errors
     case INTERNAL_SERVER_ERROR = -100;
     case SERVER_UNAVAILABLE = -101;
     case BAD_REQUEST = -102;
@@ -26,12 +26,7 @@ enum StandardError : int
 
     // Authentication/Cryptography Errors
     case INVALID_PUBLIC_KEY = -4000; // *
-
-    case SESSION_REQUIRED = -5001; // *
     case SESSION_NOT_FOUND = -5002; // *
-    case SESSION_EXPIRED = -5003; // *
-    case SESSION_DHE_REQUIRED = -5004; // *
-
     case ALREADY_AUTHENTICATED = -6005;
     case UNSUPPORTED_AUTHENTICATION_TYPE = -6006;
     case AUTHENTICATION_REQUIRED = -6007;
@@ -55,7 +50,7 @@ enum StandardError : int
     {
         return match ($this)
         {
-            self::UNKNOWN => 'Unknown Error',
+            default => 'Unknown Error',
 
             self::RPC_METHOD_NOT_FOUND => 'The request method was not found',
             self::RPC_INVALID_ARGUMENTS => 'The request method contains one or more invalid arguments',
@@ -68,7 +63,6 @@ enum StandardError : int
             self::ALREADY_AUTHENTICATED => 'The action cannot be preformed while authenticated',
             self::AUTHENTICATION_REQUIRED => 'Authentication is required to preform this action',
             self::SESSION_NOT_FOUND => 'The requested session UUID was not found',
-            self::SESSION_REQUIRED => 'A session is required to preform this action',
             self::REGISTRATION_DISABLED => 'Registration is disabled on the server',
             self::CAPTCHA_NOT_AVAILABLE => 'Captcha is not available',
             self::INCORRECT_CAPTCHA_ANSWER => 'The Captcha answer is incorrect',
@@ -79,8 +73,6 @@ enum StandardError : int
             self::USERNAME_ALREADY_EXISTS => 'The given username already exists on the network',
             self::NOT_REGISTERED => 'The given username is not registered on the server',
             self::METHOD_NOT_ALLOWED => 'The requested method is not allowed',
-            self::SESSION_EXPIRED => 'The session has expired',
-            self::SESSION_DHE_REQUIRED => 'The session requires DHE to be established',
         };
 
     }

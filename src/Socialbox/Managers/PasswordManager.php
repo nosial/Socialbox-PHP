@@ -116,6 +116,32 @@
         }
 
         /**
+         * Deletes the stored password for a specific peer.
+         *
+         * @param string|RegisteredPeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.
+         * @return void
+         * @throws DatabaseOperationException If an error occurs during the database operation.
+         */
+        public static function deletePassword(string|RegisteredPeerRecord $peerUuid): void
+        {
+            if($peerUuid instanceof RegisteredPeerRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
+            try
+            {
+                $stmt = Database::getConnection()->prepare('DELETE FROM authentication_passwords WHERE peer_uuid=:uuid');
+                $stmt->bindParam(':uuid', $peerUuid);
+                $stmt->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('An error occurred while deleting the password', $e);
+            }
+        }
+
+        /**
          * Verifies a given password against a stored password hash for a specific peer.
          *
          * @param string|RegisteredPeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.

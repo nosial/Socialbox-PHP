@@ -261,6 +261,17 @@
         }
 
         /**
+         * Returns whether the session is external.
+         *
+         * @return bool True if the session is external, false otherwise.
+         * @throws DatabaseOperationException Thrown if the peer record cannot be retrieved.
+         */
+        public function isExternal(): bool
+        {
+            return RegisteredPeerManager::getPeer($this->peerUuid)->isExternal();
+        }
+
+        /**
          * Converts the current session state into a standard session state object.
          *
          * @return \Socialbox\Objects\Standard\SessionState The standardized session state object.

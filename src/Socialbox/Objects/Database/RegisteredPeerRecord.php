@@ -228,13 +228,14 @@
         }
 
         /**
-         * Determines if the server is external.
+         * Determines if the user is considered external by checking if the username is 'host' and the server
+         * is not the same as the domain from the configuration.
          *
-         * @return bool True if the server is external, false otherwise.
+         * @return bool True if the user is external, false otherwise.
          */
         public function isExternal(): bool
         {
-            return $this->server === 'host';
+            return $this->username === 'host' && $this->server !== Configuration::getInstanceConfiguration()->getDomain();
         }
 
         /**
