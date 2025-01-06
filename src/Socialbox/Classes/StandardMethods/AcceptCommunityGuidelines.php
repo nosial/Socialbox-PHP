@@ -15,17 +15,21 @@
     {
 
         /**
+         * Executes the process of accepting the community guidelines.
+         *
          * @inheritDoc
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
+            if(!$request->getSession()->flagExists(SessionFlags::VER_COMMUNITY_GUIDELINES))
+            {
+                return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Community guidelines has already been accepted');
+            }
+
             try
             {
-                // Remove the verification flag
-                SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::VER_COMMUNITY_GUIDELINES]);
-
                 // Check & update the session flow
-                SessionManager::updateFlow($request->getSession());
+                SessionManager::updateFlow($request->getSession(), [SessionFlags::VER_COMMUNITY_GUIDELINES]);
             }
             catch (DatabaseOperationException $e)
             {
