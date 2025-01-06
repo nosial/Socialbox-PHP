@@ -30,6 +30,16 @@
                 return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'password' parameter, must be a valid argon2id hash");
             }
 
+            if(!$rpcRequest->containsParameter('existing_password'))
+            {
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'existing_password' parameter");
+            }
+
+            if(!Cryptography::validateSha512($rpcRequest->getParameter('existing_password')))
+            {
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'existing_password' parameter, must be a valid SHA-512 hash");
+            }
+
             try
             {
                 if (!PasswordManager::usesPassword($request->getPeer()->getUuid()))
@@ -40,6 +50,18 @@
             catch (DatabaseOperationException $e)
             {
                 throw new StandardException('Failed to check password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
+
+            try
+            {
+                if (!PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('existing_password')))
+                {
+                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Failed to update password due to incorrect existing password");
+                }
+            }
+            catch (Exception $e)
+            {
+                throw new StandardException('Failed to verify existing password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             try

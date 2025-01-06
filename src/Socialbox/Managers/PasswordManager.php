@@ -59,7 +59,10 @@
             }
 
             // Throws an exception if the hash is invalid
-            Cryptography::validatePasswordHash($hash);
+            if(!Cryptography::validatePasswordHash($hash))
+            {
+                throw new CryptographyException('Invalid password hash');
+            }
 
             $encryptionKey = Configuration::getCryptographyConfiguration()->getRandomInternalEncryptionKey();
             $securedPassword = Cryptography::encryptMessage($hash, $encryptionKey, Configuration::getCryptographyConfiguration()->getEncryptionKeysAlgorithm());
@@ -94,7 +97,10 @@
                 $peerUuid = $peerUuid->getUuid();
             }
 
-            Cryptography::validatePasswordHash($hash);
+            if(!Cryptography::validatePasswordHash($hash))
+            {
+                throw new CryptographyException('Invalid password hash');
+            }
 
             $encryptionKey = Configuration::getCryptographyConfiguration()->getRandomInternalEncryptionKey();
             $securedPassword = Cryptography::encryptMessage($hash, $encryptionKey, Configuration::getCryptographyConfiguration()->getEncryptionKeysAlgorithm());
@@ -145,19 +151,17 @@
          * Verifies a given password against a stored password hash for a specific peer.
          *
          * @param string|RegisteredPeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.
-         * @param string $hash The password hash to verify.
+         * @param string $sha512 The SHA-512 hash of the password to be verified.
          * @return bool Returns true if the password matches the stored hash; false otherwise.
          * @throws CryptographyException If the password hash is invalid or an error occurs during the cryptographic operation.
          * @throws DatabaseOperationException If an error occurs during the database operation.
          */
-        public static function verifyPassword(string|RegisteredPeerRecord $peerUuid, string $hash): bool
+        public static function verifyPassword(string|RegisteredPeerRecord $peerUuid, string $sha512): bool
         {
             if($peerUuid instanceof RegisteredPeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
-
-            Cryptography::validatePasswordHash($hash);
 
             try
             {
@@ -190,7 +194,7 @@
                     throw new CryptographyException('Cannot decrypt hashed password');
                 }
 
-                return Cryptography::verifyPassword($hash, $decryptedHash);
+                return Cryptography::verifyPassword($sha512, $decryptedHash);
             }
             catch(PDOException $e)
             {
