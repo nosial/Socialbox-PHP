@@ -676,14 +676,14 @@
          * Sets the birthday of a registered peer record based on the provided date components.
          *
          * @param string|RegisteredPeerRecord $peer The unique identifier of the peer or an instance of RegisteredPeerRecord.
-         * @param int $year The year component of the birthday.
          * @param int $month The month component of the birthday.
          * @param int $day The day component of the birthday.
+         * @param int $year The year component of the birthday.
          * @return void
          * @throws InvalidArgumentException If the peer is external or the provided date is invalid.
          * @throws DatabaseOperationException If there is an error during the database operation.
          */
-        public static function setBirthday(string|RegisteredPeerRecord $peer, int $year, int $month, int $day): void
+        public static function updateBirthday(string|RegisteredPeerRecord $peer, int $month, int $day, int $year): void
         {
             if(is_string($peer))
             {

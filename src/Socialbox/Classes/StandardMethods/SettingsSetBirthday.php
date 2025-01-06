@@ -21,27 +21,41 @@
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-            if(!$rpcRequest->containsParameter('email_address'))
+            if(!$rpcRequest->containsParameter('month'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'email_address' parameter");
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'month' parameter");
             }
 
-            if(!Validator::validateEmailAddress($rpcRequest->getParameter('email_address')))
+            if(!$rpcRequest->containsParameter('day'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'email_address' parameter, must be a valid email address");
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'day' parameter");
+            }
+
+            if(!$rpcRequest->containsParameter('year'))
+            {
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'year' parameter");
+            }
+
+            $month = $rpcRequest->getParameter('month');
+            $day = $rpcRequest->getParameter('day');
+            $year = $rpcRequest->getParameter('year');
+
+            if(!Validator::validateDate($month, $day, $year))
+            {
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid date provided, must be a valid gregorian calender date.");
             }
 
             try
             {
                 // Set the password
-                RegisteredPeerManager::updateEmailAddress($request->getPeer(), $rpcRequest->getParameter('email_address'));
+                RegisteredPeerManager::updateBirthday($request->getPeer(), $month, $day, $year);
 
                 // Check & update the session flow
-                SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_EMAIL]);
+                SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_BIRTHDAY]);
             }
             catch(Exception $e)
             {
-                throw new StandardException('Failed to set email address due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardException('Failed to set birthday due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse(true);
