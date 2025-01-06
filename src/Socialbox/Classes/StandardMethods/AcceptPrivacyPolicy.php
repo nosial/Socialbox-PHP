@@ -13,19 +13,23 @@
 
     class AcceptPrivacyPolicy extends Method
     {
-
         /**
+         * Executes the process of accepting the privacy policy.
+         *
          * @inheritDoc
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
+            $session = $request->getSession();
+            if(!$session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
+            {
+                return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Privacy policy has already been accepted');
+            }
+
             try
             {
-                // Remove the verification flag
-                SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::VER_PRIVACY_POLICY]);
-
                 // Check & update the session flow
-                SessionManager::updateFlow($request->getSession());
+                SessionManager::updateFlow($session, [SessionFlags::VER_PRIVACY_POLICY]);
             }
             catch (DatabaseOperationException $e)
             {

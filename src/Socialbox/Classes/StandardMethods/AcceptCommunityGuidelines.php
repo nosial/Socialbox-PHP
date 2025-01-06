@@ -21,7 +21,8 @@
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-            if(!$request->getSession()->flagExists(SessionFlags::VER_COMMUNITY_GUIDELINES))
+            $session = $request->getSession();
+            if(!$session->flagExists(SessionFlags::VER_COMMUNITY_GUIDELINES))
             {
                 return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Community guidelines has already been accepted');
             }
@@ -29,7 +30,7 @@
             try
             {
                 // Check & update the session flow
-                SessionManager::updateFlow($request->getSession(), [SessionFlags::VER_COMMUNITY_GUIDELINES]);
+                SessionManager::updateFlow($session, [SessionFlags::VER_COMMUNITY_GUIDELINES]);
             }
             catch (DatabaseOperationException $e)
             {
