@@ -88,7 +88,6 @@ class CaptchaManager
         // Return false if the captcha does not exist
         if(!self::captchaExists($peer_uuid))
         {
-            Logger::getLogger()->warning(sprintf("The requested captcha does not exist for the peer %s", $peer_uuid));
             return false;
         }
 
@@ -97,25 +96,21 @@ class CaptchaManager
         // Return false if the captcha has already been solved
         if($captcha->getStatus() === CaptchaStatus::SOLVED)
         {
-            Logger::getLogger()->warning(sprintf("The requested captcha has already been solved for the peer %s", $peer_uuid));
             return false;
         }
 
         // Return false if the captcha is older than 5 minutes
         if ($captcha->isExpired())
         {
-            Logger::getLogger()->warning(sprintf("The requested captcha is older than 5 minutes for the peer %s", $peer_uuid));
             return false;
         }
 
         // Verify the answer
         if($captcha->getAnswer() !== $answer)
         {
-            Logger::getLogger()->warning(sprintf("The answer to the requested captcha is incorrect for the peer %s", $peer_uuid));
             return false;
         }
 
-        Logger::getLogger()->debug(sprintf("The answer to the requested captcha is correct for the peer %s", $peer_uuid));
         $statement = Database::getConnection()->prepare("UPDATE captcha_images SET status='SOLVED', answered=NOW() WHERE peer_uuid=?");
         $statement->bindParam(1, $peer_uuid);
 
