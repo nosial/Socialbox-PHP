@@ -471,10 +471,18 @@
 
             if($peer->isExternal())
             {
+                // TODO: Implement this
                 throw new InvalidArgumentException('Cannot delete the display picture of an external peer');
             }
 
             Logger::getLogger()->verbose(sprintf("Deleting display picture of peer %s", $peer->getUuid()));
+
+            // Delete the file if it exists
+            $displayPicturePath = Configuration::getStorageConfiguration()->getUserDisplayImagesPath() . DIRECTORY_SEPARATOR . $peer->getDisplayPicture() . '.jpeg';
+            if(file_exists($displayPicturePath))
+            {
+                unlink($displayPicturePath);
+            }
 
             try
             {

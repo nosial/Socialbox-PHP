@@ -40,7 +40,7 @@
                     return $rpcRequest->produceError(StandardError::RPC_BAD_REQUEST, "Failed to decode JPEG image base64 data");
                 }
 
-                $sanitizedImage = Utilities::resizeImage(Utilities::sanitizeJpeg($decodedImage), 126, 126);
+                $sanitizedImage = Utilities::resizeImage(Utilities::sanitizeJpeg($decodedImage), 256, 256);
             }
             catch(Exception $e)
             {
@@ -53,10 +53,7 @@
                 RegisteredPeerManager::updateDisplayPicture($request->getPeer(), $sanitizedImage);
 
                 // Check & update the session flow
-                if($request->getSession()->flagExists(SessionFlags::SET_DISPLAY_PICTURE))
-                {
-                    SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_DISPLAY_PICTURE]);
-                }
+                SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_DISPLAY_PICTURE]);
             }
             catch(Exception $e)
             {
