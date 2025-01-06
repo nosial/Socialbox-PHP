@@ -213,11 +213,24 @@
         /**
          * Checks if a given flag exists in the list of session flags.
          *
-         * @param string|SessionFlags $flag The flag to check, either as a string or a SessionFlags object.
+         * @param string|SessionFlags|array $flag The flag to check, either as a string or a SessionFlags object. If an array is provided, all flags must exist.
          * @return bool True if the flag exists, false otherwise.
          */
-        public function flagExists(string|SessionFlags $flag): bool
+        public function flagExists(string|SessionFlags|array $flag): bool
         {
+            if(is_array($flag))
+            {
+                foreach($flag as $f)
+                {
+                    if(!$this->flagExists($f))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
             if(is_string($flag))
             {
                 $flag = SessionFlags::tryFrom($flag);

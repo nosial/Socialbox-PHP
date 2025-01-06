@@ -436,14 +436,21 @@
                 return;
             }
 
+            // Don't do anything if the flags to remove are not present
+            if(!$session->flagExists($flagsToRemove))
+            {
+                return;
+            }
+
+            // Remove & update the session flags
             self::removeFlags($session->getUuid(), $flagsToRemove);
             $session = self::getSession($session->getUuid());
 
             // Check if all registration/authentication requirements are met
             if(SessionFlags::isComplete($session->getFlags()))
             {
-                SessionManager::setAuthenticated($session->getUuid(), true);
-                SessionManager::removeFlags($session->getUuid(), [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]);
+                SessionManager::removeFlags($session->getUuid(), [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]); // Remove the registration/authentication flags
+                SessionManager::setAuthenticated($session->getUuid(), true); // Mark the session as authenticated
             }
         }
     }
