@@ -36,7 +36,7 @@
             {
                 return $rpcRequest->produceResponse(PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('password')));
             }
-            catch (CryptographyException $e)
+            catch (CryptographyException)
             {
                 return $rpcRequest->produceResponse(false);
             }
