@@ -7,7 +7,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
-    use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
@@ -26,26 +26,40 @@
                 return $rpcRequest->produceError(StandardError::FORBIDDEN, 'A password is required for this server');
             }
 
-            try
+            if(!$rpcRequest->containsParameter('password'))
             {
-                if (!PasswordManager::usesPassword($request->getPeer()->getUuid()))
-                {
-                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Cannot update password when one isn't already set, use 'settingsSetPassword' instead");
-                }
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'password' parameter");
             }
-            catch (DatabaseOperationException $e)
+
+            if(!Cryptography::validateSha512($rpcRequest->getParameter('password')))
             {
-                throw new StandardException('Failed to check password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'password' parameter, must be a valid SHA-512 hash");
             }
+
+            $peer = $request->getPeer();
 
             try
             {
+                if (!PasswordManager::usesPassword($peer->getUuid()))
+                {
+                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Cannot update password when one isn't already set, use 'settingsSetPassword' instead");
+                }
+
+                if (!PasswordManager::verifyPassword($peer->getUuid(), $rpcRequest->getParameter('password')))
+                {
+                    return $rpcRequest->produceError(StandardError::FORBIDDEN, "Failed to update password due to incorrect existing password");
+                }
+
                 // Set the password
-                PasswordManager::updatePassword($request->getPeer(), $rpcRequest->getParameter('password'));
+                PasswordManager::updatePassword($peer->getUuid(), $rpcRequest->getParameter('password'));
             }
-            catch(Exception $e)
+            catch(CryptographyException)
             {
-                throw new StandardException('Failed to set password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                return $rpcRequest->produceError(StandardError::CRYPTOGRAPHIC_ERROR, 'Failed to update password due to a cryptographic error');
+            }
+            catch (Exception $e)
+            {
+                throw new StandardException('Failed to check password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse(true);
