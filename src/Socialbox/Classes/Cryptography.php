@@ -5,6 +5,7 @@
     use Exception;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Objects\KeyPair;
+    use SodiumException;
 
     class Cryptography
     {
@@ -471,7 +472,14 @@
             {
                 if (isset($key))
                 {
-                    sodium_memzero($key);
+                    try
+                    {
+                        sodium_memzero($key);
+                    }
+                    catch (SodiumException)
+                    {
+                        // Ignore
+                    }
                 }
             }
         }
@@ -535,7 +543,14 @@
             {
                 if (isset($key))
                 {
-                    sodium_memzero($key);
+                    try
+                    {
+                        sodium_memzero($key);
+                    }
+                    catch (SodiumException)
+                    {
+                        // Ignore
+                    }
                 }
             }
         }
@@ -613,23 +628,46 @@
             {
                 if (isset($key))
                 {
-                    sodium_memzero($key);
+                    try
+                    {
+                        sodium_memzero($key);
+                    }
+                    catch (SodiumException)
+                    {
+                        // Ignore
+                    }
                 }
             }
         }
 
         /**
+         * Validates whether the provided hash is a valid SHA-512 hash.
+         *
+         * @param string $hash The hash string to be validated, expected to be a 128-character hexadecimal string.
+         * @return bool Returns true if the hash is a valid SHA-512 hash, otherwise false.
+         */
+        public static function validateSha512(string $hash): bool
+        {
+            return preg_match('/^[A-Fa-f0-9]{128}$/', $hash) === 1;
+        }
+
+        /**
          * Hashes a password securely using a memory-hard, CPU-intensive hashing algorithm.
          *
-         * @param string $password The plaintext password to be hashed.
+         * @param string $sha512 The SHA-512 hash of the password to be hashed.
          * @return string The hashed password in a secure format.
          * @throws CryptographyException If password hashing fails.
          */
-        public static function hashPassword(string $password): string
+        public static function hashPassword(string $sha512): string
         {
+            if(!self::validateSha512($sha512))
+            {
+                throw new CryptographyException("Invalid SHA-512 hash provided");
+            }
+            
             try
             {
-                return sodium_crypto_pwhash_str($password, SODIUM_CRYPTO_PWHASH_OPSLIMIT_INTERACTIVE, SODIUM_CRYPTO_PWHASH_MEMLIMIT_INTERACTIVE);
+                return sodium_crypto_pwhash_str($sha512, SODIUM_CRYPTO_PWHASH_OPSLIMIT_INTERACTIVE, SODIUM_CRYPTO_PWHASH_MEMLIMIT_INTERACTIVE);
             }
             catch (Exception $e)
             {
@@ -671,18 +709,26 @@
         /**
          * Verifies a password against a stored hash.
          *
-         * @param string $password The password to be verified.
+         * @param string $sha512 The password to be verified.
          * @param string $hash The stored password hash to be compared against.
          * @return bool True if the password matches the hash; false otherwise.
          * @throws CryptographyException If the password verification process fails.
          */
-        public static function verifyPassword(string $password, string $hash): bool
+        public static function verifyPassword(string $sha512, string $hash): bool
         {
-            self::validatePasswordHash($hash);
+            if(!self::validateSha512($sha512))
+            {
+                throw new CryptographyException("Invalid password hash provided");
+            }
+            
+            if(!self::validatePasswordHash($hash))
+            {
+                throw new CryptographyException("Invalid password hash provided");
+            }
 
             try
             {
-                return sodium_crypto_pwhash_str_verify($hash, $password);
+                return sodium_crypto_pwhash_str_verify($hash, $sha512);
             }
             catch (Exception $e)
             {
