@@ -50,10 +50,7 @@
                 PasswordManager::setPassword($request->getPeer(), $rpcRequest->getParameter('password'));
 
                 // Remove the SET_PASSWORD flag & update the session flow if necessary
-                if($request->getSession()->flagExists(SessionFlags::SET_PASSWORD))
-                {
-                    SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_PASSWORD]);
-                }
+                SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_PASSWORD]);
             }
             catch(Exception $e)
             {
