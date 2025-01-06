@@ -99,6 +99,23 @@
                 throw new InvalidArgumentException('The name is too long');
             }
 
+            if($name !== null && empty($name))
+            {
+                throw new InvalidArgumentException('The name cannot be empty');
+            }
+
+            if($expires !== null && $expires < time())
+            {
+                throw new InvalidArgumentException('The expiration time is in the past');
+            }
+
+            // At least more than 1 hour
+            if($expires !== null && $expires < time() + 3600)
+            {
+                throw new InvalidArgumentException('The expiration time is too soon, must be at least 1 hour in the future');
+            }
+
+
             $uuid = UuidV4::v4()->toRfc4122();
 
             try
