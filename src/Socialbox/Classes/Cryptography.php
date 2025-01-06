@@ -9,9 +9,9 @@
 
     class Cryptography
     {
-        private const KEY_TYPE_ENCRYPTION = 'enc:';
-        private const KEY_TYPE_SIGNING = 'sig:';
-        private const BASE64_VARIANT = SODIUM_BASE64_VARIANT_URLSAFE_NO_PADDING;
+        private const string KEY_TYPE_ENCRYPTION = 'enc:';
+        private const string KEY_TYPE_SIGNING = 'sig:';
+        private const int BASE64_VARIANT = SODIUM_BASE64_VARIANT_URLSAFE_NO_PADDING;
 
         /**
          * Generates a new encryption key pair consisting of a public key and a secret key.
@@ -654,15 +654,26 @@
         /**
          * Hashes a password securely using a memory-hard, CPU-intensive hashing algorithm.
          *
-         * @param string $sha512 The SHA-512 hash of the password to be hashed.
+         * @param string $password The password in plaintext to be hashed, if $hash is false this should be a SHA-512 hash.
+         * @param bool $hash True to hash the password, false to use the provided SHA-512 hash directly which is validated.
          * @return string The hashed password in a secure format.
          * @throws CryptographyException If password hashing fails.
          */
-        public static function hashPassword(string $sha512): string
+        public static function hashPassword(string $password, bool $hash=true): string
         {
-            if(!self::validateSha512($sha512))
+            if(empty($password))
+            {
+                throw new CryptographyException("Empty password provided");
+            }
+
+            if($hash === false && !self::validateSha512($password))
             {
                 throw new CryptographyException("Invalid SHA-512 hash provided");
+            }
+
+            if($hash)
+            {
+                $sha512 = hash('sha512', $password);
             }
             
             try
@@ -709,7 +720,7 @@
         /**
          * Verifies a password against a stored hash.
          *
-         * @param string $sha512 The password to be verified.
+         * @param string $sha512 The sha512 password to be verified.
          * @param string $hash The stored password hash to be compared against.
          * @return bool True if the password matches the hash; false otherwise.
          * @throws CryptographyException If the password verification process fails.
