@@ -19,6 +19,17 @@ class Validator
     }
 
     /**
+     * Checks if the provided email address is in a valid email format.
+     *
+     * @param string $emailAddress The email address to be validated.
+     * @return bool Returns true if the email address is valid, otherwise false.
+     */
+    public static function validateEmailAddress(string $emailAddress): bool
+    {
+        return filter_var($emailAddress, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
+    /**
      * Validates a username
      *
      * @param string $username The username to validate.
