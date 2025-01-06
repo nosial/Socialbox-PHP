@@ -55,4 +55,17 @@
         {
             return preg_match("/^\+[0-9]{1,15}$/", $phoneNumber) === 1;
         }
+
+        /**
+         * Validates whether the given date is a valid gregorian calendar date.
+         *
+         * @param int $month The month component of the date (1 through 12).
+         * @param int $day The day component of the date.
+         * @param int $year The year component of the date.
+         * @return bool Returns true if the provided date is valid, otherwise false.
+         */
+        public static function validateDate(int $month, int $day, int $year): bool
+        {
+            return checkdate($month, $day, $year);
+        }
     }

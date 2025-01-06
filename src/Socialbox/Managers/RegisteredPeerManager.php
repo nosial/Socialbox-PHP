@@ -2,6 +2,7 @@
 
     namespace Socialbox\Managers;
 
+    use DateTime;
     use Exception;
     use InvalidArgumentException;
     use PDO;
@@ -668,6 +669,85 @@
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to delete the phone number of the peer in the database', $e);
+            }
+        }
+
+        /**
+         * Sets the birthday of a registered peer record based on the provided date components.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the peer or an instance of RegisteredPeerRecord.
+         * @param int $year The year component of the birthday.
+         * @param int $month The month component of the birthday.
+         * @param int $day The day component of the birthday.
+         * @return void
+         * @throws InvalidArgumentException If the peer is external or the provided date is invalid.
+         * @throws DatabaseOperationException If there is an error during the database operation.
+         */
+        public static function setBirthday(string|RegisteredPeerRecord $peer, int $year, int $month, int $day): void
+        {
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot set the birthday of an external peer');
+            }
+
+            if(!Validator::validateDate($month, $day, $year))
+            {
+                throw new InvalidArgumentException('The provided date is not valid');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Setting birthday of peer %s to %d-%d-%d", $peer->getUuid(), $year, $month, $day));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET birthday=? WHERE uuid=?');
+                $birthday = (new DateTime())->setDate($year, $month, $day)->format('Y-m-d');
+                $statement->bindParam(1, $birthday);
+                $uuid = $peer->getUuid();
+                $statement->bindParam(2, $uuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to set the birthday of the peer in the database', $e);
+            }
+        }
+
+        /**
+         * Deletes the birthday of a registered peer based on the given unique identifier or RegisteredPeerRecord object.
+         *
+         * @param string|RegisteredPeerRecord $peer The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @throws InvalidArgumentException If the peer is marked as external and cannot have its birthday deleted.
+         * @throws DatabaseOperationException If there is an error during the database operation.
+         */
+        public static function deleteBirthday(string|RegisteredPeerRecord $peer): void
+        {
+            if(is_string($peer))
+            {
+                $peer = self::getPeer($peer);
+            }
+
+            if($peer->isExternal())
+            {
+                throw new InvalidArgumentException('Cannot delete the birthday of an external peer');
+            }
+
+            Logger::getLogger()->verbose(sprintf("Deleting birthday of peer %s", $peer->getUuid()));
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET birthday=NULL WHERE uuid=?');
+                $uuid = $peer->getUuid();
+                $statement->bindParam(1, $uuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to delete the birthday of the peer in the database', $e);
             }
         }
     }
