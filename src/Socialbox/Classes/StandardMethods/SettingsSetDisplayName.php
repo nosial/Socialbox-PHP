@@ -3,6 +3,7 @@
     namespace Socialbox\Classes\StandardMethods;
 
     use Exception;
+    use ncc\ThirdParty\Symfony\Process\Exception\InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
@@ -27,14 +28,15 @@
 
             try
             {
-                // Set the password
+                // Update the display name
                 RegisteredPeerManager::updateDisplayName($request->getPeer(), $rpcRequest->getParameter('name'));
 
-                // Remove the SET_PASSWORD flag
-                SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::SET_DISPLAY_NAME]);
-
                 // Check & update the session flow
-                SessionManager::updateFlow($request->getSession());
+                SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_DISPLAY_NAME]);
+            }
+            catch(InvalidArgumentException)
+            {
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid display name');
             }
             catch(Exception $e)
             {
