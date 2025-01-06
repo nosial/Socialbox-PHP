@@ -18,6 +18,9 @@
         private bool $otpRequired;
         private bool $displayNameRequired;
         private bool $displayPictureRequired;
+        private bool $emailAddressRequired;
+        private bool $phoneNumberRequired;
+        private bool $birthdayRequired;
         private bool $imageCaptchaVerificationRequired;
 
         /**
@@ -47,6 +50,9 @@
             $this->otpRequired = (bool)$data['otp_required'];
             $this->displayNameRequired = (bool)$data['display_name_required'];
             $this->displayPictureRequired = (bool)$data['display_picture_required'];
+            $this->emailAddressRequired = (bool)$data['email_address_required'];
+            $this->phoneNumberRequired = (bool)$data['phone_number_required'];
+            $this->birthdayRequired = (bool)$data['birthday_required'];
             $this->imageCaptchaVerificationRequired = (bool)$data['image_captcha_verification_required'];
         }
 
@@ -188,6 +194,36 @@
         public function isDisplayPictureRequired(): bool
         {
             return $this->displayPictureRequired;
+        }
+
+        /**
+         * Determines whether an email address is required.
+         *
+         * @return bool Returns true if an email address is required, false otherwise.
+         */
+        public function isEmailAddressRequired(): bool
+        {
+            return $this->emailAddressRequired;
+        }
+
+        /**
+         * Determines if a phone number is required.
+         *
+         * @return bool Returns true if a phone number is required, false otherwise.
+         */
+        public function isPhoneNumberRequired(): bool
+        {
+            return $this->phoneNumberRequired;
+        }
+
+        /**
+         * Determines if a birthday is required.
+         *
+         * @return bool Returns true if a birthday is required, otherwise false.
+         */
+        public function isBirthdayRequired(): bool
+        {
+            return $this->birthdayRequired;
         }
 
         /**

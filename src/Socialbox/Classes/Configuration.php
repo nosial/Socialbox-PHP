@@ -118,6 +118,9 @@
             $config->setDefault('registration.otp_required', false);
             $config->setDefault('registration.display_name_required', true);
             $config->setDefault('registration.display_picture_required', false);
+            $config->setDefault('registration.email_address_required', false);
+            $config->setDefault('registration.phone_number_required', false);
+            $config->setDefault('registration.birthday_required', false);
             $config->setDefault('registration.image_captcha_verification_required', true);
 
             // Server Policies
