@@ -5,7 +5,6 @@
     use Exception;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Cryptography;
-    use Socialbox\Classes\Logger;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
