@@ -26,12 +26,11 @@
 
             try
             {
-                // Set the password
                 RegisteredPeerManager::deleteDisplayName($request->getPeer());
             }
             catch(Exception $e)
             {
-                throw new StandardException('Failed to set password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardException('Failed to delete display name due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse(true);
