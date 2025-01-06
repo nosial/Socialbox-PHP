@@ -26,12 +26,11 @@
 
             try
             {
-                // Set the password
                 RegisteredPeerManager::deleteDisplayPicture($request->getPeer());
             }
             catch(Exception $e)
             {
-                throw new StandardException('Failed to update display picture: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardException('Failed to delete display picture: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse(true);
