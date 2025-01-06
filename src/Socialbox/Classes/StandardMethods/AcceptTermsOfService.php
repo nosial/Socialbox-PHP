@@ -14,17 +14,22 @@
     class AcceptTermsOfService extends Method
     {
         /**
+         * Executes the process of accepting the terms of service.
+         *
          * @inheritDoc
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
+            $session = $request->getSession();
+            if(!$session->flagExists(SessionFlags::VER_TERMS_OF_SERVICE))
+            {
+                return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Terms of service has already been accepted');
+            }
+
             try
             {
-                // Remove the verification flag
-                SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::VER_TERMS_OF_SERVICE]);
-
                 // Check & update the session flow
-                SessionManager::updateFlow($request->getSession());
+                SessionManager::updateFlow($session, [SessionFlags::VER_TERMS_OF_SERVICE]);
             }
             catch (DatabaseOperationException $e)
             {
