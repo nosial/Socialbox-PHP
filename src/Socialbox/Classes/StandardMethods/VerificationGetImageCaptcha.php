@@ -4,7 +4,7 @@
 
     use Gregwar\Captcha\CaptchaBuilder;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Logger;
+    use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\StandardException;
@@ -22,18 +22,16 @@
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
             $session = $request->getSession();
-
             // Check for session conditions
-            if($session->getPeerUuid() === null)
+            if(!$session->flagExists(SessionFlags::VER_IMAGE_CAPTCHA))
             {
-                return $rpcRequest->produceError(StandardError::AUTHENTICATION_REQUIRED);
+                return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'Solving an image captcha is not required at this time');
             }
 
             $peer = $request->getPeer();
 
             try
             {
-                Logger::getLogger()->debug('Creating a new captcha for peer ' . $peer->getUuid());
                 if(CaptchaManager::captchaExists($peer))
                 {
                     $captchaRecord = CaptchaManager::getCaptcha($peer);

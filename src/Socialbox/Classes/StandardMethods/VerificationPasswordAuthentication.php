@@ -6,11 +6,13 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Logger;
+    use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
+    use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
 
@@ -32,9 +34,16 @@
                 return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'password' parameter, must be a valid SHA-512 hash");
             }
 
+            $session = $request->getSession();
+            if(!$session->flagExists(SessionFlags::VER_PASSWORD))
+            {
+                return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Password verification is not required at this time');
+            }
+
             try
             {
-                return $rpcRequest->produceResponse(PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('password')));
+                $result = PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('password'));
+                SessionManager::updateFlow($request->getSession(), [SessionFlags::VER_PASSWORD]);
             }
             catch (CryptographyException)
             {
@@ -42,8 +51,9 @@
             }
             catch (Exception $e)
             {
-                Logger::getLogger()->error('Failed to verify password due to an internal exception', $e);
                 throw new StandardException('Failed to verify password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
+
+            return $rpcRequest->produceResponse($result);
         }
     }
