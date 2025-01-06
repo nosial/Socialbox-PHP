@@ -30,7 +30,7 @@
 
             try
             {
-                if(CaptchaManager::getCaptcha($session->getPeerUuid())->isExpired())
+                if(CaptchaManager::getCaptcha($session->getPeerUuid())?->isExpired())
                 {
                     return $rpcRequest->produceError(StandardError::CAPTCHA_EXPIRED, 'The captcha has expired');
                 }
