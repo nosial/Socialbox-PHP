@@ -46,8 +46,7 @@
 
                 if($result)
                 {
-                    SessionManager::removeFlags($request->getSessionUuid(), [SessionFlags::VER_IMAGE_CAPTCHA]);
-                    SessionManager::updateFlow($session);
+                    SessionManager::updateFlow($session, [SessionFlags::VER_IMAGE_CAPTCHA]);
                 }
             }
             catch (DatabaseOperationException $e)
