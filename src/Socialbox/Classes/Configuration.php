@@ -129,6 +129,10 @@
             // The amount of time in seconds it takes before a session is considered expired due to inactivity
             // Default: 12hours
             $config->setDefault('policies.session_inactivity_expires', 43200);
+            // The amount of time in seconds it takes before an image captcha is considered expired due to lack of
+            // answer within the time-frame that the captcha was generated
+            // If expired; client is expected to request for a new captcha which will generate a new random answer.
+            $config->setDefault('policies.image_captcha_expires', 300);
 
             // Storage configuration
             $config->setDefault('storage.path', '/etc/socialbox'); // The main path for file storage
