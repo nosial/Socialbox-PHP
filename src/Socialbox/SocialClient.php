@@ -23,7 +23,6 @@
          *
          * @param string|PeerAddress $peerAddress The address of the peer to connect to.
          * @param ExportedSession|null $exportedSession Optional. The exported session to use for communication.
-         * @param array $options Optional. Additional options to pass to the client.
          * @throws CryptographyException If the public key is invalid.
          * @throws ResolutionException If the domain cannot be resolved.
          * @throws RpcException If the RPC request fails.
@@ -57,6 +56,19 @@
             return SessionState::fromArray($this->sendRequest(
                 new RpcRequest(StandardMethods::GET_SESSION_STATE->value, Utilities::randomCrc32())
             )->getResponse()->getResult());
+        }
+
+        /**
+         * Retrieves the list of allowed methods, these are the methods that can be called by the client.
+         *
+         * @return array The allowed methods returned from the RPC request.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function getAllowedMethods(): array
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::GET_ALLOWED_METHODS->value, Utilities::randomCrc32())
+            )->getResponse()->getResult();
         }
 
         /**
@@ -316,6 +328,28 @@
             return (bool)$this->sendRequest(
                 new RpcRequest(StandardMethods::VERIFICATION_ANSWER_EXTERNAL_URL->value, Utilities::randomCrc32(), [
                     'verification_code' => $verificationCode
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Authenticates a password by sending a remote procedure call request with an optional hashing operation.
+         *
+         * @param string $password The password to authenticate.
+         * @param bool $hash Indicates whether the password should be hashed using SHA-512 before authentication.
+         * @return bool The result of the password authentication request.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function verificationPasswordAuthentication(string $password, bool $hash=true): bool
+        {
+            if($hash)
+            {
+                $password = hash('sha512', $password);
+            }
+
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::VERIFICATION_PASSWORD_AUTHENTICATION->value, Utilities::randomCrc32(), [
+                    'password' => $password
                 ])
             )->getResponse()->getResult();
         }
