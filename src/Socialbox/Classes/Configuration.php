@@ -45,6 +45,17 @@
             $config->setDefault('security.display_internal_exceptions', false);
             $config->setDefault('security.resolved_servers_ttl', 600);
             $config->setDefault('security.captcha_ttl', 200);
+            // Server-side OTP Security options
+            // The time step in seconds for the OTP generation
+            // Default: 30 seconds
+            $config->setDefault('security.otp_secret_key_length', 32);
+            $config->setDefault('security.otp_time_step', 30);
+            // The number of digits in the OTP
+            $config->setDefault('security.otp_digits', 6);
+            // The hash algorithm to use for the OTP generation (sha1, sha256, sha512)
+            $config->setDefault('security.otp_hash_algorithm', 'sha512');
+            // The window of time steps to allow for OTP verification
+            $config->setDefault('security.otp_window', 1);
 
             // Cryptography Configuration
             // The Unix Timestamp for when the host's keypair should expire
