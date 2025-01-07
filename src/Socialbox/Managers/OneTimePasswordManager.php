@@ -202,32 +202,4 @@
 
             return $updated->getTimestamp();
         }
-
-        /**
-         * Updates the last updated timestamp for the OTP record of the specified peer.
-         *
-         * @param string|RegisteredPeerRecord $peerUuid The peer's UUID or an instance of RegisteredPeerRecord whose OTP record needs to be updated.
-         * @return void
-         * @throws DatabaseOperationException if the database operation fails.
-         */
-        public static function updateOtp(string|RegisteredPeerRecord $peerUuid): void
-        {
-            if($peerUuid instanceof RegisteredPeerRecord)
-            {
-                $peerUuid = $peerUuid->getUuid();
-            }
-
-            try
-            {
-                $stmt = Database::getConnection()->prepare('UPDATE authentication_otp SET updated=:updated WHERE peer_uuid=:uuid');
-                $updated = (new DateTime())->setTimestamp(time());
-                $stmt->bindParam(':updated', $updated);
-                $stmt->bindParam(':uuid', $peerUuid);
-                $stmt->execute();
-            }
-            catch(PDOException $e)
-            {
-                throw new DatabaseOperationException(sprintf('Failed to update the OTP secret for user %s', $peerUuid), $e);
-            }
-        }
     }
