@@ -54,23 +54,23 @@
         case GET_COMMUNITY_GUIDELINES = 'getCommunityGuidelines';
         case ACCEPT_COMMUNITY_GUIDELINES = 'acceptCommunityGuidelines';
 
-        case VERIFICATION_EMAIL = 'verificationEmail';
-        case VERIFICATION_ANSWER_EMAIL = 'verificationAnswerEmail';
+        case VERIFICATION_EMAIL = 'verificationEmail'; // NOT IMPLEMENTED
+        case VERIFICATION_ANSWER_EMAIL = 'verificationAnswerEmail'; // NOT IMPLEMENTED
 
-        case VERIFICATION_SMS = 'verificationSms';
-        case VERIFICATION_ANSWER_SMS = 'verificationAnswerSms';
+        case VERIFICATION_SMS = 'verificationSms'; // NOT IMPLEMENTED
+        case VERIFICATION_ANSWER_SMS = 'verificationAnswerSms'; // NOT IMPLEMENTED
 
-        case VERIFICATION_PHONE_CALL = 'verificationPhoneCall';
-        case VERIFICATION_ANSWER_PHONE_CALL = 'verificationAnswerPhoneCall';
+        case VERIFICATION_PHONE_CALL = 'verificationPhoneCall'; // NOT IMPLEMENTED
+        case VERIFICATION_ANSWER_PHONE_CALL = 'verificationAnswerPhoneCall'; // NOT IMPLEMENTED
 
         case VERIFICATION_GET_IMAGE_CAPTCHA = 'verificationGetImageCaptcha';
         case VERIFICATION_ANSWER_IMAGE_CAPTCHA = 'verificationAnswerImageCaptcha';
 
-        case VERIFICATION_GET_TEXT_CAPTCHA = 'verificationGetTextCaptcha';
-        case VERIFICATION_ANSWER_TEXT_CAPTCHA = 'verificationAnswerTextCaptcha';
+        case VERIFICATION_GET_TEXT_CAPTCHA = 'verificationGetTextCaptcha'; // NOT IMPLEMENTED
+        case VERIFICATION_ANSWER_TEXT_CAPTCHA = 'verificationAnswerTextCaptcha'; // NOT IMPLEMENTED
 
-        case VERIFICATION_GET_EXTERNAL_URL = 'verificationGetExternalUrl';
-        case VERIFICATION_ANSWER_EXTERNAL_URL = 'verificationAnswerExternalUrl';
+        case VERIFICATION_GET_EXTERNAL_URL = 'verificationGetExternalUrl'; // NOT IMPLEMENTED
+        case VERIFICATION_ANSWER_EXTERNAL_URL = 'verificationAnswerExternalUrl'; // NOT IMPLEMENTED
         
         case VERIFICATION_PASSWORD_AUTHENTICATION = 'verificationPasswordAuthentication';
         case VERIFICATION_OTP_AUTHENTICATION = 'verificationOtpAuthentication';
