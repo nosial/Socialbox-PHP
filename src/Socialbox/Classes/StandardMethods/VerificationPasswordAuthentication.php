@@ -42,7 +42,11 @@
             try
             {
                 $result = PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('password'));
-                SessionManager::updateFlow($request->getSession(), [SessionFlags::VER_PASSWORD]);
+
+                if($result)
+                {
+                    SessionManager::updateFlow($request->getSession(), [SessionFlags::VER_PASSWORD]);
+                }
             }
             catch (CryptographyException)
             {
