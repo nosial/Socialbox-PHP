@@ -4,6 +4,7 @@
 
     namespace Socialbox;
 
+    use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\RpcClient;
     use Socialbox\Classes\Utilities;
     use Socialbox\Enums\StandardMethods;
@@ -338,6 +339,7 @@
          * @param string $password The password to authenticate.
          * @param bool $hash Indicates whether the password should be hashed using SHA-512 before authentication.
          * @return bool The result of the password authentication request.
+         * @throws CryptographyException Thrown if the password hash is invalid.
          * @throws RpcException Thrown if the RPC request fails.
          */
         public function verificationPasswordAuthentication(string $password, bool $hash=true): bool
@@ -345,6 +347,10 @@
             if($hash)
             {
                 $password = hash('sha512', $password);
+            }
+            elseif(!Cryptography::validateSha512($password))
+            {
+                throw new CryptographyException('Invalid SHA-512 hash provided');
             }
 
             return (bool)$this->sendRequest(
@@ -355,18 +361,78 @@
         }
 
         /**
+         * Authenticates an OTP code for verification purposes
+         *
+         * @param string $code The OTP code to be authenticated.
+         * @return bool True if the OTP authentication is successful, otherwise false.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function verificationOtpAuthentication(string $code): bool
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::VERIFICATION_OTP_AUTHENTICATION->value, Utilities::randomCrc32(), [
+                    'code' => $code
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
          * Sets a new password for settings with optional hashing.
          *
          * @param string $password The password to be set. If hashing is enabled, the password will be hashed before being sent.
          * @param bool $hash Optional. Determines whether the password should be hashed. Default is true. If false, the input is expected to be hashed using sha512.
          * @return true Returns true if the password is successfully set.
+         * @throws CryptographyException Thrown if the password hash is invalid.
          * @throws RpcException Thrown if the RPC request fails.
          */
         public function settingsSetPassword(string $password, bool $hash=true): true
         {
+            if($hash)
+            {
+                $password = Cryptography::hashPassword($password);
+            }
+            elseif(!Cryptography::validatePasswordHash($password))
+            {
+                throw new CryptographyException('Invalid password hash provided');
+            }
+
             return (bool)$this->sendRequest(
                 new RpcRequest(StandardMethods::SETTINGS_SET_PASSWORD->value, Utilities::randomCrc32(), [
-                    'password' => $hash ? hash('sha512', $password) : $password
+                    'password' => $password
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Deletes the user's password settings by sending a remote procedure call request.
+         *
+         * @param string $password The password to be deleted.
+         * @return true Indicates successful deletion of the password.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function settingsDeletePassword(string $password): true
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_PASSWORD->value, Utilities::randomCrc32(), [
+                    'password' => $password
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Updates the user's password by sending a remote procedure call request.
+         *
+         * @param string $password The new password to be set.
+         * @param string $existingPassword The current password for authentication.
+         * @return bool True if the password was successfully updated, false otherwise.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function settingsUpdatePassword(string $password, string $existingPassword): bool
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_UPDATE_PASSWORD->value, Utilities::randomCrc32(), [
+                    'password' => $password,
+                    'existing_password' => $existingPassword
                 ])
             )->getResponse()->getResult();
         }
@@ -387,6 +453,33 @@
         }
 
         /**
+         * Deletes the one-time password (OTP) settings by sending a remote procedure call request.
+         *
+         * @param string|null $password The password to authenticate the request. If provided, it will be hashed using SHA-512 if $hash is true.
+         * @param bool $hash Indicates whether to hash the password before sending the request. Defaults to true.
+         * @return bool True if the OTP settings were successfully deleted, false otherwise.
+         * @throws CryptographyException Thrown if the password hash is invalid.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function settingsDeleteOtp(?string $password=null, bool $hash=true): bool
+        {
+            if($hash && $password !== null)
+            {
+                $password = hash('sha512', $password);
+            }
+            elseif($password !== null && !Cryptography::validateSha512($password))
+            {
+                throw new CryptographyException('Invalid SHA-512 hash provided');
+            }
+
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_OTP->value, Utilities::randomCrc32(), [
+                    'password' => $password
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
          * Sets the display name in the settings by sending a remote procedure call request.
          *
          * @param string $displayName The new display name to be set.
@@ -399,6 +492,16 @@
                 new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME->value, Utilities::randomCrc32(), [
                     'display_name' => $displayName
                 ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         *
+         */
+        public function settingsDeleteDisplayName(): true
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_DISPLAY_NAME->value, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -435,6 +538,19 @@
         }
 
         /**
+         * Deletes the email associated with the user settings by sending a remote procedure call request.
+         *
+         * @return true Returns true if the email deletion request is successful.
+         * @throws RpcException
+         */
+        public function settingsDeleteEmail(): true
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_EMAIL->value, Utilities::randomCrc32())
+            )->getResponse()->getResult();
+        }
+
+        /**
          * Updates the phone number in the settings by sending a remote procedure call request.
          *
          * @param string $phoneNumber The phone number to be set in the settings.
@@ -447,6 +563,16 @@
                 new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME->value, Utilities::randomCrc32(), [
                     'phone_number' => $phoneNumber
                 ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         *
+         */
+        public function settingsDeletePhone(): true
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_PHONE->value, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -467,6 +593,19 @@
                     'month' => $month,
                     'day' => $day
                 ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Deletes the saved birthday setting by sending a remote procedure call request.
+         *
+         * @return true Returns true if the birthday deletion request is successful.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function deleteBirthday(): true
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_BIRTHDAY->value, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
     }
