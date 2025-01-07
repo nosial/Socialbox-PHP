@@ -2,6 +2,7 @@
 
     namespace Socialbox\Classes;
 
+    use Socialbox\Classes\Configuration\AuthenticationConfiguration;
     use Socialbox\Classes\Configuration\CacheConfiguration;
     use Socialbox\Classes\Configuration\CryptographyConfiguration;
     use Socialbox\Classes\Configuration\DatabaseConfiguration;
@@ -22,6 +23,7 @@
         private static ?LoggingConfiguration $loggingConfiguration = null;
         private static ?CacheConfiguration $cacheConfiguration = null;
         private static ?RegistrationConfiguration $registrationConfiguration = null;
+        private static ?AuthenticationConfiguration $authenticationConfiguration = null;
         private static ?PoliciesConfiguration $policiesConfiguration = null;
         private static ?StorageConfiguration $storageConfiguration = null;
 
@@ -134,6 +136,10 @@
             $config->setDefault('registration.birthday_required', false);
             $config->setDefault('registration.image_captcha_verification_required', true);
 
+            // Authentication configuration
+            $config->setDefault('authentication.enabled', true);
+            $config->setDefault('authentication.image_captcha_verification_required', true);
+
             // Server Policies
             // The maximum number of signing keys a peer can register onto the server at once
             $config->setDefault('policies.max_signing_keys', 20);
@@ -160,6 +166,7 @@
             self::$loggingConfiguration = new LoggingConfiguration(self::$configuration->getConfiguration()['logging']);
             self::$cacheConfiguration = new CacheConfiguration(self::$configuration->getConfiguration()['cache']);
             self::$registrationConfiguration = new RegistrationConfiguration(self::$configuration->getConfiguration()['registration']);
+            self::$authenticationConfiguration = new AuthenticationConfiguration(self::$configuration->getConfiguration()['authentication']);
             self::$policiesConfiguration = new PoliciesConfiguration(self::$configuration->getConfiguration()['policies']);
             self::$storageConfiguration = new StorageConfiguration(self::$configuration->getConfiguration()['storage']);
         }
@@ -327,6 +334,24 @@
             }
 
             return self::$registrationConfiguration;
+        }
+
+        /**
+         * Retrieves the authentication configuration.
+         *
+         * This method returns the current AuthenticationConfiguration instance.
+         * If the configuration has not been initialized yet, it initializes it first.
+         *
+         * @return AuthenticationConfiguration The authentication configuration instance.
+         */
+        public static function getAuthenticationConfiguration(): AuthenticationConfiguration
+        {
+            if(self::$authenticationConfiguration === null)
+            {
+                self::initializeConfiguration();
+            }
+
+            return self::$authenticationConfiguration;
         }
 
         /**
