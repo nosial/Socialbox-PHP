@@ -3,11 +3,13 @@
     namespace Socialbox\Classes\CliCommands;
 
     use Exception;
+    use ncc\ThirdParty\Symfony\Process\Exception\InvalidArgumentException;
     use PDOException;
     use Socialbox\Abstracts\CacheLayer;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
+    use Socialbox\Classes\DnsHelper;
     use Socialbox\Classes\Logger;
     use Socialbox\Classes\Resources;
     use Socialbox\Enums\DatabaseObjects;
@@ -358,10 +360,62 @@
                 }
             }
 
+            // Handle Mock Servers environment variables (SB_INSTANCE_MOCK_SERVER_*)
+            $mockServers = [];
+            foreach(self::getMockServerValues() as $mockServer)
+            {
+                $mockServer = explode(' ', $mockServer);
+                if(count($mockServer) !== 2)
+                {
+                    Logger::getLogger()->warning(sprintf('Invalid Mock Server format: %s', implode(' ', $mockServer)));
+                    continue;
+                }
+
+                $domain = $mockServer[1];
+
+                try
+                {
+                    $txt = DnsHelper::parseTxt($mockServer[2]);
+                }
+                catch(InvalidArgumentException $e)
+                {
+                    Logger::getLogger()->warning(sprintf('Invalid TXT record format for %s: %s', $domain, $e->getMessage()));
+                    continue;
+                }
+
+                $mockServers[$domain] = $txt;
+            }
+
+            if(count($mockServers) > 0)
+            {
+                Logger::getLogger()->info('Setting Mock Servers...');
+                Configuration::getConfigurationLib()->set('instance.mock_servers', $mockServers);
+            }
+
             // Apply changes & reload the configuration
             Logger::getLogger()->info('Updating configuration...');
             Configuration::getConfigurationLib()->save(); // Save
             Configuration::reload(); // Reload
+        }
+
+        /**
+         * Retrieves all environment variable values that start with the prefix 'SB_INSTANCE_MOCK_SERVER_'.
+         *
+         * @return array An array of environment variable values filtered by the specified prefix.
+         */
+        private static function getMockServerValues(): array
+        {
+            // Fetch all environment variables
+            $envVars = getenv();
+
+            // Filter variables that start with the specified prefix
+            $filtered = array_filter($envVars, function ($key)
+            {
+                return str_starts_with($key, 'SB_INSTANCE_MOCK_SERVER_');
+            }, ARRAY_FILTER_USE_KEY);
+
+            // Return only the values as an array
+            return array_values($filtered);
         }
 
         /**
@@ -398,7 +452,8 @@
                     "  SB_CACHE_PORT - The cache port (default: 6379)\n" .
                     "  SB_CACHE_USERNAME - The cache username (default: null)\n" .
                     "  SB_CACHE_PASSWORD - The cache password (default: null)\n" .
-                    "  SB_CACHE_DATABASE - The cache database (default: 0)\n";
+                    "  SB_CACHE_DATABASE - The cache database (default: 0)\n" .
+                    "  SB_INSTANCE_MOCK_SERVER_* - Mock server environment variables, format: (<domain> <txt>), eg; SB_INSTANCE_MOCK_SERVER_N64: teapot.com <txt>\n";
         }
 
         /**

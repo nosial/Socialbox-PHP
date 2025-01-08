@@ -42,6 +42,9 @@
             $config->setDefault('instance.name', "Socialbox Server");
             $config->setDefault('instance.domain', null);
             $config->setDefault('instance.rpc_endpoint', null);
+            // DNS Mocking Configuration, usually used for testing purposes
+            // Allows the user to mock a domain to use a specific TXT record
+            $config->setDefault('instance.dns_mocks', []);
 
             // Security Configuration
             $config->setDefault('security.display_internal_exceptions', false);
