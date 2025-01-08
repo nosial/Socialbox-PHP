@@ -32,7 +32,6 @@ RUN apt-get update -yqq && apt-get install -yqq --no-install-recommends \
     libmemcached-dev \
     redis \
     libgd-dev \
-    libsodium-dev \
     nginx \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -48,7 +47,7 @@ RUN docker-php-ext-install -j$(nproc) \
     zip \
     pcntl && \
     pecl install redis memcached && \
-    docker-php-ext-enable redis memcached libsodium23 \
+    docker-php-ext-enable redis memcached
 
 # ----------------------------- Additional Tools -----------------------------
 # Install Phive (Package Manager for PHAR libraries) and global tools in one step
