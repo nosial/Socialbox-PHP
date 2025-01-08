@@ -10,6 +10,7 @@
         case REGISTERED_PEERS = 'registered_peers.sql';
 
         case AUTHENTICATION_PASSWORDS = 'authentication_passwords.sql';
+        case AUTHENTICATION_OTP = 'authentication_otp.sql';
         case CAPTCHA_IMAGES = 'captcha_images.sql';
         case SESSIONS = 'sessions.sql';
         case EXTERNAL_SESSIONS = 'external_sessions.sql';
@@ -23,9 +24,16 @@
         {
             return match ($this)
             {
-                self::VARIABLES, self::RESOLVED_DNS_RECORDS => 0,
+                self::VARIABLES,
+                self::RESOLVED_DNS_RECORDS => 0,
+
                 self::REGISTERED_PEERS => 1,
-                self::AUTHENTICATION_PASSWORDS, self::CAPTCHA_IMAGES, self::SESSIONS, self::EXTERNAL_SESSIONS => 2,
+
+                self::AUTHENTICATION_PASSWORDS,
+                self::AUTHENTICATION_OTP,
+                self::CAPTCHA_IMAGES,
+                self::SESSIONS,
+                self::EXTERNAL_SESSIONS => 2,
             };
         }
 
