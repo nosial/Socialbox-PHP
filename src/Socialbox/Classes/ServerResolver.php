@@ -10,7 +10,6 @@
 
     class ServerResolver
     {
-        private static bool $mockingEnabled = false;
         private static array $mockedRecords = [];
 
         /**
@@ -25,18 +24,23 @@
          */
         public static function resolveDomain(string $domain, bool $useDatabase=true): DnsRecord
         {
-            // Return the mocked record if mocking is enabled
-            if(self::$mockingEnabled)
+            // Return the mocked record if the mocking record is set
+            if(isset(self::$mockedRecords[$domain]))
             {
-                if(isset(self::$mockedRecords[$domain]))
-                {
-                    return self::$mockedRecords[$domain];
-                }
+                return self::$mockedRecords[$domain];
+            }
+
+            // Return the mocked record from the configuration if one is set
+            if(isset(Configuration::getInstanceConfiguration()->getDnsMocks()[$domain]))
+            {
+                return DnsHelper::parseTxt(Configuration::getInstanceConfiguration()->getDnsMocks()[$domain]);
             }
 
             // Check the database if enabled
             if ($useDatabase)
             {
+                // Return from the database cache if one exists
+                // TODO: Implement renewal here
                 $resolvedServer = ResolvedDnsRecordsManager::getDnsRecord($domain);
                 if ($resolvedServer !== null)
                 {
@@ -44,12 +48,12 @@
                 }
             }
 
+            // Resolve DNS & Records
             $txtRecords = self::dnsGetTxtRecords($domain);
             if ($txtRecords === false)
             {
                 throw new ResolutionException(sprintf("Failed to resolve DNS TXT records for %s", $domain));
             }
-
             $fullRecord = self::concatenateTxtRecords($txtRecords);
 
             try
@@ -104,27 +108,6 @@
                 }
             }
             return $fullRecordBuilder;
-        }
-
-        /**
-         * Determines if mocking is enabled.
-         *
-         * @return bool True if mocking is enabled, false otherwise.
-         */
-        public static function isMockingEnabled(): bool
-        {
-            return self::$mockingEnabled;
-        }
-
-        /**
-         * Enables or disables mocking functionality.
-         *
-         * @param bool $enabled Indicates whether mocking should be enabled (true) or disabled (false).
-         * @return void
-         */
-        public static function setMockingEnabled(bool $enabled): void
-        {
-            self::$mockingEnabled = $enabled;
         }
 
         /**

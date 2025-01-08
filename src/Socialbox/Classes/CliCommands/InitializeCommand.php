@@ -360,14 +360,14 @@
                 }
             }
 
-            // Handle Mock Servers environment variables (SB_INSTANCE_MOCK_SERVER_*)
+            // Handle Mock Servers environment variables (SB_INSTANCE_DNS_MOCK_*)
             $mockServers = [];
             foreach(self::getMockServerValues() as $mockServer)
             {
                 $mockServer = explode(' ', $mockServer);
                 if(count($mockServer) !== 2)
                 {
-                    Logger::getLogger()->warning(sprintf('Invalid Mock Server format: %s', implode(' ', $mockServer)));
+                    Logger::getLogger()->warning(sprintf('Invalid DNS Mock Server format: %s', implode(' ', $mockServer)));
                     continue;
                 }
 
@@ -399,7 +399,7 @@
         }
 
         /**
-         * Retrieves all environment variable values that start with the prefix 'SB_INSTANCE_MOCK_SERVER_'.
+         * Retrieves all environment variable values that start with the prefix 'SB_INSTANCE_DNS_MOCK_'.
          *
          * @return array An array of environment variable values filtered by the specified prefix.
          */
@@ -411,7 +411,7 @@
             // Filter variables that start with the specified prefix
             $filtered = array_filter($envVars, function ($key)
             {
-                return str_starts_with($key, 'SB_INSTANCE_MOCK_SERVER_');
+                return str_starts_with($key, 'SB_INSTANCE_DNS_MOCK_');
             }, ARRAY_FILTER_USE_KEY);
 
             // Return only the values as an array
@@ -453,7 +453,7 @@
                     "  SB_CACHE_USERNAME - The cache username (default: null)\n" .
                     "  SB_CACHE_PASSWORD - The cache password (default: null)\n" .
                     "  SB_CACHE_DATABASE - The cache database (default: 0)\n" .
-                    "  SB_INSTANCE_MOCK_SERVER_* - Mock server environment variables, format: (<domain> <txt>), eg; SB_INSTANCE_MOCK_SERVER_N64: teapot.com <txt>\n";
+                    "  SB_INSTANCE_DNS_MOCK_* - Mock server environment variables, format: (<domain> <txt>), eg; SB_INSTANCE_DNS_MOCK_N64: teapot.com <txt>\n";
         }
 
         /**

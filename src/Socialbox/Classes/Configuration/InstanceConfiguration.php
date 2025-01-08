@@ -8,6 +8,7 @@
         private string $name;
         private ?string $domain;
         private ?string $rpcEndpoint;
+        private array $dnsMocks;
 
         /**
          * Constructor that initializes object properties with the provided data.
@@ -21,6 +22,7 @@
             $this->name = $data['name'];
             $this->domain = $data['domain'];
             $this->rpcEndpoint = $data['rpc_endpoint'];
+            $this->dnsMocks = $data['dns_mocks'];
         }
 
         /**
@@ -54,5 +56,13 @@
         public function getRpcEndpoint(): ?string
         {
             return $this->rpcEndpoint;
+        }
+
+        /**
+         * @return array
+         */
+        public function getDnsMocks(): array
+        {
+            return $this->dnsMocks;
         }
     }
