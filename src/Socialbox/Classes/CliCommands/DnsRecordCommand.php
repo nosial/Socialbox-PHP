@@ -5,6 +5,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Logger;
     use Socialbox\Interfaces\CliCommandInterface;
+    use Socialbox\Socialbox;
 
     class DnsRecordCommand implements CliCommandInterface
     {
@@ -13,13 +14,8 @@
          */
         public static function execute(array $args): int
         {
-            $txt_record = sprintf('v=socialbox;sb-rpc=%s;sb-key=%s',
-                Configuration::getInstanceConfiguration()->getRpcEndpoint(),
-                Configuration::getCryptographyConfiguration()->getHostPublicKey()
-            );
-
             Logger::getLogger()->info('Please set the following DNS TXT record for the domain:');
-            Logger::getLogger()->info(sprintf('  %s', $txt_record));
+            Logger::getLogger()->info(sprintf('  %s', Socialbox::getDnsRecord()));
             return 0;
         }
 
