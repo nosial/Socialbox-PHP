@@ -19,5 +19,4 @@ echo "Initializing Socialbox..."
 /usr/bin/socialbox init --log-level=${LOG_LEVEL-INFO}
 
 # Run supervisord, final command
-echo "Starting supervisord..."
 /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

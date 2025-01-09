@@ -59,8 +59,8 @@ services:
       # Usage: SB_INSTANCE_DNS_MOCK_<INSTANCE_NAME>: <DOMAIN> <TXT_RECORD>
       # Environment Variable name is ignored, only the value is used with the prefix being used to detect
       # the instance name and the suffix being used to detect the TXT record
-      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com <txt>"}
-      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com <txt>"}
+      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://127.0.0.0:8086/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
+      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://127.0.0.0:8087/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8086/}"]
       interval: 30s
@@ -162,8 +162,8 @@ services:
       # Usage: SB_INSTANCE_DNS_MOCK_<INSTANCE_NAME>: <DOMAIN> <TXT_RECORD>
       # Environment Variable name is ignored, only the value is used with the prefix being used to detect
       # the instance name and the suffix being used to detect the TXT record
-      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com <txt>"}
-      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com <txt>"}
+      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://127.0.0.0:8086/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
+      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://127.0.0.0:8087/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8087/}"]
       interval: 30s
