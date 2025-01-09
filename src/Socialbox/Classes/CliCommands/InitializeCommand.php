@@ -382,6 +382,7 @@
                 try
                 {
                     $mockServers[$domain] = DnsHelper::parseTxt($txt);
+                    Logger::getLogger()->info(sprintf('Added Mock Server %s = %s', $domain, $txt));
                 }
                 catch(InvalidArgumentException $e)
                 {
@@ -393,7 +394,7 @@
             if(count($mockServers) > 0)
             {
                 Logger::getLogger()->info('Setting Mock Servers...');
-                Configuration::getConfigurationLib()->set('instance.mock_servers', $mockServers);
+                Configuration::getConfigurationLib()->set('instance.dns_mocks', $mockServers);
             }
 
             // Apply changes & reload the configuration
