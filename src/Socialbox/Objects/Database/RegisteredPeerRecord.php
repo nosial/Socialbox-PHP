@@ -41,7 +41,11 @@
             $this->emailAddress = $data['email_address'] ?? null;
             $this->phoneNumber = $data['phone_number'] ?? null;
 
-            if(is_int($data['birthday']))
+            if(!isset($data['birthday']))
+            {
+                $this->birthday = null;
+            }
+            elseif(is_int($data['birthday']))
             {
                 $this->birthday = (new DateTime())->setTimestamp($data['birthday']);
             }
@@ -55,7 +59,7 @@
             }
             else
             {
-                $this->birthday = null;
+                throw new \InvalidArgumentException("The birthday field must be a valid timestamp or date string.");
             }
 
             if($data['flags'])
@@ -69,7 +73,11 @@
 
             $this->enabled = $data['enabled'];
 
-            if(is_int($data['created']))
+            if(!isset($data['created']))
+            {
+                $this->created = new DateTime();
+            }
+            elseif(is_int($data['created']))
             {
                 $this->created = (new DateTime())->setTimestamp($data['created']);
             }
