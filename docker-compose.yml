@@ -88,9 +88,6 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     networks:
       - internal_network
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
-      REDIS_DB: 0
     expose:
       - "6379"
     healthcheck:

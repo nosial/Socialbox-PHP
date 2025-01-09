@@ -1,66 +1,29 @@
-services:
-  alice_socialbox:
-    container_name: alice_socialbox
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8087:8085"
-    depends_on:
-      alice_mariadb:
-        condition: service_healthy
-      alice_redis:
-        condition: service_healthy
-    networks:
-      - alice_network
-    restart: unless-stopped
-    volumes:
-      - ./alice_socialbox/config:/etc/config
-      - ./alice_socialbox/logs:/var/log
-      - ./alice_socialbox/data:/etc/socialbox
-    environment:
-      # No need to change these values
-      LOG_LEVEL: ${LOG_LEVEL:-debug}
-      CONFIGLIB_PATH: /etc/config
-      LOGGING_DIRECTORY: /var/log
-      SB_MODE: automated
-      SB_STORAGE_PATH: /etc/socialbox
-      # Updated environment variables for Alice
-      SB_INSTANCE_DOMAIN: ${SB_ALICE_DOMAIN:-localhost}
-      SB_INSTANCE_RPC_ENDPOINT: ${SB_ALICE_RPC_ENDPOINT:-http://127.0.0.1:8087/}
-      SB_DATABASE_HOST: alice_mariadb
-      SB_DATABASE_USERNAME: ${MYSQL_USER:-socialbox}
-      SB_DATABASE_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
-      SB_DATABASE_NAME: ${MYSQL_DATABASE:-socialbox}
-      SB_CACHE_ENGINE: redis
-      SB_CACHE_HOST: alice_redis
-      SB_CACHE_PASSWORD: ${REDIS_PASSWORD:-root}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8085/}"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+# Test docker-compose file for SocialBox service to setup two instances of the service:
+# 1. Teapot Service (teapot.com)
+# 2. Coffee Service (coffee.com)
 
-  bob_socialbox:
-    container_name: bob_socialbox
+services:
+
+  # Coffee Service (coffee.com test)
+  socialbox_coffee:
+    container_name: socialbox_coffee
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "8086:8085"
     depends_on:
-      bob_mariadb:
+      mariadb_coffee:
         condition: service_healthy
-      bob_redis:
+      redis_coffee:
         condition: service_healthy
     networks:
-      - bob_network
+      - coffee_network
     restart: unless-stopped
     volumes:
-      - ./bob_socialbox/config:/etc/config
-      - ./bob_socialbox/logs:/var/log
-      - ./bob_socialbox/data:/etc/socialbox
+      - ./socialbox_coffee/config:/etc/config
+      - ./socialbox_coffee/logs:/var/log
+      - ./socialbox_coffee/data:/etc/socialbox
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}
@@ -68,25 +31,44 @@ services:
       LOGGING_DIRECTORY: /var/log
       SB_MODE: automated
       SB_STORAGE_PATH: /etc/socialbox
-      # Updated environment variables for Bob
-      SB_INSTANCE_DOMAIN: ${SB_BOB_DOMAIN:-localhost}
-      SB_INSTANCE_RPC_ENDPOINT: ${SB_BOB_RPC_ENDPOINT:-http://127.0.0.1:8086/}
-      SB_DATABASE_HOST: bob_mariadb
+      # Change these values to match your environment or update the .env file
+      SB_INSTANCE_NAME: ${SB_COFFEE_NAME:-coffee} # Instance name SB_COFFEE_NAME
+      SB_INSTANCE_DOMAIN: ${SB_COFFEE_DOMAIN:-coffee.com} # Instance domain SB_COFFEE_DOMAIN
+      SB_INSTANCE_RPC_ENDPOINT: ${SB_COFFEE_RPC_ENDPOINT:-http://127.0.0.0:8086/}  # Instance RPC endpoint SB_COFFEE_RPC_ENDPOINT
+      SB_LOGGING_CONSOLE_ENABLED: ${SB_LOGGING_CONSOLE_ENABLED:-true}
+      SB_LOGGING_CONSOLE_LEVEL: ${SB_LOGGING_CONSOLE_LEVEL:-debug}
+      SB_LOGGING_FILE_ENABLED: ${SB_LOGGING_FILE_ENABLED:-true}
+      SB_LOGGING_FILE_LEVEL: ${SB_LOGGING_FILE_LEVEL:-debug}
+      SB_SECURITY_DISPLAY_INTERNAL_EXCEPTIONS: ${SB_SECURITY_DISPLAY_INTERNAL_EXCEPTIONS:-true}
+      SB_CRYPTO_KEYPAIR_EXPIRES: ${SB_CRYPTO_KEYPAIR_EXPIRES}
+      SB_CRYPTO_ENCRYPTION_KEYS_COUNT: ${SB_CRYPTO_ENCRYPTION_KEYS_COUNT:-10}
+      SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM: ${SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM:-xchacha20}
+      SB_CRYPTO_TRANSPORT_ENCRYPTION_ALGORITHM: ${SB_CRYPTO_TRANSPORT_ENCRYPTION_ALGORITHM:-chacha20}
+      SB_DATABASE_HOST: mariadb_coffee
       SB_DATABASE_USERNAME: ${MYSQL_USER:-socialbox}
       SB_DATABASE_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
       SB_DATABASE_NAME: ${MYSQL_DATABASE:-socialbox}
+      SB_CACHE_ENABLED: ${SB_CACHE_ENABLED:-true}
       SB_CACHE_ENGINE: redis
-      SB_CACHE_HOST: bob_redis
-      SB_CACHE_PASSWORD: ${REDIS_PASSWORD:-root}
+      SB_CACHE_HOST: redis_coffee
+      SB_CACHE_PORT: ${SB_CACHE_PORT:-6379}
+      SB_CACHE_USERNAME: ${SB_CACHE_USERNAME:-root}
+      SB_CACHE_PASSWORD: ${SB_CACHE_PASSWORD:-root}
+      SB_CACHE_DATABASE: ${SB_CACHE_DATABASE:-0}
+      # Mocking, required for testing without the need for configuring actual DNS records
+      # Usage: SB_INSTANCE_DNS_MOCK_<INSTANCE_NAME>: <DOMAIN> <TXT_RECORD>
+      # Environment Variable name is ignored, only the value is used with the prefix being used to detect
+      # the instance name and the suffix being used to detect the TXT record
+      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-http://127.0.0.1:8086/}
+      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-http://127.0.0.1:8087/}
     healthcheck:
-      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8085/}"]
+      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8086/}"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  alice_mariadb:
-    container_name: alice_mariadb
+  mariadb_coffee:
+    container_name: socialbox_coffee_mariadb
     image: mariadb:10.5
     restart: unless-stopped
     environment:
@@ -95,53 +77,27 @@ services:
       MYSQL_USER: ${MYSQL_USER:-socialbox}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
     volumes:
-      - alice_mariadb_data:/var/lib/mysql
+      - coffee_mariadb_data:/var/lib/mysql
     networks:
-      - alice_network
+      - coffee_network
     expose:
       - "3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "alice_mariadb", "-u", "${MYSQL_USER:-socialbox}", "-p${MYSQL_PASSWORD:-socialbox}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "mariadb_coffee", "-u", "${MYSQL_USER:-socialbox}", "-p${MYSQL_PASSWORD:-socialbox}"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 30s
-
-  bob_mariadb:
-    container_name: bob_mariadb
-    image: mariadb:10.5
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sb_root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-socialbox}
-      MYSQL_USER: ${MYSQL_USER:-socialbox}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
-    volumes:
-      - bob_mariadb_data:/var/lib/mysql
-    networks:
-      - bob_network
-    expose:
-      - "3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "bob_mariadb", "-u", "${MYSQL_USER:-socialbox}", "-p${MYSQL_PASSWORD:-socialbox}"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  alice_redis:
-    container_name: alice_redis
+  redis_coffee:
+    container_name: socialbox_coffee_redis
     image: redis:alpine
     restart: unless-stopped
     command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
     volumes:
-      - alice_redis_data:/data
+      - coffee_redis_data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     networks:
-      - alice_network
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
-      REDIS_DB: 0
+      - coffee_network
     expose:
       - "6379"
     healthcheck:
@@ -151,19 +107,100 @@ services:
       retries: 3
       start_period: 5s
 
-  bob_redis:
-    container_name: bob_redis
+  # Teapot Service (teapot.com test)
+  socialbox_teapot:
+    container_name: socialbox_teapot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8085" # Unique port for Teapot instance
+    depends_on:
+      mariadb_teapot:
+        condition: service_healthy
+      redis_teapot:
+        condition: service_healthy
+    networks:
+      - teapot_network
+    restart: unless-stopped
+    volumes:
+      - ./socialbox_teapot/config:/etc/config
+      - ./socialbox_teapot/logs:/var/log
+      - ./socialbox_teapot/data:/etc/socialbox
+    environment:
+      # No need to change these values
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      CONFIGLIB_PATH: /etc/config
+      LOGGING_DIRECTORY: /var/log
+      SB_MODE: automated
+      SB_STORAGE_PATH: /etc/socialbox
+      # Change these values to match your environment or update the .env file
+      SB_INSTANCE_NAME: ${SB_TEAPOT_NAME:-teapot} # Instance name SB_TEAPOT_NAME
+      SB_INSTANCE_DOMAIN: ${SB_TEAPOT_DOMAIN:-teapot.com} # Instance domain SB_TEAPOT_DOMAIN
+      SB_INSTANCE_RPC_ENDPOINT: ${SB_TEAPOT_RPC_ENDPOINT:-http://127.0.0.0:8087/} # Instance RPC endpoint SB_TEAPOT_RPC_ENDPOINT
+      SB_LOGGING_CONSOLE_ENABLED: ${SB_LOGGING_CONSOLE_ENABLED:-true}
+      SB_LOGGING_CONSOLE_LEVEL: ${SB_LOGGING_CONSOLE_LEVEL:-debug}
+      SB_LOGGING_FILE_ENABLED: ${SB_LOGGING_FILE_ENABLED:-true}
+      SB_LOGGING_FILE_LEVEL: ${SB_LOGGING_FILE_LEVEL:-debug}
+      SB_SECURITY_DISPLAY_INTERNAL_EXCEPTIONS: ${SB_SECURITY_DISPLAY_INTERNAL_EXCEPTIONS:-true}
+      SB_CRYPTO_KEYPAIR_EXPIRES: ${SB_CRYPTO_KEYPAIR_EXPIRES}
+      SB_CRYPTO_ENCRYPTION_KEYS_COUNT: ${SB_CRYPTO_ENCRYPTION_KEYS_COUNT:-10}
+      SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM: ${SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM:-xchacha20}
+      SB_CRYPTO_TRANSPORT_ENCRYPTION_ALGORITHM: ${SB_CRYPTO_TRANSPORT_ENCRYPTION_ALGORITHM:-chacha20}
+      SB_DATABASE_HOST: mariadb_teapot
+      SB_DATABASE_USERNAME: ${MYSQL_USER:-socialbox}
+      SB_DATABASE_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
+      SB_DATABASE_NAME: ${MYSQL_DATABASE:-socialbox}
+      SB_CACHE_ENABLED: ${SB_CACHE_ENABLED:-true}
+      SB_CACHE_ENGINE: redis
+      SB_CACHE_HOST: redis_teapot
+      SB_CACHE_PORT: ${SB_CACHE_PORT:-6379}
+      SB_CACHE_USERNAME: ${SB_CACHE_USERNAME:-root}
+      SB_CACHE_PASSWORD: ${SB_CACHE_PASSWORD:-root}
+      SB_CACHE_DATABASE: ${SB_CACHE_DATABASE:-0}
+      # Mocking, required for testing without the need for configuring actual DNS records
+      # Usage: SB_INSTANCE_DNS_MOCK_<INSTANCE_NAME>: <DOMAIN> <TXT_RECORD>
+      # Environment Variable name is ignored, only the value is used with the prefix being used to detect
+      # the instance name and the suffix being used to detect the TXT record
+      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-http://127.0.0.1:8086/}
+      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-http://127.0.0.1:8087/}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8087/}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  mariadb_teapot:
+    container_name: socialbox_teapot_mariadb
+    image: mariadb:10.5
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sb_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-socialbox}
+      MYSQL_USER: ${MYSQL_USER:-socialbox}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-socialbox}
+    volumes:
+      - teapot_mariadb_data:/var/lib/mysql
+    networks:
+      - teapot_network
+    expose:
+      - "3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "mariadb_teapot", "-u", "${MYSQL_USER:-socialbox}", "-p${MYSQL_PASSWORD:-socialbox}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+  redis_teapot:
+    container_name: socialbox_teapot_redis
     image: redis:alpine
     restart: unless-stopped
     command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
     volumes:
-      - bob_redis_data:/data
+      - teapot_redis_data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     networks:
-      - bob_network
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-root}
-      REDIS_DB: 0
+      - teapot_network
     expose:
       - "6379"
     healthcheck:
@@ -174,19 +211,19 @@ services:
       start_period: 5s
 
 volumes:
-  alice_mariadb_data:
+  teapot_mariadb_data:
     driver: local
-  bob_mariadb_data:
+  teapot_redis_data:
     driver: local
-  alice_redis_data:
+  coffee_redis_data:
     driver: local
-  bob_redis_data:
+  coffee_mariadb_data:
     driver: local
 
 networks:
-  alice_network:
+  teapot_network:
     driver: bridge
-    name: alice_network
-  bob_network:
+    name: teapot_network
+  coffee_network:
     driver: bridge
-    name: bob_network
+    name: coffee_network
