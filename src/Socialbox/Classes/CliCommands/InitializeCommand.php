@@ -371,19 +371,23 @@
                     continue;
                 }
 
-                $domain = $mockServer[1];
-
-                try
+                $domain = $mockServer[0] ?? null;
+                $txt = $mockServer[1] ?? null;
+                if($domain === null || $txt === null)
                 {
-                    $txt = DnsHelper::parseTxt($mockServer[2]);
-                }
-                catch(InvalidArgumentException $e)
-                {
-                    Logger::getLogger()->warning(sprintf('Invalid TXT record format for %s: %s', $domain, $e->getMessage()));
+                    Logger::getLogger()->warning(sprintf('Invalid DNS Mock Server format, domain or txt missing: %s', implode(' ', $mockServer)));
                     continue;
                 }
 
-                $mockServers[$domain] = $txt;
+                try
+                {
+                    $mockServers[$domain] = DnsHelper::parseTxt($txt);
+                }
+                catch(InvalidArgumentException $e)
+                {
+                    Logger::getLogger()->error(sprintf('Invalid TXT record format for %s', $domain), $e);
+                    continue;
+                }
             }
 
             if(count($mockServers) > 0)
