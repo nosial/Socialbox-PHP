@@ -6,6 +6,7 @@
     use Socialbox\Classes\StandardMethods\AcceptCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\AcceptTermsOfService;
+    use Socialbox\Classes\StandardMethods\Authenticate;
     use Socialbox\Classes\StandardMethods\GetAllowedMethods;
     use Socialbox\Classes\StandardMethods\GetCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\GetPrivacyPolicy;
@@ -95,6 +96,7 @@
         case SETTINGS_ADD_SIGNING_KEY = 'settingsAddSigningKey';
         case SETTINGS_GET_SIGNING_KEYS = 'settingsGetSigningKeys';
 
+        case AUTHENTICATE = 'authenticate';
         case RESOLVE_PEER = 'resolvePeer';
 
         /**
@@ -143,6 +145,7 @@
                 self::SETTINGS_ADD_SIGNING_KEY => SettingsAddSigningKey::execute($request, $rpcRequest),
                 self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),
 
+                self::AUTHENTICATE => Authenticate::execute($request, $rpcRequest),
                 self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
 
                 default => $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, sprintf("The method %s is not supported by the server", $rpcRequest->getMethod()))
@@ -229,12 +232,25 @@
         }
 
         /**
-         **/
+         * Retrieves a list of external methods based on the client's session state.
+         *
+         * @param ClientRequest
+         */
         private static function getExternalMethods(ClientRequest $clientRequest): array
         {
-            return [
-                self::RESOLVE_PEER
-            ];
+            $methods = [];
+
+            $session = $clientRequest->getSession();
+            if(!$session->isAuthenticated() || $session->flagExists(SessionFlags::AUTHENTICATION_REQUIRED))
+            {
+                $methods[] = self::AUTHENTICATE;
+            }
+            else
+            {
+                $methods[] = self::RESOLVE_PEER;
+            }
+
+            return $methods;
         }
 
         /**

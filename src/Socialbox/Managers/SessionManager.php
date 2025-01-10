@@ -55,7 +55,11 @@
             $flags = [];
 
             // TODO: Update this to support `host` peers
-            if($peer->isEnabled())
+            if($peer->isExternal())
+            {
+                $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
+            }
+            else if($peer->isEnabled())
             {
                 $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
 
