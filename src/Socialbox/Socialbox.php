@@ -286,8 +286,14 @@
                 return;
             }
 
-            // Check if the session is awaiting a DHE exchange, forbidden if not
             $session = $clientRequest->getSession();
+            if($session === null)
+            {
+                self::returnError(404, StandardError::SESSION_NOT_FOUND, 'Session not found');
+                return;
+            }
+
+            // Check if the session is awaiting a DHE exchange, forbidden if not
             if($session->getState() !== SessionState::AWAITING_DHE)
             {
                 self::returnError(403, StandardError::FORBIDDEN, 'Bad request: The session is not awaiting a DHE exchange');
