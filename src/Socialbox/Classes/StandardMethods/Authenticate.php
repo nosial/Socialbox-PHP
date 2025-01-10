@@ -31,8 +31,7 @@
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Peer is already authenticated');
                 }
 
-                SessionManager::removeFlags($request->getPeer()->getUuid(), [SessionFlags::AUTHENTICATION_REQUIRED]);
-                SessionManager::setAuthenticated($request->getPeer()->getUuid(), true);
+                SessionManager::updateFlow($request->getSession(), [SessionFlags::AUTHENTICATION_REQUIRED]);
             }
             catch(Exception $e)
             {

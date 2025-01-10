@@ -27,6 +27,7 @@
         case VER_IMAGE_CAPTCHA = 'VER_IMAGE_CAPTCHA'; // Peer has to solve an image captcha
         case VER_TEXT_CAPTCHA = 'VER_TEXT_CAPTCHA'; // Peer has to solve a text captcha
         case VER_EXTERNAL_URL = 'VER_EXTERNAL_URL'; // Peer has to visit an external URL
+        case VER_AUTHENTICATION = 'VER_AUTHENTICATION'; // External peer has to run authenticate() on their end
 
         // Login, require fields
         case VER_PASSWORD = 'VER_PASSWORD'; // Peer has to enter their password
@@ -37,37 +38,43 @@
         case RATE_LIMITED = 'RATE_LIMITED'; // Peer is temporarily rate limited
 
         /**
-         * Determines whether the current value corresponds to a registration method flag.
+         * Retrieves a list of registration-related flags.
          *
-         * @return bool True if the value is a registration method flag, otherwise false.
+         * @return array Array of registration flags applicable for the process.
          */
-        public function isRegistrationFlag(): bool
+        public static function getRegistrationFlags(): array
         {
-            return in_array($this->value, [
+            return [
                 self::SET_PASSWORD->value,
                 self::SET_OTP->value,
                 self::SET_DISPLAY_NAME->value,
+                self::SET_DISPLAY_PICTURE->value,
+                self::SET_PHONE->value,
+                self::SET_BIRTHDAY->value,
+                self::SET_EMAIL->value,
                 self::VER_PRIVACY_POLICY->value,
                 self::VER_TERMS_OF_SERVICE->value,
+                self::VER_COMMUNITY_GUIDELINES->value,
                 self::VER_EMAIL->value,
                 self::VER_SMS->value,
                 self::VER_PHONE_CALL->value,
                 self::VER_IMAGE_CAPTCHA->value
-            ]);
+            ];
         }
 
         /**
-         * Determines whether the current value corresponds to an authentication method flag.
+         * Retrieves an array of authentication flags to be used for verifying user identity.
          *
-         * @return bool True if the value is an authentication method flag, otherwise false.
+         * @return array Returns an array containing the values of defined authentication flags.
          */
-        public function isAuthenticationFlag(): bool
+        public static function getAuthenticationFlags(): array
         {
-            return in_array($this->value, [
+            return [
                 self::VER_IMAGE_CAPTCHA->value,
                 self::VER_PASSWORD->value,
-                self::VER_OTP->value
-            ]);
+                self::VER_OTP->value,
+                self::VER_AUTHENTICATION->value
+            ];
         }
 
         /**
@@ -105,33 +112,17 @@
          */
         public static function isComplete(array $flags): bool
         {
-            // todo: refactor this to use the isRegistrationFlag & isAuthenticationFlag methods
             $flags = array_map(function ($flag) {return is_string($flag) ? SessionFlags::from($flag) : $flag;}, $flags);
             $flags = array_map(fn(SessionFlags $flag) => $flag->value, $flags);
 
             if (in_array(SessionFlags::REGISTRATION_REQUIRED->value, $flags))
             {
-                $flagsToComplete = [
-                    SessionFlags::SET_PASSWORD->value,
-                    SessionFlags::SET_OTP->value,
-                    SessionFlags::SET_DISPLAY_NAME->value,
-                    SessionFlags::VER_PRIVACY_POLICY->value,
-                    SessionFlags::VER_TERMS_OF_SERVICE->value,
-                    SessionFlags::VER_EMAIL->value,
-                    SessionFlags::VER_SMS->value,
-                    SessionFlags::VER_PHONE_CALL->value,
-                    SessionFlags::VER_IMAGE_CAPTCHA->value
-                ];
-                return !array_intersect($flagsToComplete, $flags); // Check if the intersection is empty
+                return !array_intersect(self::getRegistrationFlags(), $flags); // Check if the intersection is empty
             }
 
             if (in_array(SessionFlags::AUTHENTICATION_REQUIRED->value, $flags))
             {
-                $flagsToComplete = [
-                    SessionFlags::VER_PASSWORD->value,
-                    SessionFlags::VER_OTP->value
-                ];
-                return !array_intersect($flagsToComplete, $flags); // Check if the intersection is empty
+                return !array_intersect(self::getAuthenticationFlags(), $flags); // Check if the intersection is empty
 
             }
 

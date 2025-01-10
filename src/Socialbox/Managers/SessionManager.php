@@ -58,6 +58,7 @@
             if($peer->isExternal())
             {
                 $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
+                $flags[] = SessionFlags::VER_AUTHENTICATION;
             }
             else if($peer->isEnabled())
             {
