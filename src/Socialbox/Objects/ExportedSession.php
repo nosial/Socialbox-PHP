@@ -11,6 +11,7 @@
     {
         private string $peerAddress;
         private string $rpcEndpoint;
+        private string $remoteServer;
         private string $sessionUUID;
         private string $transportEncryptionAlgorithm;
         private int $serverKeypairExpires;
@@ -41,6 +42,7 @@
         {
             $this->peerAddress = $data['peer_address'];
             $this->rpcEndpoint = $data['rpc_endpoint'];
+            $this->remoteServer = $data['remote_server'];
             $this->sessionUUID = $data['session_uuid'];
             $this->transportEncryptionAlgorithm = $data['transport_encryption_algorithm'];
             $this->serverKeypairExpires = $data['server_keypair_expires'];
@@ -73,6 +75,16 @@
         public function getRpcEndpoint(): string
         {
             return $this->rpcEndpoint;
+        }
+
+        /**
+         * Retrieves the remote server.
+         *
+         * @return string The remote server.
+         */
+        public function getRemoteServer(): string
+        {
+            return $this->remoteServer;
         }
 
         /**
@@ -203,6 +215,7 @@
             return [
                 'peer_address' => $this->peerAddress,
                 'rpc_endpoint' => $this->rpcEndpoint,
+                'remote_server' => $this->remoteServer,
                 'session_uuid' => $this->sessionUUID,
                 'transport_encryption_algorithm' => $this->transportEncryptionAlgorithm,
                 'server_keypair_expires' => $this->serverKeypairExpires,

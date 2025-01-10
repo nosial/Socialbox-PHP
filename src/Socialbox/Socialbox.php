@@ -8,6 +8,7 @@
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\DnsHelper;
     use Socialbox\Classes\Logger;
+    use Socialbox\Classes\RpcClient;
     use Socialbox\Classes\ServerResolver;
     use Socialbox\Classes\Utilities;
     use Socialbox\Classes\Validator;
@@ -20,7 +21,10 @@
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RequestException;
+    use Socialbox\Exceptions\ResolutionException;
+    use Socialbox\Exceptions\RpcException;
     use Socialbox\Exceptions\StandardException;
+    use Socialbox\Managers\ExternalSessionManager;
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
@@ -599,6 +603,39 @@
         }
 
         /**
+         * Retrieves an external session associated with the given domain.
+         *
+         * If a session already exists for the specified domain, it retrieves and uses the existing session.
+         * Otherwise, it establishes a new connection, creates a session, and stores it for later use.
+         *
+         * @param string $domain The domain for which the external session is to be retrieved.
+         * @return RpcClient The RPC client initialized with the external session for the given domain.
+         * @throws CryptographyException If there was an error in the cryptography
+         * @throws DatabaseOperationException If there was an error while processing the session against the database
+         * @throws RpcException If there is an RPC exception while connecting to the remote server
+         * @throws ResolutionException If the connection to the remote server fails.
+         */
+        public static function getExternalSession(string $domain): RpcClient
+        {
+            if(ExternalSessionManager::sessionExists($domain))
+            {
+                return new SocialClient(self::getServerAddress(), $domain, ExternalSessionManager::getSession($domain));
+            }
+
+            try
+            {
+                $client = new SocialClient(self::getServerAddress(), $domain);
+            }
+            catch (Exception $e)
+            {
+                throw new ResolutionException(sprintf('Failed to connect to remote server %s: %s', $domain, $e->getMessage()), $e->getCode(), $e);
+            }
+
+            ExternalSessionManager::addSession($client->exportSession());
+            return $client;
+        }
+
+        /**
          * Retrieves the server information by assembling data from the configuration settings.
          *
          * @return ServerInformation An instance of ServerInformation containing details such as server name, hashing algorithm,
@@ -611,6 +648,16 @@
                 'server_keypair_expires' => Configuration::getCryptographyConfiguration()->getHostKeyPairExpires(),
                 'transport_encryption_algorithm' => Configuration::getCryptographyConfiguration()->getTransportEncryptionAlgorithm()
             ]);
+        }
+
+        /**
+         * Retrieves the server address.
+         *
+         * @return PeerAddress The constructed server address containing the host and domain information.
+         */
+        public static function getServerAddress(): PeerAddress
+        {
+            return new PeerAddress(ReservedUsernames::HOST->value, Configuration::getInstanceConfiguration()->getDomain());
         }
 
         /**

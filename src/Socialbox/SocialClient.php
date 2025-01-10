@@ -9,6 +9,7 @@
     use Socialbox\Classes\Utilities;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
     use Socialbox\Objects\ExportedSession;
@@ -22,15 +23,17 @@
         /**
          * Constructs the object from an array of data.
          *
-         * @param string|PeerAddress $peerAddress The address of the peer to connect to.
+         * @param string|PeerAddress $identifiedAs The address of the peer to connect to.
+         * @param string|null $server Optional. The domain of the server to connect to if different from the identified
          * @param ExportedSession|null $exportedSession Optional. The exported session to use for communication.
          * @throws CryptographyException If the public key is invalid.
+         * @throws DatabaseOperationException If the database operation fails.
          * @throws ResolutionException If the domain cannot be resolved.
          * @throws RpcException If the RPC request fails.
          */
-        public function __construct(string|PeerAddress $peerAddress, ?ExportedSession $exportedSession=null)
+        public function __construct(string|PeerAddress $identifiedAs, ?string $server=null, ?ExportedSession $exportedSession=null)
         {
-            parent::__construct($peerAddress, $exportedSession);
+            parent::__construct($identifiedAs, $server, $exportedSession);
         }
 
         /**

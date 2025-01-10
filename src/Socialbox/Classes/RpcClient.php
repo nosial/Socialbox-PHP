@@ -6,6 +6,7 @@
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\Types\RequestType;
     use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
     use Socialbox\Objects\ExportedSession;
@@ -21,7 +22,7 @@
         private const string CLIENT_VERSION = '1.0';
 
         private bool $bypassSignatureVerification;
-        private PeerAddress $peerAddress;
+        private PeerAddress $identifiedAs;
         private string $serverPublicSigningKey;
         private string $serverPublicEncryptionKey;
         private KeyPair $clientSigningKeyPair;
@@ -31,18 +32,21 @@
         private string $serverTransportEncryptionKey;
         private ServerInformation $serverInformation;
         private string $rpcEndpoint;
+        private string $remoteServer;
         private string $sessionUuid;
 
         /**
          * Constructs a new instance with the specified peer address.
          *
-         * @param string|PeerAddress $peerAddress The peer address to be used for the instance (eg; johndoe@example.com)
+         * @param string|PeerAddress $identifiedAs The peer address to be used for the instance (eg; johndoe@example.com)
+         * @param string|null $server Optional. The domain of the server to connect to if different from the identified
          * @param ExportedSession|null $exportedSession Optional. An exported session to be used to re-connect.
          * @throws CryptographyException If there is an error in the cryptographic operations.
-         * @throws RpcException If there is an error in the RPC request or if no response is received.
          * @throws ResolutionException If there is an error in the resolution process.
+         * @throws RpcException If there is an error in the RPC request or if no response is received.
+         * @throws DatabaseOperationException
          */
-        public function __construct(string|PeerAddress $peerAddress, ?ExportedSession $exportedSession=null)
+        public function __construct(string|PeerAddress $identifiedAs, ?string $server=null, ?ExportedSession $exportedSession=null)
         {
             $this->bypassSignatureVerification = false;
 
@@ -56,8 +60,9 @@
                     throw new RpcException('The server keypair has expired, a new session must be created');
                 }
 
-                $this->peerAddress = PeerAddress::fromAddress($exportedSession->getPeerAddress());
+                $this->identifiedAs = PeerAddress::fromAddress($exportedSession->getPeerAddress());
                 $this->rpcEndpoint = $exportedSession->getRpcEndpoint();
+                $this->remoteServer = $exportedSession->getRemoteServer();
                 $this->sessionUuid = $exportedSession->getSessionUuid();
                 $this->serverPublicSigningKey = $exportedSession->getServerPublicSigningKey();
                 $this->serverPublicEncryptionKey = $exportedSession->getServerPublicEncryptionKey();
@@ -86,16 +91,17 @@
             }
 
             // If the peer address is a string, we need to convert it to a PeerAddress object
-            if(is_string($peerAddress))
+            if(is_string($identifiedAs))
             {
-                $peerAddress = PeerAddress::fromAddress($peerAddress);
+                $identifiedAs = PeerAddress::fromAddress($identifiedAs);
             }
 
             // Set the initial properties
-            $this->peerAddress = $peerAddress;
+            $this->identifiedAs = $identifiedAs;
+            $this->remoteServer = $server ?? $identifiedAs->getDomain();
 
             // Resolve the domain and get the server's Public Key & RPC Endpoint
-            $resolvedServer = ServerResolver::resolveDomain($this->peerAddress->getDomain(), false);
+            $resolvedServer = ServerResolver::resolveDomain($this->remoteServer, false);
 
             // Import the RPC Endpoint & the server's public key.
             $this->serverPublicSigningKey = $resolvedServer->getPublicSigningKey();
@@ -117,7 +123,7 @@
 
             // If the username is `host` and the domain is the same as this server's domain, we use our signing keypair
             // Essentially this is a special case for the server to contact another server
-            if($this->peerAddress->isHost())
+            if($this->identifiedAs->isHost())
             {
                 $this->clientSigningKeyPair = new KeyPair(Configuration::getCryptographyConfiguration()->getHostPublicKey(), Configuration::getCryptographyConfiguration()->getHostPrivateKey());
             }
@@ -157,14 +163,14 @@
                 StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::INITIATE_SESSION->value,
                 StandardHeaders::CLIENT_NAME->value . ': ' . self::CLIENT_NAME,
                 StandardHeaders::CLIENT_VERSION->value . ': ' . self::CLIENT_VERSION,
-                StandardHeaders::IDENTIFY_AS->value . ': ' . $this->peerAddress->getAddress(),
+                StandardHeaders::IDENTIFY_AS->value . ': ' . $this->identifiedAs->getAddress(),
                 // Always provide our generated encrypted public key
                 StandardHeaders::ENCRYPTION_PUBLIC_KEY->value . ': ' . $this->clientEncryptionKeyPair->getPublicKey()
             ];
 
             // If we're not connecting as the host, we need to provide our public key
             // Otherwise, the server will obtain the public key itself from DNS records rather than trusting the client
-            if(!$this->peerAddress->isHost())
+            if(!$this->identifiedAs->isHost())
             {
                 $headers[] = StandardHeaders::SIGNING_PUBLIC_KEY->value . ': ' . $this->clientSigningKeyPair->getPublicKey();
             }
@@ -567,8 +573,9 @@
         public function exportSession(): ExportedSession
         {
             return new ExportedSession([
-                'peer_address' => $this->peerAddress->getAddress(),
+                'peer_address' => $this->identifiedAs->getAddress(),
                 'rpc_endpoint' => $this->rpcEndpoint,
+                'remote_server' => $this->remoteServer,
                 'session_uuid' => $this->sessionUuid,
                 'transport_encryption_algorithm' => $this->serverInformation->getTransportEncryptionAlgorithm(),
                 'server_keypair_expires' => $this->serverInformation->getServerKeypairExpires(),
