@@ -129,6 +129,11 @@
          */
         public static function addMock(string $domain, DnsRecord|string $record): void
         {
+            if(isset(self::$mockedRecords[$domain]))
+            {
+                return;
+            }
+
             if(is_string($record))
             {
                 $record = DnsHelper::parseTxt($record);
