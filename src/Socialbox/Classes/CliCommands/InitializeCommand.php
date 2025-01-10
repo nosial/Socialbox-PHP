@@ -381,8 +381,8 @@
 
                 try
                 {
-                    $mockServers[$domain] = DnsHelper::parseTxt($txt);
-                    Logger::getLogger()->info(sprintf('Added Mock Server %s = %s', $domain, $txt));
+                    $mockServers[$domain] = $txt;
+                    Logger::getLogger()->info(sprintf('Added Mock Server %s: %s', $domain, $txt));
                 }
                 catch(InvalidArgumentException $e)
                 {
