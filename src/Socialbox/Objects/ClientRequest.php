@@ -34,15 +34,21 @@
          */
         public function __construct(array $headers, ?string $requestBody)
         {
-            $this->headers = $headers;
+            $parsedHeaders = [];
+            foreach($headers as $key => $value)
+            {
+                $parsedHeaders[strtolower($key)] = $value;
+            }
+
+            $this->headers = $parsedHeaders;
             $this->requestBody = $requestBody;
 
-            $this->clientName = $headers[StandardHeaders::CLIENT_NAME->value] ?? null;
-            $this->clientVersion = $headers[StandardHeaders::CLIENT_VERSION->value] ?? null;
-            $this->requestType = RequestType::tryFrom($headers[StandardHeaders::REQUEST_TYPE->value]);
-            $this->identifyAs = $headers[StandardHeaders::IDENTIFY_AS->value] ?? null;
-            $this->sessionUuid = $headers[StandardHeaders::SESSION_UUID->value] ?? null;
-            $this->signature = $headers[StandardHeaders::SIGNATURE->value] ?? null;
+            $this->clientName = $parsedHeaders[strtolower(StandardHeaders::CLIENT_NAME->value)] ?? null;
+            $this->clientVersion = $parsedHeaders[strtolower(StandardHeaders::CLIENT_VERSION->value)] ?? null;
+            $this->requestType = RequestType::tryFrom($parsedHeaders[strtolower(StandardHeaders::REQUEST_TYPE->value)]);
+            $this->identifyAs = $parsedHeaders[strtolower(StandardHeaders::IDENTIFY_AS->value)] ?? null;
+            $this->sessionUuid = $parsedHeaders[strtolower(StandardHeaders::SESSION_UUID->value)] ?? null;
+            $this->signature = $parsedHeaders[strtolower(StandardHeaders::SIGNATURE->value)] ?? null;
         }
 
         /**
@@ -65,10 +71,10 @@
         {
             if(is_string($header))
             {
-                return isset($this->headers[$header]);
+                return isset($this->headers[strtolower($header)]);
             }
 
-            return isset($this->headers[$header->value]);
+            return isset($this->headers[strtolower($header->value)]);
         }
 
         /**
@@ -86,10 +92,10 @@
 
             if(is_string($header))
             {
-                return $this->headers[$header];
+                return $this->headers[strtolower($header)];
             }
 
-            return $this->headers[$header->value];
+            return $this->headers[strtolower($header->value)];
         }
 
         /**
