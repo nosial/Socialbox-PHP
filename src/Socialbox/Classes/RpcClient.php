@@ -51,7 +51,7 @@
             if($exportedSession !== null)
             {
                 // Check if the server keypair has expired from the exported session
-                if(time() > $exportedSession->getServerKeypairExpires())
+                if($exportedSession->getServerKeypairExpires() > 0 && time() > $exportedSession->getServerKeypairExpires())
                 {
                     throw new RpcException('The server keypair has expired, a new session must be created');
                 }
@@ -71,7 +71,7 @@
                 $this->serverInformation = self::getServerInformation();
 
                 // Check if the active keypair has expired
-                if(time() > $this->serverInformation->getServerKeypairExpires())
+                if($this->serverInformation->getServerKeypairExpires() > 0 && time() > $this->serverInformation->getServerKeypairExpires())
                 {
                     throw new RpcException('The server keypair has expired but the server has not provided a new keypair, contact the server administrator');
                 }
@@ -110,7 +110,7 @@
             $this->serverInformation = self::getServerInformation();
 
             // Check if the server keypair has expired
-            if(time() > $this->serverInformation->getServerKeypairExpires())
+            if($this->serverInformation->getServerKeypairExpires() > 0 && time() > $this->serverInformation->getServerKeypairExpires())
             {
                 throw new RpcException('The server keypair has expired but the server has not provided a new keypair, contact the server administrator');
             }
@@ -500,14 +500,6 @@
                 {
                     throw new RpcException(sprintf('Failed to get server information at %s, server responded with ' . $responseCode, $this->rpcEndpoint));
                 }
-
-                throw new RpcException(sprintf('Failed to get server information at %s, server responded with ' . $responseCode . ': ' . $response, $this->rpcEndpoint));
-            }
-
-            if(empty($response))
-            {
-                curl_close($ch);
-                throw new RpcException(sprintf('Failed to get server information at %s, server returned an empty response', $this->rpcEndpoint));
             }
 
             curl_close($ch);
