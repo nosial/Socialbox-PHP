@@ -8,7 +8,6 @@
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\DnsHelper;
     use Socialbox\Classes\Logger;
-    use Socialbox\Classes\RpcClient;
     use Socialbox\Classes\ServerResolver;
     use Socialbox\Classes\Utilities;
     use Socialbox\Classes\Validator;
