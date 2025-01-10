@@ -624,6 +624,7 @@
             try
             {
                 $client = new SocialClient(self::getServerAddress(), $domain);
+                $client->authenticate();
             }
             catch (Exception $e)
             {

@@ -614,6 +614,21 @@
         }
 
         /**
+         * Authenticates the user by sending a remote procedure call request.
+         * Only applicable for server to server communication, this is the first method to call
+         * after connecting to the server.
+         *
+         * @return true Returns true if the authentication is successful.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function authenticate(): true
+        {
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::AUTHENTICATE->value, Utilities::randomCrc32())
+            )->getResponse()->getResult();
+        }
+
+        /**
          * Resolves a peer by its address or a PeerAddress instance through a remote procedure call.
          *
          * @param string|PeerAddress $peerAddress The peer address as a string or an instance of PeerAddress.
