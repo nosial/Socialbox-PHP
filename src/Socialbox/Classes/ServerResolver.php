@@ -127,8 +127,13 @@
          * @param DnsRecord $record The DNS record to be associated with the specified domain.
          * @return void
          */
-        public static function mockRecord(string $domain, DnsRecord $record): void
+        public static function addMock(string $domain, DnsRecord|string $record): void
         {
+            if(is_string($record))
+            {
+                $record = DnsHelper::parseTxt($record);
+            }
+
             self::$mockedRecords[$domain] = $record;
         }
 
