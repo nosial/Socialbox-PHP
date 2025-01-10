@@ -175,7 +175,7 @@
                 }
 
                 $sharedSecret = sodium_crypto_scalarmult($decodedPrivateKey, $decodedPublicKey);
-                $derivedKey = sodium_crypto_generichash($sharedSecret, null, SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
+                $derivedKey = sodium_crypto_generichash($sharedSecret, '', SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
                 $result = sodium_bin2base64($derivedKey, self::BASE64_VARIANT);
 
                 // Clean up sensitive data
