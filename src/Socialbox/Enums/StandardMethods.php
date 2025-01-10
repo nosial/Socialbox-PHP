@@ -12,6 +12,7 @@
     use Socialbox\Classes\StandardMethods\GetSessionState;
     use Socialbox\Classes\StandardMethods\GetTermsOfService;
     use Socialbox\Classes\StandardMethods\Ping;
+    use Socialbox\Classes\StandardMethods\ResolvePeer;
     use Socialbox\Classes\StandardMethods\SettingsAddSigningKey;
     use Socialbox\Classes\StandardMethods\SettingsDeleteBirthday;
     use Socialbox\Classes\StandardMethods\SettingsDeleteDisplayName;
@@ -94,6 +95,8 @@
         case SETTINGS_ADD_SIGNING_KEY = 'settingsAddSigningKey';
         case SETTINGS_GET_SIGNING_KEYS = 'settingsGetSigningKeys';
 
+        case RESOLVE_PEER = 'resolvePeer';
+
         /**
          * Executes the appropriate operation based on the current context and requests provided.
          *
@@ -139,6 +142,8 @@
 
                 self::SETTINGS_ADD_SIGNING_KEY => SettingsAddSigningKey::execute($request, $rpcRequest),
                 self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),
+
+                self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
 
                 default => $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, sprintf("The method %s is not supported by the server", $rpcRequest->getMethod()))
             };
@@ -227,7 +232,9 @@
          **/
         private static function getExternalMethods(ClientRequest $clientRequest): array
         {
-            return [];
+            return [
+                self::RESOLVE_PEER
+            ];
         }
 
         /**
@@ -249,7 +256,8 @@
                 self::SETTINGS_SET_OTP,
                 self::SETTINGS_SET_EMAIL,
                 self::SETTINGS_SET_PHONE,
-                self::SETTINGS_SET_BIRTHDAY
+                self::SETTINGS_SET_BIRTHDAY,
+                self::RESOLVE_PEER
             ];
 
             // Prevent the user from deleting their display name if it is required

@@ -609,13 +609,13 @@
          * Otherwise, it establishes a new connection, creates a session, and stores it for later use.
          *
          * @param string $domain The domain for which the external session is to be retrieved.
-         * @return RpcClient The RPC client initialized with the external session for the given domain.
+         * @return SocialClient The RPC client initialized with the external session for the given domain.
          * @throws CryptographyException If there was an error in the cryptography
          * @throws DatabaseOperationException If there was an error while processing the session against the database
-         * @throws RpcException If there is an RPC exception while connecting to the remote server
          * @throws ResolutionException If the connection to the remote server fails.
+         * @throws RpcException If there is an RPC exception while connecting to the remote server
          */
-        public static function getExternalSession(string $domain): RpcClient
+        public static function getExternalSession(string $domain): SocialClient
         {
             if(ExternalSessionManager::sessionExists($domain))
             {

@@ -261,7 +261,7 @@
          *
          * @return Peer The Peer representation of the current instance.
          */
-        public function toPeer(): Peer
+        public function toStandardPeer(): Peer
         {
             return Peer::fromArray($this->toArray());
         }

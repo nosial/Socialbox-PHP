@@ -15,6 +15,7 @@
     use Socialbox\Objects\ExportedSession;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
+    use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerDocument;
     use Socialbox\Objects\Standard\SessionState;
 
@@ -610,5 +611,26 @@
             return (bool)$this->sendRequest(
                 new RpcRequest(StandardMethods::SETTINGS_DELETE_BIRTHDAY->value, Utilities::randomCrc32())
             )->getResponse()->getResult();
+        }
+
+        /**
+         * Resolves a peer by its address or a PeerAddress instance through a remote procedure call.
+         *
+         * @param string|PeerAddress $peerAddress The peer address as a string or an instance of PeerAddress.
+         * @return Peer The resolved peer object.
+         * @throws RpcException Thrown if the RPC request fails.
+         */
+        public function resolvePeer(string|PeerAddress $peerAddress): Peer
+        {
+            if($peerAddress instanceof PeerAddress)
+            {
+                $peerAddress = $peerAddress->getAddress();
+            }
+
+            return Peer::fromArray($this->sendRequest(
+                new RpcRequest(StandardMethods::RESOLVE_PEER->value, Utilities::randomCrc32(), [
+                    'peer_address' => $peerAddress
+                ])
+            )->getResponse()->getResult());
         }
     }

@@ -165,6 +165,13 @@
                 $username = $address->getUsername();
                 $statement->bindParam(1, $username);
                 $server = $address->getDomain();
+
+                // Convert to 'host' if the domain is the same as the server's host
+                if($server === Configuration::getInstanceConfiguration()->getDomain())
+                {
+                    $server = 'host';
+                }
+
                 $statement->bindParam(2, $server);
                 $statement->execute();
 
