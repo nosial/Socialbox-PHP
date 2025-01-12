@@ -172,7 +172,7 @@
             // If the peer is identifying as an external domain
             else
             {
-                // Only allow the host to identify as an external peer
+                // Only allow the host to identify as a host
                 if($clientRequest->getIdentifyAs()->getUsername() !== ReservedUsernames::HOST->value)
                 {
                     self::returnError(403, StandardError::FORBIDDEN, 'Forbidden: Any external peer must identify as the host, only the host can preform actions on behalf of it\'s peers');
@@ -210,6 +210,25 @@
                     // with a cron job using `socialbox clean-sessions`
                     self::returnError(403, StandardError::FORBIDDEN, 'Unauthorized: The requested peer is disabled/banned');
                     return;
+                }
+                // If-clause for handling the host peer, host peers are always enabled unless the fist clause is true
+                // in which case the host was blocked by this server.
+                elseif($clientRequest->getIdentifyAs() === ReservedUsernames::HOST->value)
+                {
+                    $serverInformation = self::getExternalServerInformation($clientRequest->getIdentifyAs()->getDomain());
+
+                    // If the host is not registered, register it
+                    if($registeredPeer === null)
+                    {
+                        $peerUuid = RegisteredPeerManager::createPeer(PeerAddress::fromAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)));
+                        RegisteredPeerManager::updateDisplayName($peerUuid, $serverInformation->getServerName());
+                        RegisteredPeerManager::enablePeer($peerUuid);
+                    }
+                    // Otherwise, update the display name if it has changed
+                    else
+                    {
+                        RegisteredPeerManager::updateDisplayName($registeredPeer->getUuid(), $serverInformation->getServerName());
+                    }
                 }
                 // Otherwise the peer isn't registered, so we need to register it
                 else
@@ -451,6 +470,34 @@
                 return;
             }
 
+            // If the client has provided an identification header, further validation and resolution is required
+            if($clientRequest->getIdentifyAs() !== null)
+            {
+                // First check if the client is identifying as the host
+                if($clientRequest->getPeer()->getAddress() !== ReservedUsernames::HOST->value)
+                {
+                    // TODO: Maybe allow user client to change identification but within an RPC method rather than the headers
+                    self::returnError(403, StandardError::FORBIDDEN, 'Unauthorized: Not allowed to identify as a different peer');
+                    return;
+                }
+
+                // Synchronize the peer
+                try
+                {
+                    $client = self::getExternalSession($clientRequest->getIdentifyAs()->getDomain());
+                    RegisteredPeerManager::synchronizeExternalPeer($client->resolvePeer($clientRequest->getIdentifyAs()));
+                }
+                catch (DatabaseOperationException $e)
+                {
+                    self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to synchronize external peer', $e);
+                    return;
+                }
+                catch (Exception $e)
+                {
+                    throw new ResolutionException(sprintf('Failed to synchronize external peer %s: %s', $clientRequest->getIdentifyAs()->getAddress(), $e->getMessage()), $e->getCode(), $e);
+                }
+            }
+
             try
             {
                 $clientRequests = $clientRequest->getRpcRequests($decryptedContent);
@@ -633,6 +680,25 @@
 
             ExternalSessionManager::addSession($client->exportSession());
             return $client;
+        }
+
+        /**
+         * Retrieves external server information for the specified domain.
+         *
+         * @param string $domain The domain from which the server information is to be retrieved.
+         * @return ServerInformation The server information retrieved from the external session.
+         * @throws ResolutionException If unable to retrieve server information for the given domain.
+         */
+        public static function getExternalServerInformation(string $domain): ServerInformation
+        {
+            try
+            {
+                return self::getExternalSession($domain)->getServerInformation();
+            }
+            catch (Exception $e)
+            {
+                throw new ResolutionException(sprintf('Failed to retrieve server information from %s: %s', $domain, $e->getMessage()), $e->getCode(), $e);
+            }
         }
 
         /**
