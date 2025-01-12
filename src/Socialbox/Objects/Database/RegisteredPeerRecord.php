@@ -3,6 +3,7 @@
     namespace Socialbox\Objects\Database;
 
     use DateTime;
+    use InvalidArgumentException;
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\Flags\PeerFlags;
     use Socialbox\Interfaces\SerializableInterface;
@@ -25,6 +26,7 @@
         private ?array $flags;
         private bool $enabled;
         private DateTime $created;
+        private DateTime $updated;
 
         /**
          * Constructor for initializing class properties from provided data.
@@ -59,7 +61,7 @@
             }
             else
             {
-                throw new \InvalidArgumentException("The birthday field must be a valid timestamp or date string.");
+                throw new InvalidArgumentException("The birthday field must be a valid timestamp or date string.");
             }
 
             if($data['flags'])
@@ -87,7 +89,24 @@
             }
             else
             {
-                throw new \InvalidArgumentException("The created field must be a valid timestamp or date string.");
+                throw new InvalidArgumentException("The created field must be a valid timestamp or date string.");
+            }
+
+            if(!isset($data['updated']))
+            {
+                $this->updated = new DateTime();
+            }
+            elseif(is_int($data['updated']))
+            {
+                $this->updated = (new DateTime())->setTimestamp($data['updated']);
+            }
+            elseif(is_string($data['updated']))
+            {
+                $this->updated = new DateTime($data['updated']);
+            }
+            else
+            {
+                throw new InvalidArgumentException("The updated field must be a valid timestamp or date string.");
             }
         }
 
@@ -236,6 +255,16 @@
         }
 
         /**
+         * Retrieves the last update date and time.
+         *
+         * @return DateTime The last update date and time.
+         */
+        public function getUpdated(): DateTime
+        {
+            return $this->updated;
+        }
+
+        /**
          * Determines if the user is considered external by checking if the username is 'host' and the server
          * is not the same as the domain from the configuration.
          *
@@ -290,7 +319,8 @@
                 'birthday' => $this->birthday?->getTimestamp(),
                 'flags' => PeerFlags::toString($this->flags),
                 'enabled' => $this->enabled,
-                'created' => $this->created
+                'created' => $this->created,
+                'updated' => $this->updated
             ];
         }
     }
