@@ -39,6 +39,9 @@
          * missing or invalid request types.
          *
          * @return void
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
          */
         public static function handleRequest(): void
         {
@@ -279,6 +282,7 @@
          *                                     required to perform the DHE exchange.
          *
          * @return void
+         * @throws CryptographyException
          */
         private static function handleDheExchange(ClientRequest $clientRequest): void
         {
@@ -412,6 +416,9 @@
          * @param ClientRequest $clientRequest The RPC client request containing headers, body, and session information.
          *
          * @return void
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
          */
         private static function handleRpc(ClientRequest $clientRequest): void
         {
@@ -484,8 +491,7 @@
                 // Synchronize the peer
                 try
                 {
-                    $client = self::getExternalSession($clientRequest->getIdentifyAs()->getDomain());
-                    RegisteredPeerManager::synchronizeExternalPeer($client->resolvePeer($clientRequest->getIdentifyAs()));
+                    self::synchronizeExternalPeer($clientRequest->getIdentifyAs());
                 }
                 catch (DatabaseOperationException $e)
                 {
@@ -699,6 +705,27 @@
             {
                 throw new ResolutionException(sprintf('Failed to retrieve server information from %s: %s', $domain, $e->getMessage()), $e->getCode(), $e);
             }
+        }
+
+        /**
+         * Synchronizes an external peer by resolving and integrating its information into the system.
+         *
+         * @param PeerAddress|string $externalPeer The external peer to synchronize, provided as a PeerAddress instance or a string.
+         * @return void
+         * @throws CryptographyException If there is an error in the cryptography
+         * @throws DatabaseOperationException If there is an error while processing the peer against the database
+         * @throws ResolutionException If the synchronization process fails due to unresolved peer information or other errors.
+         * @throws RpcException If there is an RPC exception while connecting to the remote server
+         */
+        public static function synchronizeExternalPeer(PeerAddress|string $externalPeer): void
+        {
+            if($externalPeer instanceof PeerAddress)
+            {
+                $externalPeer = $externalPeer->getAddress();
+            }
+
+            $client = self::getExternalSession($externalPeer->getDomain());
+            RegisteredPeerManager::synchronizeExternalPeer($client->resolvePeer($externalPeer));
         }
 
         /**
