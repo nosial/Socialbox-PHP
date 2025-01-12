@@ -329,10 +329,11 @@
          * Sends an RPC request with the given JSON data.
          *
          * @param string $jsonData The JSON data to be sent in the request.
+         * @param string|null $identifiedAs Optional. The username to identify as, usually the requesting peer. Required for server-to-server communication.
          * @return RpcResult[] An array of RpcResult objects.
          * @throws RpcException If the request fails, the response is invalid, or the decryption/signature verification fails.
          */
-        public function sendRawRequest(string $jsonData): array
+        public function sendRawRequest(string $jsonData, ?string $identifiedAs=null): array
         {
             try
             {
@@ -353,28 +354,34 @@
             }
 
             $ch = curl_init();
-            $headers = [];
+            $returnHeaders = [];
+            $headers = [
+                StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::RPC->value,
+                StandardHeaders::SESSION_UUID->value . ': ' . $this->sessionUuid,
+                StandardHeaders::SIGNATURE->value . ': ' . $signature
+            ];
+
+            if($identifiedAs)
+            {
+                $headers[] = StandardHeaders::IDENTIFY_AS->value . ': ' . $identifiedAs;
+            }
 
             curl_setopt($ch, CURLOPT_URL, $this->rpcEndpoint);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HEADERFUNCTION, function($curl, $header) use (&$headers)
+            curl_setopt($ch, CURLOPT_HEADERFUNCTION, function($curl, $header) use (&$returnHeaders)
             {
                 $len = strlen($header);
                 $header = explode(':', $header, 2);
-                if (count($header) < 2) // ignore invalid headers
+                if (count($header) < 2) // ignore invalid returnHeaders
                 {
                     return $len;
                 }
 
-                $headers[strtolower(trim($header[0]))][] = trim($header[1]);
+                $returnHeaders[strtolower(trim($header[0]))][] = trim($header[1]);
                 return $len;
             });
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::RPC->value,
-                StandardHeaders::SESSION_UUID->value . ': ' . $this->sessionUuid,
-                StandardHeaders::SIGNATURE->value . ': ' . $signature
-            ]);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $encryptedData);
 
             $response = curl_exec($ch);
@@ -428,7 +435,7 @@
 
             if (!$this->bypassSignatureVerification)
             {
-                $signature = $headers[strtolower(StandardHeaders::SIGNATURE->value)][0] ?? null;
+                $signature = $returnHeaders[strtolower(StandardHeaders::SIGNATURE->value)][0] ?? null;
                 if ($signature === null)
                 {
                     throw new RpcException('The server did not provide a signature for the response');
@@ -516,12 +523,14 @@
          * Sends an RPC request and retrieves the corresponding RPC response.
          *
          * @param RpcRequest $request The RPC request to be sent.
+         * @param bool $throwException Optional. Whether to throw an exception if the response contains an error.
+         * @param string|null $identifiedAs Optional. The username to identify as, usually the requesting peer. Required for server-to-server communication.
          * @return RpcResult The received RPC response.
          * @throws RpcException If no response is received from the request.
          */
-        public function sendRequest(RpcRequest $request, bool $throwException=true): RpcResult
+        public function sendRequest(RpcRequest $request, bool $throwException=true, ?string $identifiedAs=null): RpcResult
         {
-            $response = $this->sendRawRequest(json_encode($request->toArray()));
+            $response = $this->sendRawRequest(json_encode($request->toArray()), $identifiedAs);
 
             if (count($response) === 0)
             {
@@ -544,10 +553,11 @@
          * and handles the response.
          *
          * @param RpcRequest[] $requests An array of RpcRequest objects to be sent to the server.
+         * @param string|null $identifiedAs Optional. The username to identify as, usually the requesting peer. Required for server-to-server communication.
          * @return RpcResult[] An array of RpcResult objects received from the server.
          * @throws RpcException If no response is received from the server.
          */
-        public function sendRequests(array $requests): array
+        public function sendRequests(array $requests, ?string $identifiedAs=null): array
         {
             $parsedRequests = [];
             foreach ($requests as $request)
@@ -555,7 +565,7 @@
                 $parsedRequests[] = $request->toArray();
             }
 
-            $responses = $this->sendRawRequest(json_encode($parsedRequests));
+            $responses = $this->sendRawRequest(json_encode($parsedRequests), $identifiedAs);
 
             if (count($responses) === 0)
             {
