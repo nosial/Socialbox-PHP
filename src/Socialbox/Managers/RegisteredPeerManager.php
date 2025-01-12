@@ -12,9 +12,11 @@
     use Socialbox\Classes\Logger;
     use Socialbox\Classes\Validator;
     use Socialbox\Enums\Flags\PeerFlags;
+    use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\RegisteredPeerRecord;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\Peer;
     use Symfony\Component\Uid\Uuid;
 
     class RegisteredPeerManager
@@ -187,6 +189,75 @@
             catch(Exception $e)
             {
                 throw new DatabaseOperationException('Failed to get the peer from the database', $e);
+            }
+        }
+
+        /**
+         * Synchronizes the provided external peer by adding its details to the registered peers in the database.
+         *
+         * @param Peer $peer The peer object representing the external peer to be synchronized.
+         * @return void This method does not return any value.
+         * @throws InvalidArgumentException If the given peer is not an external peer or if it represents a host peer.
+         * @throws DatabaseOperationException If there is an error during the database operation to insert the peer's details.
+         */
+        public static function synchronizeExternalPeer(Peer $peer): void
+        {
+            if($peer->getAddress()->getDomain() === Configuration::getInstanceConfiguration()->getDomain())
+            {
+                throw new InvalidArgumentException('Given peer is not an external peer');
+            }
+
+            if($peer->getAddress()->getUsername() === ReservedUsernames::HOST->value)
+            {
+                throw new InvalidArgumentException('Cannot synchronize an external host peer');
+            }
+
+            $existingPeer = self::getPeerByAddress($peer->getAddress());
+            if($existingPeer !== null)
+            {
+                // getUpdated is DateTime() if it's older than 1 hour, update it
+                if($existingPeer->getUpdated()->diff(new DateTime())->h < 1)
+                {
+                    return;
+                }
+
+                try
+                {
+                    $statement = Database::getConnection()->prepare('UPDATE `registered_peers` SET display_name=?, updated=? WHERE uuid=?');
+                    $displayName = $peer->getDisplayName();
+                    $statement->bindParam(1, $displayName);
+                    $updated = new DateTime();
+                    $statement->bindParam(2, $updated);
+                    $uuid = $existingPeer->getUuid();
+                    $statement->bindParam(3, $uuid);
+                    $statement->execute();
+                }
+                catch(PDOException $e)
+                {
+                    throw new DatabaseOperationException('Failed to update the external peer in the database', $e);
+                }
+
+                return;
+            }
+
+            $uuid = Uuid::v4()->toRfc4122();
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('INSERT INTO `registered_peers` (uuid, username, server, display_name, enabled) VALUES (:uuid, :username, :server, :display_name, 1)');
+                $statement->bindParam(':uuid', $uuid);
+                $username = $peer->getAddress()->getUsername();
+                $statement->bindParam(':username', $username);
+                $server = $peer->getAddress()->getDomain();
+                $statement->bindParam(':server', $server);
+                $displayName = $peer->getDisplayName();
+                $statement->bindParam(':display_name', $displayName);
+
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to synchronize the external peer in the database', $e);
             }
         }
 
