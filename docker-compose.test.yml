@@ -19,6 +19,7 @@ services:
         condition: service_healthy
     networks:
       - coffee_network
+      - shared_network
     restart: unless-stopped
     volumes:
       - ./coffee_socialbox/config:/etc/config
@@ -34,7 +35,7 @@ services:
       # Change these values to match your environment or update the .env file
       SB_INSTANCE_NAME: ${SB_COFFEE_NAME:-coffee} # Instance name SB_COFFEE_NAME
       SB_INSTANCE_DOMAIN: ${SB_COFFEE_DOMAIN:-coffee.com} # Instance domain SB_COFFEE_DOMAIN
-      SB_INSTANCE_RPC_ENDPOINT: ${SB_COFFEE_RPC_ENDPOINT:-http://127.0.0.0:8086/}  # Instance RPC endpoint SB_COFFEE_RPC_ENDPOINT
+      SB_INSTANCE_RPC_ENDPOINT: ${SB_COFFEE_RPC_ENDPOINT:-http://coffee_socialbox:8085/}  # Instance RPC endpoint SB_COFFEE_RPC_ENDPOINT
       SB_LOGGING_CONSOLE_ENABLED: ${SB_LOGGING_CONSOLE_ENABLED:-true}
       SB_LOGGING_CONSOLE_LEVEL: ${SB_LOGGING_CONSOLE_LEVEL:-debug}
       SB_LOGGING_FILE_ENABLED: ${SB_LOGGING_FILE_ENABLED:-true}
@@ -59,10 +60,10 @@ services:
       # Usage: SB_INSTANCE_DNS_MOCK_<INSTANCE_NAME>: <DOMAIN> <TXT_RECORD>
       # Environment Variable name is ignored, only the value is used with the prefix being used to detect
       # the instance name and the suffix being used to detect the TXT record
-      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://127.0.0.0:8086/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
-      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://127.0.0.0:8087/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
+      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://coffee_socialbox:8085/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
+      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://teapot_socialbox:8085/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
     healthcheck:
-      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8086/}"]
+      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://coffee_socialbox:8085/}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -122,6 +123,7 @@ services:
         condition: service_healthy
     networks:
       - teapot_network
+      - shared_network
     restart: unless-stopped
     volumes:
       - ./teapot_socialbox/config:/etc/config
@@ -137,7 +139,7 @@ services:
       # Change these values to match your environment or update the .env file
       SB_INSTANCE_NAME: ${SB_TEAPOT_NAME:-teapot} # Instance name SB_TEAPOT_NAME
       SB_INSTANCE_DOMAIN: ${SB_TEAPOT_DOMAIN:-teapot.com} # Instance domain SB_TEAPOT_DOMAIN
-      SB_INSTANCE_RPC_ENDPOINT: ${SB_TEAPOT_RPC_ENDPOINT:-http://127.0.0.0:8087/} # Instance RPC endpoint SB_TEAPOT_RPC_ENDPOINT
+      SB_INSTANCE_RPC_ENDPOINT: ${SB_TEAPOT_RPC_ENDPOINT:-http://teapot_socialbox:8085/} # Instance RPC endpoint SB_TEAPOT_RPC_ENDPOINT
       SB_LOGGING_CONSOLE_ENABLED: ${SB_LOGGING_CONSOLE_ENABLED:-true}
       SB_LOGGING_CONSOLE_LEVEL: ${SB_LOGGING_CONSOLE_LEVEL:-debug}
       SB_LOGGING_FILE_ENABLED: ${SB_LOGGING_FILE_ENABLED:-true}
@@ -162,10 +164,10 @@ services:
       # Usage: SB_INSTANCE_DNS_MOCK_<INSTANCE_NAME>: <DOMAIN> <TXT_RECORD>
       # Environment Variable name is ignored, only the value is used with the prefix being used to detect
       # the instance name and the suffix being used to detect the TXT record
-      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://127.0.0.0:8086/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
-      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://127.0.0.0:8087/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
+      SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://coffee_socialbox:8085/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
+      SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://teapot_socialbox:8085/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
     healthcheck:
-      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://127.0.0.0:8087/}"]
+      test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://teapot_socialbox:8085/}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -227,3 +229,5 @@ networks:
   coffee_network:
     driver: bridge
     name: coffee_network
+  shared_network:
+    driver: bridge

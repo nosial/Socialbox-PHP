@@ -39,9 +39,17 @@
             return 'user' . $randomString . '@' . $domain;
         }
 
-        public function testConnection() :void
+        private static function registerUser(string $domain): SocialClient
         {
-            $coffeeClient = new SocialClient(self::generateUsername('intvo.id'));
+            $client = new SocialClient(self::generateUsername($domain));
+            $client->settingsSetPassword("password");
+            $client->settingsSetDisplayName("Example User");
+            return $client;
+        }
+
+        public function testRegistration(): void
+        {
+            $coffeeClient = new SocialClient(self::generateUsername(self::COFFEE_DOMAIN));
 
             // Check initial session state
             $this->assertFalse($coffeeClient->getSessionState()->isAuthenticated());
@@ -57,5 +65,15 @@
 
             $this->assertFalse($coffeeClient->getSessionState()->containsFlag(SessionFlags::REGISTRATION_REQUIRED));
             $this->assertTrue($coffeeClient->getSessionState()->isAuthenticated());
+        }
+
+        public function testResolveDecentralizedPeer(): void
+        {
+            $coffeeUser = self::registerUser(self::COFFEE_DOMAIN);
+            $this->assertTrue($coffeeUser->getSessionState()->isAuthenticated());
+            $teapotUser = self::registerUser(self::TEAPOT_DOMAIN);
+            $this->assertTrue($teapotUser->getSessionState()->isAuthenticated());
+
+            $coffeePeer = $coffeeUser->resolvePeer($teapotUser->getIdentifiedAs());
         }
     }
