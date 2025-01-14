@@ -3,6 +3,8 @@
     namespace Socialbox\Exceptions;
 
     use Exception;
+    use Socialbox\Classes\Configuration;
+    use Socialbox\Classes\Utilities;
     use Socialbox\Enums\StandardError;
     use Socialbox\Objects\RpcError;
     use Socialbox\Objects\RpcRequest;
@@ -29,6 +31,11 @@
 
         public function produceError(RpcRequest $request): ?RpcError
         {
+            if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions())
+            {
+                return $request->produceError(StandardError::from($this->code), Utilities::throwableToString($this));
+            }
+
             return $request->produceError(StandardError::from($this->code), $this->message);
         }
     }
