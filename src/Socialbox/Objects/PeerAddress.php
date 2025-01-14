@@ -72,6 +72,21 @@
         }
 
         /**
+         * Determines if the peer is external.
+         *
+         * @return bool True if the peer is external, false otherwise.
+         */
+        public function isExternal(): bool
+        {
+            if($this->isHost())
+            {
+                return false;
+            }
+
+            return $this->username === ReservedUsernames::HOST->value;
+        }
+
+        /**
          * Returns whether the peer requires authentication, for example, the anonymous user does not require authentication
          *
          * @return bool True if authentication is required, false otherwise
