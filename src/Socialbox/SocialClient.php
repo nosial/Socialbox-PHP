@@ -494,7 +494,7 @@
         {
             return (bool)$this->sendRequest(
                 new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME->value, Utilities::randomCrc32(), [
-                    'display_name' => $displayName
+                    'name' => $displayName
                 ])
             )->getResponse()->getResult();
         }

@@ -56,27 +56,35 @@
 
             // Handle the request type, only `init` and `dhe` are not encrypted using the session's encrypted key
             // RPC Requests must be encrypted and signed by the client, vice versa for server responses.
-            switch($clientRequest->getRequestType())
+            try
             {
-                case RequestType::INFO:
-                    self::handleInformationRequest();
-                    break;
+                switch($clientRequest->getRequestType())
+                {
+                    case RequestType::INFO:
+                        self::handleInformationRequest();
+                        break;
 
-                case RequestType::INITIATE_SESSION:
-                    self::handleInitiateSession($clientRequest);
-                    break;
+                    case RequestType::INITIATE_SESSION:
+                        self::handleInitiateSession($clientRequest);
+                        break;
 
-                case RequestType::DHE_EXCHANGE:
-                    self::handleDheExchange($clientRequest);
-                    break;
+                    case RequestType::DHE_EXCHANGE:
+                        self::handleDheExchange($clientRequest);
+                        break;
 
-                case RequestType::RPC:
-                    self::handleRpc($clientRequest);
-                    break;
+                    case RequestType::RPC:
+                        self::handleRpc($clientRequest);
+                        break;
 
-                default:
-                    self::returnError(400, StandardError::BAD_REQUEST, 'Invalid Request-Type header');
+                    default:
+                        self::returnError(400, StandardError::BAD_REQUEST, 'Invalid Request-Type header');
+                }
             }
+            catch(Exception $e)
+            {
+                self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'An internal error occurred while processing the request', $e);
+            }
+
         }
 
         /**
@@ -607,7 +615,7 @@
                     privateKey: Configuration::getCryptographyConfiguration()->getHostPrivateKey()
                 );
             }
-            catch (Exceptions\CryptographyException $e)
+            catch (Exception $e)
             {
                 self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to encrypt the server response', $e);
                 return;
