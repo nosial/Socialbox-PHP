@@ -576,6 +576,116 @@
         }
 
         /**
+         * Retrieves the peer address identified for the instance.
+         *
+         * @return PeerAddress The identified peer address.
+         */
+        public function getIdentifiedAs(): PeerAddress
+        {
+            return $this->identifiedAs;
+        }
+
+        /**
+         * Retrieves the server's public signing key.
+         *
+         * @return string The server's public signing key.
+         */
+        public function getServerPublicSigningKey(): string
+        {
+            return $this->serverPublicSigningKey;
+        }
+
+        /**
+         * Retrieves the server's public encryption key.
+         *
+         * @return string The public encryption key of the server.
+         */
+        public function getServerPublicEncryptionKey(): string
+        {
+            return $this->serverPublicEncryptionKey;
+        }
+
+        /**
+         * Retrieves the client's signing key pair.
+         *
+         * @return KeyPair The client's signing key pair.
+         */
+        public function getClientSigningKeyPair(): KeyPair
+        {
+            return $this->clientSigningKeyPair;
+        }
+
+        /**
+         * Retrieves the client encryption key pair configured for the instance.
+         *
+         * @return KeyPair The client encryption key pair.
+         */
+        public function getClientEncryptionKeyPair(): KeyPair
+        {
+            return $this->clientEncryptionKeyPair;
+        }
+
+        /**
+         * Retrieves the private shared secret configured for the instance.
+         *
+         * @return string The private shared secret value.
+         */
+        public function getPrivateSharedSecret(): string
+        {
+            return $this->privateSharedSecret;
+        }
+
+        /**
+         * Retrieves the client transport encryption key configured for the instance.
+         *
+         * @return string The client transport encryption key value.
+         */
+        public function getClientTransportEncryptionKey(): string
+        {
+            return $this->clientTransportEncryptionKey;
+        }
+
+        /**
+         * Retrieves the server transport encryption key.
+         *
+         * @return string The server transport encryption key.
+         */
+        public function getServerTransportEncryptionKey(): string
+        {
+            return $this->serverTransportEncryptionKey;
+        }
+
+        /**
+         * Retrieves the RPC endpoint configured for the instance.
+         *
+         * @return string The RPC endpoint value.
+         */
+        public function getRpcEndpoint(): string
+        {
+            return $this->rpcEndpoint;
+        }
+
+        /**
+         * Retrieves the remote server address configured for the instance.
+         *
+         * @return string The remote server address.
+         */
+        public function getRemoteServer(): string
+        {
+            return $this->remoteServer;
+        }
+
+        /**
+         * Retrieves the session UUID associated with the instance.
+         *
+         * @return string The session UUID value.
+         */
+        public function getSessionUuid(): string
+        {
+            return $this->sessionUuid;
+        }
+
+        /**
          * Exports the current session details into an ExportedSession object.
          *
          * @return ExportedSession The exported session containing session-specific details.
