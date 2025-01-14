@@ -85,7 +85,7 @@ services:
     command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
     volumes:
       - redis_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - ./docker/redis.conf:/usr/local/etc/redis/redis.conf
     networks:
       - internal_network
     expose:

@@ -83,11 +83,12 @@ RUN ncc build --config release --build-source --log-level debug && \
 RUN rm -rf /tmp/build && rm -rf /var/www/html/*
 
 # Copy over the required files
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY public/index.php /var/www/html/index.php
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# ----------------------------- Cron Configuration ---------------------------
+# ----------------------------- Environment Configuration ---------------------------
+# Configure Cron
 RUN echo "*/1 * * * * root for i in {1..12}; do /usr/bin/socialbox process-outgoing; sleep 5; done" > /etc/cron.d/socialbox-process-outgoing && \
     echo "*/1 * * * * root /usr/bin/socialbox session-cleanup" > /etc/cron.d/socialbox-session-cleanup && \
     echo "*/5 * * * * root /usr/bin/socialbox peer-cleanup" > /etc/cron.d/socialbox-peer-cleanup && \
@@ -100,9 +101,20 @@ RUN echo "*/1 * * * * root for i in {1..12}; do /usr/bin/socialbox process-outgo
     crontab /etc/cron.d/socialbox-session-cleanup && \
     crontab /etc/cron.d/socialbox-peer-cleanup
 
-# ----------------------------- Supervisor Configuration ---------------------
 # Copy Supervisor configuration
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Copy docker.conf & zz-docker.conf for PHP-FPM
+COPY docker/docker.conf /usr/local/etc/php-fpm.d/docker.conf
+COPY docker/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+
+# Configure php.ini and enable error and log it to /var/log rather than stdout
+RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini && \
+    sed -i 's/^;error_log = php_errors.log/error_log = \/var\/log\/php_errors.log/' /usr/local/etc/php/php.ini && \
+    sed -i 's/^;log_errors = On/log_errors = On/' /usr/local/etc/php/php.ini && \
+    sed -i 's/^;error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT/error_reporting = E_ALL/' /usr/local/etc/php/php.ini && \
+    sed -i 's/^;display_errors = Off/display_errors = On/' /usr/local/etc/php/php.ini && \
+    sed -i 's/^;date.timezone =/date.timezone = UTC/' /usr/local/etc/php/php.ini
+
 
 # ----------------------------- Cleanup ---------------------
 WORKDIR /
@@ -112,7 +124,7 @@ EXPOSE 8085
 
 # ----------------------------- Container Startup ----------------------------
 # Copy over entrypoint script and set it as executable
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Set the entrypoint
