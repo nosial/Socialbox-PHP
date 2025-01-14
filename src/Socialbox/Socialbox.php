@@ -122,12 +122,6 @@
                 return false;
             }
 
-            if(!$clientRequest->headerExists(StandardHeaders::SIGNING_PUBLIC_KEY))
-            {
-                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::SIGNING_PUBLIC_KEY->value);
-                return false;
-            }
-
             if(!$clientRequest->headerExists(StandardHeaders::ENCRYPTION_PUBLIC_KEY))
             {
                 self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::ENCRYPTION_PUBLIC_KEY->value);
@@ -143,6 +137,12 @@
             if(!Validator::validatePeerAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)))
             {
                 self::returnError(400, StandardError::BAD_REQUEST, 'Invalid Identify-As header: ' . $clientRequest->getHeader(StandardHeaders::IDENTIFY_AS));
+                return false;
+            }
+
+            if(!$clientRequest->getIdentifyAs()->isExternal() && !$clientRequest->headerExists(StandardHeaders::SIGNING_PUBLIC_KEY))
+            {
+                self::returnError(400, StandardError::BAD_REQUEST, 'Missing required header: ' . StandardHeaders::SIGNING_PUBLIC_KEY->value);
                 return false;
             }
 
