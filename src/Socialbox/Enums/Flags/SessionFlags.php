@@ -2,6 +2,8 @@
 
     namespace Socialbox\Enums\Flags;
 
+    use Socialbox\Classes\Logger;
+
     enum SessionFlags : string
     {
         // Session states
@@ -45,20 +47,20 @@
         public static function getRegistrationFlags(): array
         {
             return [
-                self::SET_PASSWORD->value,
-                self::SET_OTP->value,
-                self::SET_DISPLAY_NAME->value,
-                self::SET_DISPLAY_PICTURE->value,
-                self::SET_PHONE->value,
-                self::SET_BIRTHDAY->value,
-                self::SET_EMAIL->value,
-                self::VER_PRIVACY_POLICY->value,
-                self::VER_TERMS_OF_SERVICE->value,
-                self::VER_COMMUNITY_GUIDELINES->value,
-                self::VER_EMAIL->value,
-                self::VER_SMS->value,
-                self::VER_PHONE_CALL->value,
-                self::VER_IMAGE_CAPTCHA->value
+                self::SET_PASSWORD,
+                self::SET_OTP,
+                self::SET_DISPLAY_NAME,
+                self::SET_DISPLAY_PICTURE,
+                self::SET_PHONE,
+                self::SET_BIRTHDAY,
+                self::SET_EMAIL,
+                self::VER_PRIVACY_POLICY,
+                self::VER_TERMS_OF_SERVICE,
+                self::VER_COMMUNITY_GUIDELINES,
+                self::VER_EMAIL,
+                self::VER_SMS,
+                self::VER_PHONE_CALL,
+                self::VER_IMAGE_CAPTCHA
             ];
         }
 
@@ -70,10 +72,10 @@
         public static function getAuthenticationFlags(): array
         {
             return [
-                self::VER_IMAGE_CAPTCHA->value,
-                self::VER_PASSWORD->value,
-                self::VER_OTP->value,
-                self::VER_AUTHENTICATION->value
+                self::VER_IMAGE_CAPTCHA,
+                self::VER_PASSWORD,
+                self::VER_OTP,
+                self::VER_AUTHENTICATION
             ];
         }
 
@@ -112,20 +114,35 @@
          */
         public static function isComplete(array $flags): bool
         {
-            $flags = array_map(function ($flag) {return is_string($flag) ? SessionFlags::from($flag) : $flag;}, $flags);
-            $flags = array_map(fn(SessionFlags $flag) => $flag->value, $flags);
+            // Map provided flags to their scalar values if they are enums
+            $flagValues = array_map(fn($flag) => $flag instanceof SessionFlags ? $flag->value : $flag, $flags);
 
-            if (in_array(SessionFlags::REGISTRATION_REQUIRED->value, $flags))
+            if (in_array(SessionFlags::REGISTRATION_REQUIRED, $flags, true))
             {
-                return !array_intersect(self::getRegistrationFlags(), $flags); // Check if the intersection is empty
+                Logger::getLogger()->info('Checking registration flags');
+                // Compare values instead of objects
+                return empty(array_intersect(self::getScalarValues(self::getRegistrationFlags()), $flagValues));
             }
 
-            if (in_array(SessionFlags::AUTHENTICATION_REQUIRED->value, $flags))
+            if (in_array(SessionFlags::AUTHENTICATION_REQUIRED, $flags, true))
             {
-                return !array_intersect(self::getAuthenticationFlags(), $flags); // Check if the intersection is empty
-
+                Logger::getLogger()->info('Checking authentication flags');
+                // Compare values instead of objects
+                return empty(array_intersect(self::getScalarValues(self::getAuthenticationFlags()), $flagValues));
             }
 
+            Logger::getLogger()->info('Neither registration nor authentication flags found');
             return true;
+        }
+
+        /**
+         * Helper method: Converts an array of SessionFlags enums to their scalar values (strings)
+         *
+         * @param array $flagEnums Array of SessionFlags objects
+         * @return array Array of scalar values corresponding to the flags
+         */
+        private static function getScalarValues(array $flagEnums): array
+        {
+            return array_map(fn(SessionFlags $flag) => $flag->value, $flagEnums);
         }
     }

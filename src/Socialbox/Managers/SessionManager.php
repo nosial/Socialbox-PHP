@@ -11,7 +11,6 @@
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Logger;
-    use Socialbox\Classes\Utilities;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
@@ -33,9 +32,7 @@
          * @param string $clientPublicSigningKey The client's public signing key, which must be a valid Ed25519 key.
          * @param string $clientPublicEncryptionKey The client's public encryption key, which must be a valid X25519 key.
          * @param KeyPair $serverEncryptionKeyPair The server's key pair for encryption, including both public and private keys.
-         *
          * @return string The UUID of the newly created session.
-         *
          * @throws InvalidArgumentException If the provided public signing key or encryption key is invalid.
          * @throws DatabaseOperationException If there is an error during the session creation in the database.
          */
@@ -310,7 +307,7 @@
          * Retrieves the flags associated with a specific session.
          *
          * @param string $uuid The UUID of the session to retrieve flags for.
-         * @return array An array of flags associated with the specified session.
+         * @return SessionFlags[] An array of flags associated with the specified session.
          * @throws StandardException If the specified session does not exist.
          * @throws DatabaseOperationException If there
          */
@@ -359,7 +356,7 @@
             try
             {
                 $statement = Database::getConnection()->prepare("UPDATE sessions SET flags=? WHERE uuid=?");
-                $statement->bindValue(1, Utilities::serializeList($flags));
+                $statement->bindValue(1, SessionFlags::toString($flags));
                 $statement->bindParam(2, $uuid);
                 $statement->execute();
             }
@@ -381,15 +378,16 @@
         {
             Logger::getLogger()->verbose(sprintf("Removing flags from session %s", $uuid));
 
-            $existingFlags = self::getFlags($uuid);
-            $flagsToRemove = array_map(fn($flag) => $flag->value, $flags);
-            $updatedFlags = array_filter($existingFlags, fn($flag) => !in_array($flag->value, $flagsToRemove));
-            $flags = SessionFlags::toString($updatedFlags);
+            $existingFlags = array_map(fn(SessionFlags $flag) => $flag->value, self::getFlags($uuid));
+            $flagsToRemove = array_map(fn(SessionFlags $flag) => $flag->value, $flags);
+            $updatedFlags = array_diff($existingFlags, $flagsToRemove);
+            $flagString = SessionFlags::toString(array_map(fn(string $value) => SessionFlags::from($value), $updatedFlags));
 
             try
             {
+                // Update the session flags in the database
                 $statement = Database::getConnection()->prepare("UPDATE sessions SET flags=? WHERE uuid=?");
-                $statement->bindValue(1, $flags); // Directly use the toString() result
+                $statement->bindValue(1, $flagString); // Use the stringified updated flags
                 $statement->bindParam(2, $uuid);
                 $statement->execute();
             }
@@ -436,7 +434,7 @@
         public static function updateFlow(SessionRecord $session, array $flagsToRemove=[]): void
         {
             // Don't do anything if the session is already authenticated
-            if(!in_array(SessionFlags::REGISTRATION_REQUIRED, $session->getFlags()) || !in_array(SessionFlags::AUTHENTICATION_REQUIRED, $session->getFlags()))
+            if (!$session->flagExists(SessionFlags::AUTHENTICATION_REQUIRED) && !$session->flagExists(SessionFlags::REGISTRATION_REQUIRED))
             {
                 return;
             }
@@ -456,6 +454,7 @@
             {
                 SessionManager::removeFlags($session->getUuid(), [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]); // Remove the registration/authentication flags
                 SessionManager::setAuthenticated($session->getUuid(), true); // Mark the session as authenticated
+                RegisteredPeerManager::enablePeer($session->getPeerUuid()); // Enable the peer
             }
         }
     }
