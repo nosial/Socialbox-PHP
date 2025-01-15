@@ -38,7 +38,7 @@
             }
             else
             {
-                throw new InvalidArgumentException('Invalid address value');
+                throw new InvalidArgumentException('Invalid address value type, got type ' . gettype($data['address']));
             }
 
             $this->displayName = $data['display_name'];
