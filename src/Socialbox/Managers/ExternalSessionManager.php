@@ -111,6 +111,7 @@
                 'session_uuid' => $result['session_uuid'],
                 'transport_encryption_algorithm' => $result['transport_encryption_algorithm'],
                 'server_keypair_expires' => $result['server_keypair_expires'],
+                'server_public_signing_key' => $result['server_public_signing_key'],
                 'server_public_encryption_key' => $result['server_public_encryption_key'],
                 'client_public_signing_key' => Configuration::getCryptographyConfiguration()->getHostPublicKey(),
                 'client_private_signing_key' => Configuration::getCryptographyConfiguration()->getHostPrivateKey(),
