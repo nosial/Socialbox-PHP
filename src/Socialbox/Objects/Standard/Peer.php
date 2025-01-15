@@ -27,6 +27,7 @@
          */
         public function __construct(array $data)
         {
+            // TODO: Bug:  PHP message: PHP Warning:  Undefined array key "address" in /var/ncc/packages/net.nosial.socialbox=1.0.0/bin/src/Socialbox/Objects/Standard/Peer.php on line 28
             if(is_string($data['address']))
             {
                 $this->address = PeerAddress::fromAddress($data['address']);

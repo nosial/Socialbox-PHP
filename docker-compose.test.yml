@@ -23,7 +23,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./coffee_socialbox/config:/etc/config
-      - ./coffee_socialbox/logs:/var/log
       - ./coffee_socialbox/data:/etc/socialbox
     environment:
       # No need to change these values
@@ -81,6 +80,8 @@ services:
       - coffee_mariadb_data:/var/lib/mysql
     networks:
       - coffee_network
+    ports:
+      - "3308:3306"
     expose:
       - "3306"
     healthcheck:
@@ -127,7 +128,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./teapot_socialbox/config:/etc/config
-      - ./teapot_socialbox/logs:/var/log
       - ./teapot_socialbox/data:/etc/socialbox
     environment:
       # No need to change these values
@@ -185,6 +185,8 @@ services:
       - teapot_mariadb_data:/var/lib/mysql
     networks:
       - teapot_network
+    ports:
+      - "3307:3306" # Unique port for Teapot instance
     expose:
       - "3306"
     healthcheck:

@@ -46,13 +46,15 @@
         {
             try
             {
-                $stmt = Database::getConnection()->prepare("INSERT INTO external_sessions (domain, rpc_endpoint, session_uuid, server_keypair_expires, server_public_signing_key, server_public_encryption_key, host_public_encryption_key, host_private_encryption_key, private_shared_secret, host_transport_encryption_key, server_transport_encryption_key) VALUES (:domain, :rpc_endpoint, :session_uuid, :server_keypair_expires, :server_public_signing_key, :server_public_encryption_key, :host_public_encryption_key, :host_private_encryption_key, :private_shared_secret, :host_transport_encryption_key, :server_transport_encryption_key)");
+                $stmt = Database::getConnection()->prepare("INSERT INTO external_sessions (domain, rpc_endpoint, session_uuid, transport_encryption_algorithm, server_keypair_expires, server_public_signing_key, server_public_encryption_key, host_public_encryption_key, host_private_encryption_key, private_shared_secret, host_transport_encryption_key, server_transport_encryption_key) VALUES (:domain, :rpc_endpoint, :session_uuid, :transport_encryption_algorithm, :server_keypair_expires, :server_public_signing_key, :server_public_encryption_key, :host_public_encryption_key, :host_private_encryption_key, :private_shared_secret, :host_transport_encryption_key, :server_transport_encryption_key)");
                 $domain = $exportedSession->getRemoteServer();
                 $stmt->bindParam(':domain', $domain);
                 $rpcEndpoint = $exportedSession->getRpcEndpoint();
                 $stmt->bindParam(':rpc_endpoint', $rpcEndpoint);
                 $sessionUuid = $exportedSession->getSessionUuid();
                 $stmt->bindParam(':session_uuid', $sessionUuid);
+                $transportEncryptionAlgorithm = $exportedSession->getTransportEncryptionAlgorithm();
+                $stmt->bindParam(':transport_encryption_algorithm', $transportEncryptionAlgorithm);
                 $serverKeypairExpires = $exportedSession->getServerKeypairExpires();
                 $stmt->bindParam(':server_keypair_expires', $serverKeypairExpires);
                 $serverPublicSigningKey = $exportedSession->getServerPublicSigningKey();
