@@ -292,7 +292,12 @@
          */
         public function toStandardPeer(): Peer
         {
-            return Peer::fromArray($this->toArray());
+            return Peer::fromArray([
+                'address' => $this->getAddress(),
+                'display_name' => $this->displayName,
+                'flags' => array_map(fn(PeerFlags $flag) => $flag->value, $this->flags),
+                'registered' => $this->created->getTimestamp()
+            ]);
         }
 
         /**
