@@ -60,6 +60,10 @@
             {
                 switch($clientRequest->getRequestType())
                 {
+                    case RequestType::PING:
+                        self::handlePingRequest();
+                        break;
+
                     case RequestType::INFO:
                         self::handleInformationRequest();
                         break;
@@ -85,6 +89,18 @@
                 self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'An internal error occurred while processing the request', $e);
             }
 
+        }
+
+        /**
+         * Handles an incoming ping request by sending a successful HTTP response.
+         *
+         * @return void
+         */
+        private static function handlePingRequest(): void
+        {
+            http_response_code(200);
+            header('Content-Type: text/plain');
+            print('OK');
         }
 
         /**
