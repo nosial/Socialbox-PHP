@@ -41,32 +41,10 @@
                 throw new StandardException('Peer Address Error: ' . $e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
             }
 
-            // If the requested peer resides in the server, resolve the peer internally.
-            if($peerAddress->getDomain() === Configuration::getInstanceConfiguration()->getDomain())
-            {
-                try
-                {
-                    $registeredPeer = RegisteredPeerManager::getPeerByAddress($peerAddress);
-                }
-                catch (DatabaseOperationException $e)
-                {
-                    throw new StandardException('There was an unexpected error while trying to resolve the peer internally', StandardError::INTERNAL_SERVER_ERROR, $e);
-                }
-
-                // Return not found if the returned record is null or if the registered peer isn't enabled
-                if($registeredPeer === null || !$registeredPeer->isEnabled())
-                {
-                    return $rpcRequest->produceError(StandardError::PEER_NOT_FOUND, sprintf('Peer %s not found', $peerAddress->getAddress()));
-                }
-
-                // Return standard peer representation
-                return $rpcRequest->produceResponse($registeredPeer->toStandardPeer());
-            }
-
-            // Otherwise, resolve the peer from the remote server
+            // Resolve the peer using the server's peer resolver, this will resolve both internal peers and external peers
             try
             {
-                return $rpcRequest->produceResponse(Socialbox::resolveExternalPeer($peerAddress));
+                return $rpcRequest->produceResponse(Socialbox::resolvePeer($peerAddress));
             }
             catch(Exception $e)
             {

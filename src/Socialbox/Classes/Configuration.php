@@ -153,6 +153,10 @@
             // answer within the time-frame that the captcha was generated
             // If expired; client is expected to request for a new captcha which will generate a new random answer.
             $config->setDefault('policies.image_captcha_expires', 300);
+            // The amount of time in seconds it takes before a peer's external address is resolved again
+            // When a peer's external address is resolved, it is cached for this amount of time before resolving again.
+            // This reduces the amount of times a resolution request is made to the external server.
+            $config->setDefault('policies.peer_sync_interval', 3600);
 
             // Storage configuration
             $config->setDefault('storage.path', '/etc/socialbox'); // The main path for file storage

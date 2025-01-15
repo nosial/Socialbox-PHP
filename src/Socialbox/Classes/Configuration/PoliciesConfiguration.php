@@ -7,12 +7,14 @@
         private int $maxSigningKeys;
         private int $sessionInactivityExpires;
         private int $imageCaptchaExpires;
+        private int $peerSyncInterval;
 
         public function __construct(array $data)
         {
             $this->maxSigningKeys = $data['max_signing_keys'];
             $this->sessionInactivityExpires = $data['session_inactivity_expires'];
             $this->imageCaptchaExpires = $data['image_captcha_expires'];
+            $this->peerSyncInterval = $data['peer_sync_interval'];
         }
 
         /**
@@ -45,5 +47,15 @@
         public function getImageCaptchaExpires(): int
         {
             return $this->imageCaptchaExpires;
+        }
+
+        /**
+         * Returns the maximum amount of seconds before the external peer resolve cache is considered expired
+         *
+         * @return int
+         */
+        public function getPeerSyncInterval(): int
+        {
+            return $this->peerSyncInterval;
         }
     }
