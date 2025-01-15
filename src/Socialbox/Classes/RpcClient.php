@@ -84,7 +84,7 @@
                 // Check if the transport encryption algorithm has changed
                 if($this->serverInformation->getTransportEncryptionAlgorithm() !== $exportedSession->getTransportEncryptionAlgorithm())
                 {
-                    throw new RpcException('The server has changed its transport encryption algorithm, a new session must be created');
+                    throw new RpcException('The server has changed its transport encryption algorithm, a new session must be created, old algorithm: ' . $exportedSession->getTransportEncryptionAlgorithm() . ', new algorithm: ' . $this->serverInformation->getTransportEncryptionAlgorithm());
                 }
 
                 return;
