@@ -5,6 +5,11 @@
     enum RequestType : string
     {
         /**
+         * Represents the action of sending a ping request.
+         */
+        case PING = 'ping';
+
+        /**
          * Represents the action of getting server information (Non-RPC Request)
          */
         case INFO = 'info';
