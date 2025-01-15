@@ -109,4 +109,14 @@
         {
             return sprintf("%s@%s", $this->username, $this->domain);
         }
+
+        /**
+         * Returns the string representation of the object
+         *
+         * @return string The string representation of the object
+         */
+        public function __toString(): string
+        {
+            return $this->getAddress();
+        }
     }
