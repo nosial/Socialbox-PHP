@@ -139,21 +139,28 @@
             $endpoint = $dnsRecord->getRpcEndpoint();
             $publicKey = $dnsRecord->getPublicSigningKey();
 
+            if($domain === null || $endpoint === null || $publicKey === null)
+            {
+                throw new DatabaseOperationException('Failed to add a resolved server to the database: Invalid parameters');
+            }
+
             if(self::resolvedServerExists($domain))
             {
-                $statement = Database::getConnection()->prepare("UPDATE resolved_dns_records SET rpc_endpoint=?, public_key=?, expires=?, updated=? WHERE domain=?");
-                $statement->bindParam(1, $endpoint);
-                $statement->bindParam(2, $publicKey);
-                $expires = (new DateTime())->setTimestamp($dnsRecord->getExpires());
-                $statement->bindParam(3, $expires);
-                $updated = new DateTime();
-                $statement->bindParam(4, $updated);
-                $statement->bindParam(5, $domain);
-                $statement->execute();
-
-                if($statement->rowCount() === 0)
+                try
                 {
-                    throw new DatabaseOperationException('Failed to update a resolved server in the database');
+                    $statement = Database::getConnection()->prepare("UPDATE resolved_dns_records SET rpc_endpoint=:rpc_endpoint, public_key=:public_key, expires=:expires, updated=:updated WHERE domain=:domain");
+                    $statement->bindParam(':rpc_endpoint', $endpoint);
+                    $statement->bindParam(':public_key', $publicKey);
+                    $expires = (new DateTime())->setTimestamp($dnsRecord->getExpires())->format('Y-m-d H:i:s');
+                    $statement->bindParam(':expires', $expires);
+                    $updated = (new DateTime())->format('Y-m-d H:i:s');
+                    $statement->bindParam(':updated', $updated);
+                    $statement->bindParam(':domain', $domain);
+                    $statement->execute();
+                }
+                catch(PDOException $e)
+                {
+                    throw new DatabaseOperationException('Failed to update a resolved server in the database', $e);
                 }
 
                 return;
@@ -161,20 +168,13 @@
 
             try
             {
-                $statement = Database::getConnection()->prepare("INSERT INTO resolved_dns_records (domain, rpc_endpoint, public_key, expires, updated) VALUES (?, ?, ?, ?, ?)");
-                $statement->bindParam(1, $domain);
-                $statement->bindParam(2, $endpoint);
-                $statement->bindParam(3, $publicKey);
-                $expires = (new DateTime())->setTimestamp($dnsRecord->getExpires());
-                $statement->bindParam(4, $expires);
-                $updated = new DateTime();
-                $statement->bindParam(5, $updated);
+                $statement = Database::getConnection()->prepare("INSERT INTO resolved_dns_records (domain, rpc_endpoint, public_key, expires) VALUES (:domain, :rpc_endpoint, :public_key, :expires)");
+                $statement->bindParam(':domain', $domain);
+                $statement->bindParam(':rpc_endpoint', $endpoint);
+                $statement->bindParam(':public_key', $publicKey);
+                $expires = (new DateTime())->setTimestamp($dnsRecord->getExpires())->format('Y-m-d H:i:s');
+                $statement->bindParam(':expires', $expires);
                 $statement->execute();
-
-                if($statement->rowCount() === 0)
-                {
-                    throw new DatabaseOperationException('Failed to add a resolved server to the database');
-                }
             }
             catch(PDOException $e)
             {

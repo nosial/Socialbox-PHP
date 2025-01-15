@@ -1,7 +1,7 @@
 create table resolved_dns_records
 (
-    domain       varchar(512)                          not null comment 'The domain name'
-        primary key comment 'Unique Index for the server domain',
+    domain       varchar(512)                          not null comment 'Unique Index for the server domain'
+        primary key,
     rpc_endpoint text                                  not null comment 'The endpoint of the RPC server',
     public_key   text                                  not null comment 'The Public Key of the server',
     expires      bigint                                not null comment 'The Unix Timestamp for when the server''s keypair expires',
