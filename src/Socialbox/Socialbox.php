@@ -28,6 +28,7 @@
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerInformation;
     use Throwable;
 
@@ -734,15 +735,21 @@
         /**
          * Synchronizes an external peer by resolving and integrating its information into the system.
          *
-         * @param PeerAddress|string $externalPeer The external peer to synchronize, provided as a PeerAddress instance or a string.
+         * @param PeerAddress|Peer|string $externalPeer The external peer to synchronize, provided as a PeerAddress instance or a string.
          * @return void
          * @throws CryptographyException If there is an error in the cryptography
          * @throws DatabaseOperationException If there is an error while processing the peer against the database
          * @throws ResolutionException If the synchronization process fails due to unresolved peer information or other errors.
          * @throws RpcException If there is an RPC exception while connecting to the remote server
          */
-        public static function synchronizeExternalPeer(PeerAddress|string $externalPeer): void
+        public static function synchronizeExternalPeer(PeerAddress|Peer|string $externalPeer): void
         {
+            if($externalPeer instanceof Peer)
+            {
+                RegisteredPeerManager::synchronizeExternalPeer($externalPeer);
+                return;
+            }
+
             if($externalPeer instanceof PeerAddress)
             {
                 $externalPeer = $externalPeer->getAddress();
@@ -750,6 +757,24 @@
 
             $client = self::getExternalSession($externalPeer->getDomain());
             RegisteredPeerManager::synchronizeExternalPeer($client->resolvePeer($externalPeer));
+        }
+
+        /**
+         * Resolves an external peer based on the given peer address or string identifier.
+         *
+         * @param PeerAddress|string $externalPeer The external peer address or string identifier to be resolved.
+         * @return Peer The resolved external peer after synchronization.
+         */
+        public static function resolveExternalPeer(PeerAddress|string $externalPeer): Peer
+        {
+            if($externalPeer instanceof PeerAddress)
+            {
+                $externalPeer = $externalPeer->getAddress();
+            }
+
+            $resolvedPeer = self::getExternalSession($externalPeer->getDomain())->resolvePeer($externalPeer);
+            self::synchronizeExternalPeer($resolvedPeer);
+            return $resolvedPeer;
         }
 
         /**

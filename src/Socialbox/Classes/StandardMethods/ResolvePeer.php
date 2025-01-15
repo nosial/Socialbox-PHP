@@ -66,21 +66,11 @@
             // Otherwise, resolve the peer from the remote server
             try
             {
-                $client = Socialbox::getExternalSession($peerAddress->getDomain());
+                return $rpcRequest->produceResponse(Socialbox::resolveExternalPeer($peerAddress));
             }
             catch(Exception $e)
             {
-                throw new StandardException(sprintf('There was an error while trying to connect to %s: %s', $peerAddress->getDomain(), $e->getMessage()), StandardError::RESOLUTION_FAILED, $e);
-            }
-
-            // Return the result/error of the resolution
-            try
-            {
-                return $rpcRequest->produceResponse($client->resolvePeer($peerAddress));
-            }
-            catch(RpcException $e)
-            {
-                throw new StandardException($e->getMessage(), StandardError::tryFrom($e->getCode()) ?? StandardError::UNKNOWN, $e);
+                throw new StandardException(sprintf('There was an error while trying to resolve the peer %s: %s', $peerAddress, $e->getMessage()), StandardError::RESOLUTION_FAILED, $e);
             }
         }
     }
