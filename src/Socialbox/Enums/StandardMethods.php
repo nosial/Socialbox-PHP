@@ -7,6 +7,7 @@
     use Socialbox\Classes\StandardMethods\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\AcceptTermsOfService;
     use Socialbox\Classes\StandardMethods\AddressBookAddContact;
+    use Socialbox\Classes\StandardMethods\AddressBookDeleteContact;
     use Socialbox\Classes\StandardMethods\Authenticate;
     use Socialbox\Classes\StandardMethods\GetAllowedMethods;
     use Socialbox\Classes\StandardMethods\GetCommunityGuidelines;
@@ -98,6 +99,7 @@
         case SETTINGS_GET_SIGNING_KEYS = 'settingsGetSigningKeys';
 
         case ADDRESS_BOOK_ADD_CONTACT = 'addressBookAddContact';
+        case ADDRESS_BOOK_DELETE_CONTACT = 'addressBookDeleteContact';
 
         case AUTHENTICATE = 'authenticate';
         case RESOLVE_PEER = 'resolvePeer';
@@ -149,6 +151,7 @@
                 self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),
 
                 self::ADDRESS_BOOK_ADD_CONTACT => AddressBookAddContact::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_DELETE_CONTACT => AddressBookDeleteContact::execute($request, $rpcRequest),
 
                 self::AUTHENTICATE => Authenticate::execute($request, $rpcRequest),
                 self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
@@ -281,7 +284,8 @@
                 self::SETTINGS_SET_BIRTHDAY,
                 self::RESOLVE_PEER,
 
-                self::ADDRESS_BOOK_ADD_CONTACT
+                self::ADDRESS_BOOK_ADD_CONTACT,
+                self::ADDRESS_BOOK_DELETE_CONTACT,
             ];
 
             // Prevent the user from deleting their display name if it is required
