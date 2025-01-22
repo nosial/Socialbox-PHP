@@ -6,6 +6,7 @@
     use Socialbox\Classes\StandardMethods\AcceptCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\AcceptTermsOfService;
+    use Socialbox\Classes\StandardMethods\AddressBookAddContact;
     use Socialbox\Classes\StandardMethods\Authenticate;
     use Socialbox\Classes\StandardMethods\GetAllowedMethods;
     use Socialbox\Classes\StandardMethods\GetCommunityGuidelines;
@@ -96,6 +97,8 @@
         case SETTINGS_ADD_SIGNING_KEY = 'settingsAddSigningKey';
         case SETTINGS_GET_SIGNING_KEYS = 'settingsGetSigningKeys';
 
+        case ADDRESS_BOOK_ADD_CONTACT = 'addressBookAddContact';
+
         case AUTHENTICATE = 'authenticate';
         case RESOLVE_PEER = 'resolvePeer';
 
@@ -144,6 +147,8 @@
 
                 self::SETTINGS_ADD_SIGNING_KEY => SettingsAddSigningKey::execute($request, $rpcRequest),
                 self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),
+
+                self::ADDRESS_BOOK_ADD_CONTACT => AddressBookAddContact::execute($request, $rpcRequest),
 
                 self::AUTHENTICATE => Authenticate::execute($request, $rpcRequest),
                 self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
@@ -234,7 +239,8 @@
         /**
          * Retrieves a list of external methods based on the client's session state.
          *
-         * @param ClientRequest
+         * @param ClientRequest $clientRequest The client request object containing all the request parameters
+         * @return array Returns an array methods that are available for external sessions
          */
         private static function getExternalMethods(ClientRequest $clientRequest): array
         {
@@ -273,7 +279,9 @@
                 self::SETTINGS_SET_EMAIL,
                 self::SETTINGS_SET_PHONE,
                 self::SETTINGS_SET_BIRTHDAY,
-                self::RESOLVE_PEER
+                self::RESOLVE_PEER,
+
+                self::ADDRESS_BOOK_ADD_CONTACT
             ];
 
             // Prevent the user from deleting their display name if it is required
@@ -334,6 +342,8 @@
             {
                 return [];
             }
+
+            $methods = [];
 
             // If the flag `VER_PRIVACY_POLICY` is set, then the user can accept the privacy policy
             if($session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
