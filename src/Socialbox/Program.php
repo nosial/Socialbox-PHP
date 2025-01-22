@@ -2,13 +2,13 @@
 
     namespace Socialbox;
 
+    use LogLib2\Logger;
     use OptsLib\Parse;
-    use Socialbox\Classes\Logger;
     use Socialbox\Enums\CliCommands;
 
     class Program
     {
-        private static ?\LogLib2\Logger $logger;
+        private static ?Logger $logger=null;
 
         /**
          * Socialbox main entry point
@@ -80,14 +80,14 @@
         /**
          * Retrieves the logger instance for the Socialbox program.
          *
-         * @return \LogLib2\Logger Returns the logger instance.
+         * @return Logger Returns the logger instance.
          */
-        public static function getLogger(): \LogLib2\Logger
+        public static function getLogger(): Logger
         {
             if(self::$logger === null)
             {
-                self::$logger = new \LogLib2\Logger('net.nosial.socialbox');
-                \LogLib2\Logger::registerHandlers();
+                self::$logger = new Logger('net.nosial.socialbox');
+                Logger::registerHandlers();
             }
 
             return self::$logger;
