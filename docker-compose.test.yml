@@ -61,6 +61,10 @@ services:
       # the instance name and the suffix being used to detect the TXT record
       SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://coffee_socialbox:8085/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
       SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://teapot_socialbox:8085/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
+
+      LOGLIB_UDP_ENABLED: true
+      LOGLIB_UDP_HOST: 10.0.0.109
+      LOGLIB_UDP_PORT: 5131
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://coffee_socialbox:8085/}"]
       interval: 30s
@@ -166,6 +170,9 @@ services:
       # the instance name and the suffix being used to detect the TXT record
       SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://coffee_socialbox:8085/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
       SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://teapot_socialbox:8085/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
+      LOGLIB_UDP_ENABLED: true
+      LOGLIB_UDP_HOST: 10.0.0.109
+      LOGLIB_UDP_PORT: 5131
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://teapot_socialbox:8085/}"]
       interval: 30s

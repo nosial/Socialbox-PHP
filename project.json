@@ -36,9 +36,9 @@
                 "source": "nosial/libs.config=latest@n64"
             },
             {
-                "name": "net.nosial.loglib",
+                "name": "net.nosial.loglib2",
                 "version": "latest",
-                "source": "nosial/libs.log=latest@n64"
+                "source": "nosial/loglib2=latest@github"
             },
             {
                 "name": "net.nosial.optslib",

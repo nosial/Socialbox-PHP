@@ -3,18 +3,19 @@
     namespace Socialbox\Classes\CliCommands;
 
     use Exception;
+    use ncc\CLI\Main;
     use ncc\ThirdParty\Symfony\Process\Exception\InvalidArgumentException;
     use PDOException;
     use Socialbox\Abstracts\CacheLayer;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
-    use Socialbox\Classes\DnsHelper;
     use Socialbox\Classes\Logger;
     use Socialbox\Classes\Resources;
     use Socialbox\Enums\DatabaseObjects;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Interfaces\CliCommandInterface;
+    use Socialbox\Program;
     use Socialbox\Socialbox;
 
     class InitializeCommand implements CliCommandInterface
@@ -31,30 +32,30 @@
                     'instance.enabled', 'instance.domain', 'registration.*'
                 ];
 
-                Logger::getLogger()->error('Socialbox is disabled. Use --force to initialize the instance or set `instance.enabled` to True in the configuration');
-                Logger::getLogger()->info('The reason you are required to do this is to allow you to configure the instance before enabling it');
-                Logger::getLogger()->info('The following configurations are required to be set before enabling the instance:');
+                Program::getLogger()->error('Socialbox is disabled. Use --force to initialize the instance or set `instance.enabled` to True in the configuration');
+                Program::getLogger()->info('The reason you are required to do this is to allow you to configure the instance before enabling it');
+                Program::getLogger()->info('The following configurations are required to be set before enabling the instance:');
                 foreach($required_configurations as $config)
                 {
-                    Logger::getLogger()->info(sprintf('  - %s', $config));
+                    Program::getLogger()->info(sprintf('  - %s', $config));
                 }
 
-                Logger::getLogger()->info('instance.private_key & instance.public_key are automatically generated if not set');
-                Logger::getLogger()->info('instance.domain is required to be set to the domain name of the instance');
-                Logger::getLogger()->info('instance.rpc_endpoint is required to be set to the publicly accessible http rpc endpoint of this server');
-                Logger::getLogger()->info('registration.* are required to be set to allow users to register to the instance');
-                Logger::getLogger()->info('You will be given a DNS TXT record to set for the public key after the initialization process');
-                Logger::getLogger()->info('The configuration file can be edited using ConfigLib:');
-                Logger::getLogger()->info('  configlib --conf socialbox -e nano');
-                Logger::getLogger()->info('Or manually at:');
-                Logger::getLogger()->info(sprintf('  %s', Configuration::getConfigurationLib()->getPath()));
+                Program::getLogger()->info('instance.private_key & instance.public_key are automatically generated if not set');
+                Program::getLogger()->info('instance.domain is required to be set to the domain name of the instance');
+                Program::getLogger()->info('instance.rpc_endpoint is required to be set to the publicly accessible http rpc endpoint of this server');
+                Program::getLogger()->info('registration.* are required to be set to allow users to register to the instance');
+                Program::getLogger()->info('You will be given a DNS TXT record to set for the public key after the initialization process');
+                Program::getLogger()->info('The configuration file can be edited using ConfigLib:');
+                Program::getLogger()->info('  configlib --conf socialbox -e nano');
+                Program::getLogger()->info('Or manually at:');
+                Program::getLogger()->info(sprintf('  %s', Configuration::getConfigurationLib()->getPath()));
 
                 if(getenv('SB_MODE') === 'automated')
                 {
                     // Wait & Reload the configuration
                     while(!Configuration::getInstanceConfiguration()->isEnabled())
                     {
-                        Logger::getLogger()->info('Waiting for configuration, retrying in 5 seconds...');
+                        Program::getLogger()->info('Waiting for configuration, retrying in 5 seconds...');
                         sleep(5);
                         Configuration::reload();
                     }
@@ -71,32 +72,32 @@
             // This is useful for CI/CD pipelines & Docker
             if(getenv('SB_MODE') === 'automated')
             {
-                Logger::getLogger()->info('Automated Setup Procedure is detected');
+                Program::getLogger()->info('Automated Setup Procedure is detected');
                 self::applyEnvironmentVariables();
             }
 
             if(Configuration::getInstanceConfiguration()->getDomain() === null)
             {
-                Logger::getLogger()->error('instance.domain is required but was not set');
+                Program::getLogger()->error('instance.domain is required but was not set');
                 return 1;
             }
 
             if(Configuration::getInstanceConfiguration()->getRpcEndpoint() === null)
             {
-                Logger::getLogger()->error('instance.rpc_endpoint is required but was not set');
+                Program::getLogger()->error('instance.rpc_endpoint is required but was not set');
                 return 1;
             }
 
-            Logger::getLogger()->info('Initializing Socialbox...');
+            Program::getLogger()->info('Initializing Socialbox...');
             if(Configuration::getCacheConfiguration()->isEnabled())
             {
-                Logger::getLogger()->verbose('Clearing cache layer...');
+                Program::getLogger()->verbose('Clearing cache layer...');
                 CacheLayer::getInstance()->clear();
             }
 
             foreach(DatabaseObjects::casesOrdered() as $object)
             {
-                Logger::getLogger()->verbose("Initializing database object {$object->value}");
+                Program::getLogger()->verbose("Initializing database object {$object->value}");
 
                 try
                 {
@@ -107,18 +108,18 @@
                     // Check if the error code is for "table already exists"
                     if ($e->getCode() === '42S01')
                     {
-                        Logger::getLogger()->warning("Database object {$object->value} already exists, skipping...");
+                        Program::getLogger()->warning("Database object {$object->value} already exists, skipping...");
                         continue;
                     }
                     else
                     {
-                        Logger::getLogger()->error("Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
+                        Program::getLogger()->error("Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
                         return 1;
                     }
                 }
                 catch(Exception $e)
                 {
-                    Logger::getLogger()->error("Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
+                    Program::getLogger()->error("Failed to initialize database object {$object->value}: {$e->getMessage()}", $e);
                     return 1;
                 }
             }
@@ -133,12 +134,12 @@
 
                 try
                 {
-                    Logger::getLogger()->info('Generating new key pair (expires ' . date('Y-m-d H:i:s', $expires) . ')...');
+                    Program::getLogger()->info('Generating new key pair (expires ' . date('Y-m-d H:i:s', $expires) . ')...');
                     $signingKeyPair = Cryptography::generateSigningKeyPair();
                 }
                 catch (CryptographyException $e)
                 {
-                    Logger::getLogger()->error('Failed to generate cryptography values', $e);
+                    Program::getLogger()->error('Failed to generate cryptography values', $e);
                     return 1;
                 }
 
@@ -153,7 +154,7 @@
                 Configuration::getCryptographyConfiguration()->getInternalEncryptionKeys() === null ||
                 count(Configuration::getCryptographyConfiguration()->getInternalEncryptionKeys()) < Configuration::getCryptographyConfiguration()->getEncryptionKeysCount())
             {
-                Logger::getLogger()->info('Generating internal encryption keys...');
+                Program::getLogger()->info('Generating internal encryption keys...');
                 $encryptionKeys = Configuration::getCryptographyConfiguration()->getInternalEncryptionKeys() ?? [];
                 while(count($encryptionKeys) < Configuration::getCryptographyConfiguration()->getEncryptionKeysCount())
                 {
@@ -163,13 +164,13 @@
                 Configuration::getConfigurationLib()->set('cryptography.internal_encryption_keys', $encryptionKeys);
             }
 
-            Logger::getLogger()->info('Updating configuration...');
+            Program::getLogger()->info('Updating configuration...');
             Configuration::getConfigurationLib()->save();
             Configuration::reload();
 
-            Logger::getLogger()->info('Socialbox has been initialized successfully');
-            Logger::getLogger()->info(sprintf('Set the DNS TXT record for the domain %s to the following value:', Configuration::getInstanceConfiguration()->getDomain()));
-            Logger::getLogger()->info(Socialbox::getDnsRecord());
+            Program::getLogger()->info('Socialbox has been initialized successfully');
+            Program::getLogger()->info(sprintf('Set the DNS TXT record for the domain %s to the following value:', Configuration::getInstanceConfiguration()->getDomain()));
+            Program::getLogger()->info(Socialbox::getDnsRecord());
 
             return 0;
         }
@@ -227,7 +228,7 @@
             foreach($configurationMap as $env => $config)
             {
                 $variable = getenv($env);
-                Logger::getLogger()->info(sprintf('Checking environment variable %s...', $env));
+                Program::getLogger()->info(sprintf('Checking environment variable %s...', $env));
 
                 switch($env)
                 {
@@ -245,91 +246,91 @@
                         if($variable !== false)
                         {
                             Configuration::getConfigurationLib()->set($config, $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
                     case 'SB_INSTANCE_DOMAIN':
                         if($variable === false && Configuration::getInstanceConfiguration()->getDomain() === null)
                         {
-                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                            Program::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
                         }
                         else
                         {
                             Configuration::getConfigurationLib()->set($config, $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
                     case 'SB_DATABASE_HOST':
                         if($variable === false && Configuration::getDatabaseConfiguration()->getHost() === null)
                         {
-                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                            Program::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
                         }
                         else
                         {
                             Configuration::getConfigurationLib()->set($config, $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
                     case 'SB_DATABASE_PORT':
                         if($variable === false && Configuration::getDatabaseConfiguration()->getPort() === null)
                         {
-                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                            Program::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
                         }
                         else
                         {
                             Configuration::getConfigurationLib()->set($config, (int) $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
                     case 'SB_DATABASE_USERNAME':
                         if($variable === false && Configuration::getDatabaseConfiguration()->getUsername() === null)
                         {
-                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                            Program::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
                         }
                         else
                         {
                             Configuration::getConfigurationLib()->set($config, $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
                     case 'SB_DATABASE_PASSWORD':
                         if($variable === false && Configuration::getDatabaseConfiguration()->getPassword() === null)
                         {
-                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                            Program::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
                         }
                         else
                         {
                             Configuration::getConfigurationLib()->set($config, $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
                     case 'SB_DATABASE_NAME':
                         if($variable === false && Configuration::getDatabaseConfiguration()->getName() === null)
                         {
-                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                            Program::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
                         }
                         else
                         {
                             Configuration::getConfigurationLib()->set($config, $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
                     case 'SB_INSTANCE_RPC_ENDPOINT':
                         if($variable === false && Configuration::getInstanceConfiguration()->getRpcEndpoint() === null)
                         {
-                            Logger::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
+                            Program::getLogger()->warning(sprintf('%s is not set, expected %s environment variable', $config, $env));
                         }
                         else
                         {
                             Configuration::getConfigurationLib()->set($config, $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
@@ -340,7 +341,7 @@
                         if($variable !== false)
                         {
                             Configuration::getConfigurationLib()->set($config, filter_var($variable, FILTER_VALIDATE_BOOLEAN));
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
@@ -350,12 +351,12 @@
                         if($variable !== false)
                         {
                             Configuration::getConfigurationLib()->set($config, (int) $variable);
-                            Logger::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
+                            Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
                         }
                         break;
 
                     default:
-                        Logger::getLogger()->warning("Environment variable $env is not supported");
+                        Program::getLogger()->warning("Environment variable $env is not supported");
                         break;
                 }
             }
@@ -367,7 +368,7 @@
                 $mockServer = explode(' ', $mockServer);
                 if(count($mockServer) !== 2)
                 {
-                    Logger::getLogger()->warning(sprintf('Invalid DNS Mock Server format: %s', implode(' ', $mockServer)));
+                    Program::getLogger()->warning(sprintf('Invalid DNS Mock Server format: %s', implode(' ', $mockServer)));
                     continue;
                 }
 
@@ -375,30 +376,30 @@
                 $txt = $mockServer[1] ?? null;
                 if($domain === null || $txt === null)
                 {
-                    Logger::getLogger()->warning(sprintf('Invalid DNS Mock Server format, domain or txt missing: %s', implode(' ', $mockServer)));
+                    Program::getLogger()->warning(sprintf('Invalid DNS Mock Server format, domain or txt missing: %s', implode(' ', $mockServer)));
                     continue;
                 }
 
                 try
                 {
                     $mockServers[$domain] = $txt;
-                    Logger::getLogger()->info(sprintf('Added Mock Server %s: %s', $domain, $txt));
+                    Program::getLogger()->info(sprintf('Added Mock Server %s: %s', $domain, $txt));
                 }
                 catch(InvalidArgumentException $e)
                 {
-                    Logger::getLogger()->error(sprintf('Invalid TXT record format for %s', $domain), $e);
+                    Program::getLogger()->error(sprintf('Invalid TXT record format for %s', $domain), $e);
                     continue;
                 }
             }
 
             if(count($mockServers) > 0)
             {
-                Logger::getLogger()->info('Setting Mock Servers...');
+                Program::getLogger()->info('Setting Mock Servers...');
                 Configuration::getConfigurationLib()->set('instance.dns_mocks', $mockServers);
             }
 
             // Apply changes & reload the configuration
-            Logger::getLogger()->info('Updating configuration...');
+            Program::getLogger()->info('Updating configuration...');
             Configuration::getConfigurationLib()->save(); // Save
             Configuration::reload(); // Reload
         }

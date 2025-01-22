@@ -3,10 +3,13 @@
     namespace Socialbox;
 
     use OptsLib\Parse;
+    use Socialbox\Classes\Logger;
     use Socialbox\Enums\CliCommands;
 
     class Program
     {
+        private static ?\LogLib2\Logger $logger;
+
         /**
          * Socialbox main entry point
          *
@@ -72,5 +75,21 @@
             print("Use 'socialbox --help=[command]' for more information about a command.\n");
 
             return 0;
+        }
+
+        /**
+         * Retrieves the logger instance for the Socialbox program.
+         *
+         * @return \LogLib2\Logger Returns the logger instance.
+         */
+        public static function getLogger(): \LogLib2\Logger
+        {
+            if(self::$logger === null)
+            {
+                self::$logger = new \LogLib2\Logger('net.nosial.socialbox');
+                \LogLib2\Logger::registerHandlers();
+            }
+
+            return self::$logger;
         }
     }

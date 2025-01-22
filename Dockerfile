@@ -45,6 +45,7 @@ RUN docker-php-ext-install -j$(nproc) \
     curl \
     opcache \
     zip \
+    sockets \
     pcntl && \
     pecl install redis memcached && \
     docker-php-ext-enable redis memcached
