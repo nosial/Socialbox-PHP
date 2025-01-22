@@ -41,9 +41,6 @@
          * missing or invalid request types.
          *
          * @return void
-         * @throws CryptographyException
-         * @throws DatabaseOperationException
-         * @throws ResolutionException
          */
         public static function handleRequest(): void
         {
@@ -765,6 +762,7 @@
          *
          * @param PeerAddress|string $peerAddress The external peer address or string identifier to be resolved.
          * @return Peer The resolved external peer after synchronization.
+         * @throws StandardException Thrown if there was an error with the resolution process
          */
         public static function resolvePeer(PeerAddress|string $peerAddress): Peer
         {
