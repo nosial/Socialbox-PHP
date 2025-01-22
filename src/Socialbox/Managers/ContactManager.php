@@ -239,7 +239,7 @@
          * @return array An array of ContactRecord instances representing the contacts for the given peer.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getContacts(string $peerUuid, int $limit = 100, int $page = 1): array
+        public static function getContacts(string $peerUuid, int $limit=100, int $page=1): array
         {
             if ($page < 1)
             {
@@ -252,9 +252,10 @@
             }
 
             $contacts = [];
+
             try
             {
-                $statement = Database::getConnection()->prepare("SELECT * FROM contacts WHERE peer_uuid = :peer ORDER BY created DESC LIMIT :limit OFFSET :offset");
+                $statement = Database::getConnection()->prepare("SELECT * FROM contacts WHERE peer_uuid=:peer ORDER BY created DESC LIMIT :limit OFFSET :offset");
                 $offset = ($page - 1) * $limit;
                 $statement->bindParam(':peer', $peerUuid);
                 $statement->bindParam(':limit', $limit, PDO::PARAM_INT);
