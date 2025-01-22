@@ -6,6 +6,7 @@
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\Types\RequestType;
     use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RequestException;
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
@@ -182,6 +183,7 @@
          * Retrieves the associated peer for the current session.
          *
          * @return RegisteredPeerRecord|null Returns the associated RegisteredPeerRecord if available, or null if no session exists.
+         * @throws DatabaseOperationException Thrown if an error occurs while retrieving the peer.
          */
         public function getPeer(): ?RegisteredPeerRecord
         {
