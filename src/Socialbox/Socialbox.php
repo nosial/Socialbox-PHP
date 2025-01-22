@@ -27,6 +27,7 @@
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
+    use Socialbox\Objects\Database\RegisteredPeerRecord;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerInformation;
@@ -762,19 +763,19 @@
         /**
          * Resolves an external peer based on the given peer address or string identifier.
          *
-         * @param PeerAddress|string $peer The external peer address or string identifier to be resolved.
+         * @param PeerAddress|string $peerAddress The external peer address or string identifier to be resolved.
          * @return Peer The resolved external peer after synchronization.
          */
-        public static function resolvePeer(PeerAddress|string $peer): Peer
+        public static function resolvePeer(PeerAddress|string $peerAddress): Peer
         {
-            if($peer instanceof PeerAddress)
+            if(is_string($peerAddress))
             {
-                $peer = $peer->getAddress();
+                $peerAddress = PeerAddress::fromAddress($peerAddress);
             }
 
             try
             {
-                $registeredPeer = RegisteredPeerManager::getPeerByAddress($peer);
+                $registeredPeer = RegisteredPeerManager::getPeerByAddress($peerAddress);
             }
             catch (DatabaseOperationException $e)
             {
@@ -790,11 +791,11 @@
             // If the peer was not found but the peer resides in an external server, resolve it
             try
             {
-                if($registeredPeer === null && $peer->getDomain() !== Configuration::getInstanceConfiguration()->getDomain())
+                if($registeredPeer === null && $peerAddress->getDomain() !== Configuration::getInstanceConfiguration()->getDomain())
                 {
                     try
                     {
-                        $registeredPeer = self::getExternalSession($peer->getDomain())->resolvePeer($peer);
+                        $registeredPeer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress);
                     }
                     catch (DatabaseOperationException $e)
                     {
@@ -805,13 +806,13 @@
                     self::synchronizeExternalPeer($registeredPeer);
                 }
                 // If the peer was found and the peer does reside in an external server, re-resolve it if necessary
-                elseif($registeredPeer !== null && $peer->getDomain() !== Configuration::getInstanceConfiguration()->getDomain())
+                elseif($registeredPeer !== null && $peerAddress->getDomain() !== Configuration::getInstanceConfiguration()->getDomain())
                 {
                     if($registeredPeer->getUpdated()->getTimestamp() < time() - Configuration::getPoliciesConfiguration()->getPeerSyncInterval())
                     {
                         try
                         {
-                            $registeredPeer = self::getExternalSession($peer->getDomain())->resolvePeer($peer);
+                            $registeredPeer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress);
                         }
                         catch (DatabaseOperationException $e)
                         {
@@ -835,6 +836,11 @@
             if($registeredPeer === null)
             {
                 throw new StandardException('The requested peer was not found', StandardError::PEER_NOT_FOUND);
+            }
+
+            if($registeredPeer instanceof RegisteredPeerRecord)
+            {
+                $registeredPeer = $registeredPeer->toStandardPeer();
             }
 
             return $registeredPeer;
