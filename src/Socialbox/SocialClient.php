@@ -46,7 +46,7 @@
         public function ping(): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::PING->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::PING, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -59,7 +59,7 @@
         public function getSessionState(): SessionState
         {
             return SessionState::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::GET_SESSION_STATE->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::GET_SESSION_STATE, Utilities::randomCrc32())
             )->getResponse()->getResult());
         }
 
@@ -72,7 +72,7 @@
         public function getAllowedMethods(): array
         {
             return $this->sendRequest(
-                new RpcRequest(StandardMethods::GET_ALLOWED_METHODS->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::GET_ALLOWED_METHODS, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -85,7 +85,7 @@
         public function getPrivacyPolicy(): ServerDocument
         {
             return ServerDocument::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::GET_PRIVACY_POLICY->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::GET_PRIVACY_POLICY, Utilities::randomCrc32())
             )->getResponse()->getResult());
         }
 
@@ -98,7 +98,7 @@
         public function acceptPrivacyPolicy(): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::ACCEPT_PRIVACY_POLICY->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::ACCEPT_PRIVACY_POLICY, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -111,7 +111,7 @@
         public function getTermsOfService(): ServerDocument
         {
             return ServerDocument::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::GET_TERMS_OF_SERVICE->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::GET_TERMS_OF_SERVICE, Utilities::randomCrc32())
             )->getResponse()->getResult());
         }
 
@@ -124,7 +124,7 @@
         public function acceptTermsOfService(): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::ACCEPT_TERMS_OF_SERVICE->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::ACCEPT_TERMS_OF_SERVICE, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -137,7 +137,7 @@
         public function getCommunityGuidelines(): ServerDocument
         {
             return ServerDocument::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::GET_COMMUNITY_GUIDELINES->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::GET_COMMUNITY_GUIDELINES, Utilities::randomCrc32())
             )->getResponse()->getResult());
         }
 
@@ -150,7 +150,7 @@
         public function acceptCommunityGuidelines(): true
         {
             return $this->sendRequest(
-                new RpcRequest(StandardMethods::ACCEPT_COMMUNITY_GUIDELINES->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::ACCEPT_COMMUNITY_GUIDELINES, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -164,7 +164,7 @@
         public function verificationEmail(string $emailAddress): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_EMAIL->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_EMAIL, Utilities::randomCrc32(), [
                     'email_address' => $emailAddress
                 ])
             )->getResponse()->getResult();
@@ -180,7 +180,7 @@
         public function verificationAnswerEmail(string $verificationCode): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_EMAIL->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_EMAIL, Utilities::randomCrc32(), [
                     'verification_code' => $verificationCode
                 ])
             )->getResponse()->getResult();
@@ -196,7 +196,7 @@
         public function verificationSms(string $phoneNumber): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_SMS->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_SMS, Utilities::randomCrc32(), [
                     'phone_number' => $phoneNumber
                 ])
             )->getResponse()->getResult();
@@ -212,7 +212,7 @@
         public function verificationAnswerSms(string $verificationCode): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_SMS->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_SMS, Utilities::randomCrc32(), [
                     'verification_code' => $verificationCode
                 ])
             )->getResponse()->getResult();
@@ -228,7 +228,7 @@
         public function verificationPhone(string $phoneNumber): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_PHONE_CALL->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_PHONE_CALL, Utilities::randomCrc32(), [
                     'phone_number' => $phoneNumber
                 ])
             )->getResponse()->getResult();
@@ -244,7 +244,7 @@
         public function verificationAnswerPhone(string $verificationCode): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_PHONE_CALL->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_PHONE_CALL, Utilities::randomCrc32(), [
                     'verification_code' => $verificationCode
                 ])
             )->getResponse()->getResult();
@@ -259,7 +259,7 @@
         public function verificationGetImageCaptcha(): string
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_GET_IMAGE_CAPTCHA->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::VERIFICATION_GET_IMAGE_CAPTCHA, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -273,7 +273,7 @@
         public function verificationAnswerImageCaptcha(string $verificationCode): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_IMAGE_CAPTCHA->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_IMAGE_CAPTCHA, Utilities::randomCrc32(), [
                     'verification_code' => $verificationCode
                 ])
             )->getResponse()->getResult();
@@ -288,7 +288,7 @@
         public function verificationGetTextCaptcha(): string
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_GET_TEXT_CAPTCHA->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::VERIFICATION_GET_TEXT_CAPTCHA, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -302,7 +302,7 @@
         public function verificationAnswerTextCaptcha(string $verificationCode): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_TEXT_CAPTCHA->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_TEXT_CAPTCHA, Utilities::randomCrc32(), [
                     'verification_code' => $verificationCode
                 ])
             )->getResponse()->getResult();
@@ -317,7 +317,7 @@
         public function verificationGetExternalUrl(): string
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_GET_EXTERNAL_URL->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::VERIFICATION_GET_EXTERNAL_URL, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -331,7 +331,7 @@
         public function verificationAnswerExternalUrl(string $verificationCode): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_EXTERNAL_URL->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_EXTERNAL_URL, Utilities::randomCrc32(), [
                     'verification_code' => $verificationCode
                 ])
             )->getResponse()->getResult();
@@ -358,7 +358,7 @@
             }
 
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_PASSWORD_AUTHENTICATION->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_PASSWORD_AUTHENTICATION, Utilities::randomCrc32(), [
                     'password' => $password
                 ])
             )->getResponse()->getResult();
@@ -374,7 +374,7 @@
         public function verificationOtpAuthentication(string $code): bool
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_OTP_AUTHENTICATION->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::VERIFICATION_OTP_AUTHENTICATION, Utilities::randomCrc32(), [
                     'code' => $code
                 ])
             )->getResponse()->getResult();
@@ -401,7 +401,7 @@
             }
 
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_PASSWORD->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_SET_PASSWORD, Utilities::randomCrc32(), [
                     'password' => $password
                 ])
             )->getResponse()->getResult();
@@ -417,7 +417,7 @@
         public function settingsDeletePassword(string $password): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_PASSWORD->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_PASSWORD, Utilities::randomCrc32(), [
                     'password' => $password
                 ])
             )->getResponse()->getResult();
@@ -434,7 +434,7 @@
         public function settingsUpdatePassword(string $password, string $existingPassword): bool
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_UPDATE_PASSWORD->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_UPDATE_PASSWORD, Utilities::randomCrc32(), [
                     'password' => $password,
                     'existing_password' => $existingPassword
                 ])
@@ -450,7 +450,7 @@
         public function settingsSetOtp(string $otp, bool $hash=true): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_OTP->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_SET_OTP, Utilities::randomCrc32(), [
                     'otp' => $hash ? hash('sha512', $otp) : $otp
                 ])
             )->getResponse()->getResult();
@@ -477,7 +477,7 @@
             }
 
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_OTP->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_OTP, Utilities::randomCrc32(), [
                     'password' => $password
                 ])
             )->getResponse()->getResult();
@@ -493,7 +493,7 @@
         public function settingsSetDisplayName(string $displayName): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME, Utilities::randomCrc32(), [
                     'name' => $displayName
                 ])
             )->getResponse()->getResult();
@@ -505,7 +505,7 @@
         public function settingsDeleteDisplayName(): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_DISPLAY_NAME->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_DISPLAY_NAME, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -519,7 +519,7 @@
         public function settingsSetDisplayPicture(string $fileId): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_PICTURE->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_PICTURE, Utilities::randomCrc32(), [
                     'file_id' => $fileId
                 ])
             )->getResponse()->getResult();
@@ -535,7 +535,7 @@
         public function settingsSetEmail(string $emailAddress): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_EMAIL->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_SET_EMAIL, Utilities::randomCrc32(), [
                     'email_address' => $emailAddress
                 ])
             )->getResponse()->getResult();
@@ -550,7 +550,7 @@
         public function settingsDeleteEmail(): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_EMAIL->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_EMAIL, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -564,7 +564,7 @@
         public function settingsSetPhone(string $phoneNumber): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME, Utilities::randomCrc32(), [
                     'phone_number' => $phoneNumber
                 ])
             )->getResponse()->getResult();
@@ -576,7 +576,7 @@
         public function settingsDeletePhone(): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_PHONE->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_PHONE, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -592,7 +592,7 @@
         public function settingsSetBirthday(int $year, int $month, int $day): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_BIRTHDAY->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_SET_BIRTHDAY, Utilities::randomCrc32(), [
                     'year' => $year,
                     'month' => $month,
                     'day' => $day
@@ -609,7 +609,7 @@
         public function deleteBirthday(): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_BIRTHDAY->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_BIRTHDAY, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -624,7 +624,7 @@
         public function authenticate(): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::AUTHENTICATE->value, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::AUTHENTICATE, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
@@ -643,7 +643,7 @@
             }
 
             return Peer::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::RESOLVE_PEER->value, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::RESOLVE_PEER, Utilities::randomCrc32(), [
                     'peer' => $peerAddress
                 ])
             )->getResponse()->getResult());

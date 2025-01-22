@@ -5,6 +5,7 @@
     use InvalidArgumentException;
     use Socialbox\Classes\Logger;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Enums\StandardMethods;
     use Socialbox\Exceptions\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
 
@@ -17,12 +18,17 @@
         /**
          * Constructs the object from an array of data.
          *
-         * @param string $method The method of the request.
+         * @param string|StandardMethods $method The method of the request.
          * @param string|null $id The ID of the request.
          * @param array|null $parameters The parameters of the request.
          */
-        public function __construct(string $method, ?string $id, ?array $parameters=null)
+        public function __construct(string|StandardMethods $method, ?string $id, ?array $parameters=null)
         {
+            if($method instanceof StandardMethods)
+            {
+                $method = $method->value;
+            }
+
             $this->method = $method;
             $this->parameters = $parameters;
             $this->id = $id;
