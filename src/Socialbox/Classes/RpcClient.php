@@ -18,10 +18,11 @@
 
     class RpcClient
     {
+        private \LogLib2\Logger $logger;
+
         private const string CLIENT_NAME = 'Socialbox PHP';
         private const string CLIENT_VERSION = '1.0';
 
-        private bool $bypassSignatureVerification;
         private PeerAddress $identifiedAs;
         private string $serverPublicSigningKey;
         private string $serverPublicEncryptionKey;
@@ -44,11 +45,11 @@
          * @throws CryptographyException If there is an error in the cryptographic operations.
          * @throws ResolutionException If there is an error in the resolution process.
          * @throws RpcException If there is an error in the RPC request or if no response is received.
-         * @throws DatabaseOperationException
+         * @throws DatabaseOperationException If there is an error in the database operation.
          */
         public function __construct(string|PeerAddress $identifiedAs, ?string $server=null, ?ExportedSession $exportedSession=null)
         {
-            $this->bypassSignatureVerification = false;
+            $this->logger = new \LogLib2\Logger('net.nosial.socialbox');
 
             // If an exported session is provided, no need to re-connect.
             // Just use the session details provided.
@@ -78,12 +79,14 @@
                 // Check if the active keypair has expired
                 if($this->serverInformation->getServerKeypairExpires() > 0 && time() > $this->serverInformation->getServerKeypairExpires())
                 {
+                    // TODO: Could be auto-resolved
                     throw new RpcException('The server keypair has expired but the server has not provided a new keypair, contact the server administrator');
                 }
 
                 // Check if the transport encryption algorithm has changed
                 if($this->serverInformation->getTransportEncryptionAlgorithm() !== $exportedSession->getTransportEncryptionAlgorithm())
                 {
+                    // TODO: Could be auto-resolved
                     throw new RpcException('The server has changed its transport encryption algorithm, a new session must be created, old algorithm: ' . $exportedSession->getTransportEncryptionAlgorithm() . ', new algorithm: ' . $this->serverInformation->getTransportEncryptionAlgorithm());
                 }
 
@@ -150,15 +153,13 @@
         /**
          * Initiates a new session with the server and retrieves the session UUID.
          *
-         * @return string The session UUID provided by the server upon successful session creation.
          * @throws RpcException If the session cannot be created, if the server does not provide a valid response,
          *                      or critical headers like encryption public key are missing in the server's response.
+         * @return void
          */
         private function createSession(): void
         {
             $ch = curl_init();
-
-            // Basic session details
             $headers = [
                 StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::INITIATE_SESSION->value,
                 StandardHeaders::CLIENT_NAME->value . ': ' . self::CLIENT_NAME,
@@ -193,6 +194,14 @@
                 return $len;
             });
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            $this->logger->debug(sprintf('Creating session with %s', $this->rpcEndpoint));
+            $this->logger->debug(sprintf('Headers: %s', json_encode($headers)));
+            $this->logger->debug(sprintf('Client Encryption Public Key: %s', $this->clientEncryptionKeyPair->getPublicKey()));
+            $this->logger->debug(sprintf('Client Signing Public Key: %s', $this->clientSigningKeyPair->getPublicKey()));
+            $this->logger->debug(sprintf('Identified As: %s', $this->identifiedAs->getAddress()));
+            $this->logger->debug(sprintf('Client Transport Encryption Key: %s', $this->clientTransportEncryptionKey));
+
             $response = curl_exec($ch);
 
             // If the response is false, the request failed
@@ -233,6 +242,8 @@
                 throw new RpcException('Failed to create session at %s, the server did not return a public encryption key');
             }
 
+            $this->logger->debug(sprintf('Server Encryption Public Key: %s', $serverPublicEncryptionKey));
+
             // Validate the server's encryption public key
             if(!Cryptography::validatePublicEncryptionKey($serverPublicEncryptionKey))
             {
@@ -249,6 +260,7 @@
             }
 
             curl_close($ch);
+            $this->logger->debug(sprintf('Session UUID: %s', $response));
 
             // Set the server's encryption key
             $this->serverPublicEncryptionKey = $serverPublicEncryptionKey;
@@ -384,6 +396,11 @@
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $encryptedData);
 
+            $this->logger->debug(sprintf('Sending RPC request to %s', $this->rpcEndpoint));
+            $this->logger->debug(sprintf('Headers: %s', json_encode($headers)));
+            $this->logger->debug(sprintf('Encrypted Data Size: %d', strlen($encryptedData)));
+            $this->logger->debug(sprintf('Request Signature: %s', $signature));
+
             $response = curl_exec($ch);
 
             if ($response === false)
@@ -419,6 +436,7 @@
             }
 
             curl_close($ch);
+            $this->logger->debug(sprintf('Encrypted Response Size: %d', strlen($responseString)));
 
             try
             {
@@ -427,35 +445,34 @@
                     encryptionKey: $this->clientTransportEncryptionKey,
                     algorithm: $this->serverInformation->getTransportEncryptionAlgorithm()
                 );
+                $this->logger->debug(sprintf('Decrypted Response: %s', $decryptedResponse));
             }
             catch (CryptographyException $e)
             {
                 throw new RpcException('Failed to decrypt response: ' . $e->getMessage(), 0, $e);
             }
 
-            if (!$this->bypassSignatureVerification)
+            $signature = $returnHeaders[strtolower(StandardHeaders::SIGNATURE->value)][0] ?? null;
+            $this->logger->debug(sprintf('Response Signature: %s', $signature));
+            if ($signature === null)
             {
-                $signature = $returnHeaders[strtolower(StandardHeaders::SIGNATURE->value)][0] ?? null;
-                if ($signature === null)
-                {
-                    throw new RpcException('The server did not provide a signature for the response');
-                }
+                throw new RpcException('The server did not provide a signature for the response');
+            }
 
-                try
+            try
+            {
+                if(!Cryptography::verifyMessage(
+                    message: $decryptedResponse,
+                    signature: $signature,
+                    publicKey: $this->serverPublicSigningKey,
+                ))
                 {
-                    if(!Cryptography::verifyMessage(
-                        message: $decryptedResponse,
-                        signature: $signature,
-                        publicKey: $this->serverPublicSigningKey,
-                    ))
-                    {
-                        throw new RpcException('Failed to verify the response signature');
-                    }
+                    throw new RpcException('Failed to verify the response signature');
                 }
-                catch (CryptographyException $e)
-                {
-                    throw new RpcException('Failed to verify the response signature: ' . $e->getMessage(), 0, $e);
-                }
+            }
+            catch (CryptographyException $e)
+            {
+                throw new RpcException('Failed to verify the response signature: ' . $e->getMessage(), 0, $e);
             }
 
             $decoded = json_decode($decryptedResponse, true);
@@ -483,8 +500,6 @@
         public function getServerInformation(): ServerInformation
         {
             $ch = curl_init();
-
-            // Basic session details
             $headers = [
                 StandardHeaders::REQUEST_TYPE->value . ': ' . RequestType::INFO->value,
                 StandardHeaders::CLIENT_NAME->value . ': ' . self::CLIENT_NAME,
@@ -496,6 +511,8 @@
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
+            $this->logger->debug(sprintf('Getting server information from %s', $this->rpcEndpoint));
+            $this->logger->debug(sprintf('Headers: %s', json_encode($headers)));
             $response = curl_exec($ch);
 
             if($response === false)
@@ -516,6 +533,7 @@
             }
 
             curl_close($ch);
+            $this->logger->debug(sprintf('Server information response: %s', $response));
             return ServerInformation::fromArray(json_decode($response, true));
         }
 
