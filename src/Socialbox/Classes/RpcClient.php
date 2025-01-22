@@ -200,7 +200,6 @@
             $this->logger->debug(sprintf('Client Encryption Public Key: %s', $this->clientEncryptionKeyPair->getPublicKey()));
             $this->logger->debug(sprintf('Client Signing Public Key: %s', $this->clientSigningKeyPair->getPublicKey()));
             $this->logger->debug(sprintf('Identified As: %s', $this->identifiedAs->getAddress()));
-            $this->logger->debug(sprintf('Client Transport Encryption Key: %s', $this->clientTransportEncryptionKey));
 
             $response = curl_exec($ch);
 
@@ -533,7 +532,6 @@
             }
 
             curl_close($ch);
-            $this->logger->debug(sprintf('Server information response: %s', $response));
             return ServerInformation::fromArray(json_decode($response, true));
         }
 

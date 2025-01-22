@@ -14,6 +14,8 @@
 
         protected function setUp(): void
         {
+            putenv('LOG_LEVEL=debug');
+
             // Add mocked records for the test domains
             ServerResolver::addMock('coffee.com', 'v=socialbox;sb-rpc=http://127.0.0.0:8086/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0');
             ServerResolver::addMock('teapot.com', 'v=socialbox;sb-rpc=http://127.0.0.0:8087/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0');
