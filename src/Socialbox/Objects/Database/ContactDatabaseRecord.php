@@ -7,8 +7,9 @@
     use InvalidArgumentException;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Objects\Standard\ContactRecord;
 
-    class ContactRecord implements SerializableInterface
+    class ContactDatabaseRecord implements SerializableInterface
     {
         private string $uuid;
         private string $peerUuid;
@@ -117,9 +118,23 @@
         /**
          * @inheritDoc
          */
-        public static function fromArray(array $data): ContactRecord
+        public static function fromArray(array $data): ContactDatabaseRecord
         {
             return new self($data);
+        }
+
+        /**
+         * Converts the object to a standard contact record.
+         *
+         * @return ContactRecord The standard contact record.
+         */
+        public function toStandard(): ContactRecord
+        {
+            return new ContactRecord([
+                'address' => $this->contactPeerAddress,
+                'relationship' => $this->relationship,
+                'added_timestamp' => $this->created->getTimestamp()
+            ]);
         }
 
         /**

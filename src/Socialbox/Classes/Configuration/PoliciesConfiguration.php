@@ -8,6 +8,7 @@
         private int $sessionInactivityExpires;
         private int $imageCaptchaExpires;
         private int $peerSyncInterval;
+        private int $getContactsLimit;
 
         public function __construct(array $data)
         {
@@ -15,6 +16,7 @@
             $this->sessionInactivityExpires = $data['session_inactivity_expires'];
             $this->imageCaptchaExpires = $data['image_captcha_expires'];
             $this->peerSyncInterval = $data['peer_sync_interval'];
+            $this->getContactsLimit = $data['get_contacts_limit'];
         }
 
         /**
@@ -57,5 +59,15 @@
         public function getPeerSyncInterval(): int
         {
             return $this->peerSyncInterval;
+        }
+
+        /**
+         * Returns the maximum amount of contacts that can be retrieved in a single request
+         *
+         * @return int
+         */
+        public function getGetContactsLimit(): int
+        {
+            return $this->getContactsLimit;
         }
     }

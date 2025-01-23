@@ -8,7 +8,7 @@
     use Socialbox\Classes\Database;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Objects\Database\ContactRecord;
+    use Socialbox\Objects\Database\ContactDatabaseRecord;
     use Socialbox\Objects\PeerAddress;
 
     class ContactManager
@@ -109,10 +109,10 @@
          *
          * @param string $peerUuid The unique identifier for the peer whose contact is to be retrieved.
          * @param string|PeerAddress $contactAddress The address of the contact, either as a string or a PeerAddress object.
-         * @return ContactRecord|null The retrieved ContactRecord instance if found, or null if no matching contact exists.
+         * @return ContactDatabaseRecord|null The retrieved ContactRecord instance if found, or null if no matching contact exists.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getContact(string $peerUuid, string|PeerAddress $contactAddress): ?ContactRecord
+        public static function getContact(string $peerUuid, string|PeerAddress $contactAddress): ?ContactDatabaseRecord
         {
             if($contactAddress instanceof PeerAddress)
             {
@@ -138,7 +138,7 @@
                 return null;
             }
 
-            return ContactRecord::fromArray($result);
+            return ContactDatabaseRecord::fromArray($result);
         }
 
         /**
@@ -204,10 +204,10 @@
          * Retrieves a contact by its unique identifier.
          *
          * @param string $uuid The unique identifier of the contact to retrieve.
-         * @return ContactRecord|null A ContactRecord instance if the contact is found, or null if no contact exists with the provided UUID.
+         * @return ContactDatabaseRecord|null A ContactRecord instance if the contact is found, or null if no contact exists with the provided UUID.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getContactByUuid(string $uuid): ?ContactRecord
+        public static function getContactByUuid(string $uuid): ?ContactDatabaseRecord
         {
             try
             {
@@ -227,7 +227,7 @@
                 return null;
             }
 
-            return ContactRecord::fromArray($result);
+            return ContactDatabaseRecord::fromArray($result);
         }
 
         /**
@@ -236,7 +236,7 @@
          * @param string $peerUuid The unique identifier for the peer whose contacts are to be retrieved.
          * @param int $limit The maximum number of contacts to retrieve per page. Defaults to 100.
          * @param int $page The page number to retrieve. Defaults to 1.
-         * @return array An array of ContactRecord instances representing the contacts for the given peer.
+         * @return ContactDatabaseRecord[] An array of ContactRecord instances representing the contacts for the given peer.
          * @throws DatabaseOperationException If the database query fails.
          */
         public static function getContacts(string $peerUuid, int $limit=100, int $page=1): array
@@ -268,7 +268,7 @@
                 // Convert results to ContactRecord instances
                 foreach ($results as $result)
                 {
-                    $contacts[] = ContactRecord::fromArray($result);
+                    $contacts[] = ContactDatabaseRecord::fromArray($result);
                 }
             }
             catch (PDOException $e)

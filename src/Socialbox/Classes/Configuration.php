@@ -157,6 +157,10 @@
             // When a peer's external address is resolved, it is cached for this amount of time before resolving again.
             // This reduces the amount of times a resolution request is made to the external server.
             $config->setDefault('policies.peer_sync_interval', 3600);
+            // The maximum number of contacts a peer can retrieve from the server at once, if the client puts a
+            // value that exceeds this limit, the server will use this limit instead.
+            // recommendation: 100
+            $config->setDefault('policies.get_contacts_limit', 100);
 
             // Storage configuration
             $config->setDefault('storage.path', '/etc/socialbox'); // The main path for file storage
