@@ -22,6 +22,7 @@
     use Socialbox\Classes\StandardMethods\SettingsDeleteInformationField;
     use Socialbox\Classes\StandardMethods\SettingsDeleteOtp;
     use Socialbox\Classes\StandardMethods\SettingsDeletePassword;
+    use Socialbox\Classes\StandardMethods\SettingsGetInformationFields;
     use Socialbox\Classes\StandardMethods\SettingsGetSigningKeys;
     use Socialbox\Classes\StandardMethods\SettingsSetOtp;
     use Socialbox\Classes\StandardMethods\SettingsSetPassword;
