@@ -293,7 +293,11 @@
                 return [];
             }
 
-            $methods = [];
+            $methods = [
+                self::SETTINGS_ADD_INFORMATION_FIELD,
+                self::SETTINGS_UPDATE_INFORMATION_FIELD,
+                self::SETTINGS_DELETE_INFORMATION_FIELD
+            ];
 
             // If the flag `VER_PRIVACY_POLICY` is set, then the user can accept the privacy policy
             if($session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
@@ -330,21 +334,6 @@
             if($session->flagExists(SessionFLags::SET_OTP))
             {
                 $methods[] = self::SETTINGS_SET_OTP;
-            }
-
-            // If the flag `SET_DISPLAY_NAME` is set, then the user has to set a display name
-            if($session->flagExists([
-                SessionFlags::SET_DISPLAY_NAME,
-                SessionFlags::SET_FIRST_NAME,
-                SessionFlags::SET_MIDDLE_NAME,
-                SessionFlags::SET_LAST_NAME,
-                SessionFlags::SET_BIRTHDAY,
-                SessionFlags::SET_PHONE,
-                SessionFlags::SET_EMAIL,
-                SessionFlags::SET_URL
-            ]))
-            {
-                $methods[] = self::SETTINGS_ADD_INFORMATION_FIELD;
             }
 
             return $methods;
