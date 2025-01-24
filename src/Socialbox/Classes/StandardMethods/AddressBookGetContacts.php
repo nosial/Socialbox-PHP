@@ -23,9 +23,9 @@
             if($rpcRequest->containsParameter('limit'))
             {
                 $limit = (int)$rpcRequest->getParameter('limit');
-                if($limit < 0)
+                if($limit < 1)
                 {
-                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid limit');
+                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid limit, must be greater than 0');
                 }
 
                 $limit = min($limit, Configuration::getPoliciesConfiguration()->getGetContactsLimit());
@@ -37,7 +37,7 @@
                 $page = (int)$rpcRequest->getParameter('page');
                 if($page < 0)
                 {
-                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid page');
+                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid page, must be greater than or equal to 0');
                 }
 
                 $page = max($page, 0);
