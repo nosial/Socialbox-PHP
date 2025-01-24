@@ -12,6 +12,14 @@
         private string $value;
         private PrivacyState $privacyState;
 
+        /**
+         * Constructor method.
+         *
+         * @param array $data An associative array containing the keys:
+         *                    - 'name': The name of the information field.
+         *                    - 'value': The value of the information field.
+         *                    - 'privacy_state': The privacy state of the information field.
+         */
         public function __construct(array $data)
         {
             $this->name = InformationFieldName::from($data['name']);
