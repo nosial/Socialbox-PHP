@@ -10,7 +10,7 @@
     use Socialbox\Exceptions\RequestException;
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
-    use Socialbox\Objects\Database\RegisteredPeerRecord;
+    use Socialbox\Objects\Database\PeerRecord;
     use Socialbox\Objects\Database\SessionRecord;
 
     class ClientRequest
@@ -182,10 +182,10 @@
         /**
          * Retrieves the associated peer for the current session.
          *
-         * @return RegisteredPeerRecord|null Returns the associated RegisteredPeerRecord if available, or null if no session exists.
+         * @return PeerRecord|null Returns the associated RegisteredPeerRecord if available, or null if no session exists.
          * @throws DatabaseOperationException Thrown if an error occurs while retrieving the peer.
          */
-        public function getPeer(): ?RegisteredPeerRecord
+        public function getPeer(): ?PeerRecord
         {
             $session = $this->getSession();
 

@@ -27,7 +27,7 @@
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
-    use Socialbox\Objects\Database\RegisteredPeerRecord;
+    use Socialbox\Objects\Database\PeerRecord;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerInformation;
@@ -836,7 +836,7 @@
                 throw new StandardException('The requested peer was not found', StandardError::PEER_NOT_FOUND);
             }
 
-            if($registeredPeer instanceof RegisteredPeerRecord)
+            if($registeredPeer instanceof PeerRecord)
             {
                 $registeredPeer = $registeredPeer->toStandardPeer();
             }

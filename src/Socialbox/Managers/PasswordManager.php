@@ -10,20 +10,20 @@
     use Socialbox\Classes\Database;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Objects\Database\RegisteredPeerRecord;
+    use Socialbox\Objects\Database\PeerRecord;
 
     class PasswordManager
     {
         /**
          * Checks if the given peer UUID is associated with a password in the database.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The UUID of the peer, or an instance of RegisteredPeerRecord from which the UUID will be retrieved.
+         * @param string|PeerRecord $peerUuid The UUID of the peer, or an instance of RegisteredPeerRecord from which the UUID will be retrieved.
          * @return bool Returns true if the peer UUID is associated with a password, otherwise false.
          * @throws DatabaseOperationException If an error occurs while querying the database.
          */
-        public static function usesPassword(string|RegisteredPeerRecord $peerUuid): bool
+        public static function usesPassword(string|PeerRecord $peerUuid): bool
         {
-            if($peerUuid instanceof RegisteredPeerRecord)
+            if($peerUuid instanceof PeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -45,15 +45,15 @@
         /**
          * Sets a secured password for the given peer UUID or registered peer record.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The unique identifier or registered peer record of the user.
+         * @param string|PeerRecord $peerUuid The unique identifier or registered peer record of the user.
          * @param string $hash The plaintext password to be securely stored.
          * @return void
          * @throws DatabaseOperationException If an error occurs while storing the password in the database.
          * @throws CryptographyException If an error occurs during password encryption or hashing.
          */
-        public static function setPassword(string|RegisteredPeerRecord $peerUuid, string $hash): void
+        public static function setPassword(string|PeerRecord $peerUuid, string $hash): void
         {
-            if($peerUuid instanceof RegisteredPeerRecord)
+            if($peerUuid instanceof PeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -84,15 +84,15 @@
         /**
          * Updates the secured password associated with the given peer UUID.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The unique identifier or registered peer record of the user.
+         * @param string|PeerRecord $peerUuid The unique identifier or registered peer record of the user.
          * @param string $hash The new password to be stored securely.
          * @return void
          * @throws DatabaseOperationException If an error occurs while updating the password in the database.
          * @throws CryptographyException If an error occurs while encrypting the password or validating the hash.
          */
-        public static function updatePassword(string|RegisteredPeerRecord $peerUuid, string $hash): void
+        public static function updatePassword(string|PeerRecord $peerUuid, string $hash): void
         {
-            if($peerUuid instanceof RegisteredPeerRecord)
+            if($peerUuid instanceof PeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -124,13 +124,13 @@
         /**
          * Deletes the stored password for a specific peer.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.
+         * @param string|PeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.
          * @return void
          * @throws DatabaseOperationException If an error occurs during the database operation.
          */
-        public static function deletePassword(string|RegisteredPeerRecord $peerUuid): void
+        public static function deletePassword(string|PeerRecord $peerUuid): void
         {
-            if($peerUuid instanceof RegisteredPeerRecord)
+            if($peerUuid instanceof PeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -150,15 +150,15 @@
         /**
          * Verifies a given password against a stored password hash for a specific peer.
          *
-         * @param string|RegisteredPeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.
+         * @param string|PeerRecord $peerUuid The unique identifier of the peer, or an instance of RegisteredPeerRecord.
          * @param string $sha512 The SHA-512 hash of the password to be verified.
          * @return bool Returns true if the password matches the stored hash; false otherwise.
          * @throws CryptographyException If the password hash is invalid or an error occurs during the cryptographic operation.
          * @throws DatabaseOperationException If an error occurs during the database operation.
          */
-        public static function verifyPassword(string|RegisteredPeerRecord $peerUuid, string $sha512): bool
+        public static function verifyPassword(string|PeerRecord $peerUuid, string $sha512): bool
         {
-            if($peerUuid instanceof RegisteredPeerRecord)
+            if($peerUuid instanceof PeerRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }

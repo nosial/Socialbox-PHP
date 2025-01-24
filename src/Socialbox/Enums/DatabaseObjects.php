@@ -7,8 +7,9 @@
         case VARIABLES = 'variables.sql';
         case RESOLVED_DNS_RECORDS = 'resolved_dns_records.sql';
 
-        case REGISTERED_PEERS = 'registered_peers.sql';
+        case PEERS = 'peers.sql';
 
+        case PEER_INFORMATION = 'peer_information.sql';
         case AUTHENTICATION_PASSWORDS = 'authentication_passwords.sql';
         case AUTHENTICATION_OTP = 'authentication_otp.sql';
         case CAPTCHA_IMAGES = 'captcha_images.sql';
@@ -27,8 +28,9 @@
                 self::VARIABLES,
                 self::RESOLVED_DNS_RECORDS => 0,
 
-                self::REGISTERED_PEERS => 1,
+                self::PEERS => 1,
 
+                self::PEER_INFORMATION,
                 self::AUTHENTICATION_PASSWORDS,
                 self::AUTHENTICATION_OTP,
                 self::CAPTCHA_IMAGES,

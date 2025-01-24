@@ -20,7 +20,7 @@ create table sessions
     constraint sessions_uuid_uindex
         unique (uuid) comment 'The Unique Primary index for the session UUID',
     constraint sessions_registered_peers_uuid_fk
-        foreign key (peer_uuid) references registered_peers (uuid)
+        foreign key (peer_uuid) references peers (uuid)
             on update cascade on delete cascade
 );
 

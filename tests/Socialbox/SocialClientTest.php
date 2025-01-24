@@ -5,6 +5,7 @@
     use PHPUnit\Framework\TestCase;
     use Socialbox\Classes\ServerResolver;
     use Socialbox\Enums\Flags\SessionFlags;
+    use Socialbox\Enums\Types\InformationFieldName;
 
     class SocialClientTest extends TestCase
     {
@@ -45,7 +46,7 @@
         {
             $client = new SocialClient(self::generateUsername($domain));
             $client->settingsSetPassword("password");
-            $client->settingsSetDisplayName("Example User");
+            $client->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, "Example User");
             return $client;
         }
 
@@ -62,7 +63,7 @@
             // Check progressive session state
             $this->assertTrue($coffeeClient->settingsSetPassword('coffeePassword'));
             $this->assertFalse($coffeeClient->getSessionState()->containsFlag(SessionFlags::SET_PASSWORD));
-            $this->assertTrue($coffeeClient->settingsSetDisplayName('Coffee User'));
+            $this->assertTrue($coffeeClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Coffee User'));
             $this->assertFalse($coffeeClient->getSessionState()->containsFlag(SessionFlags::SET_DISPLAY_NAME));
 
             $this->assertFalse($coffeeClient->getSessionState()->containsFlag(SessionFlags::REGISTRATION_REQUIRED));

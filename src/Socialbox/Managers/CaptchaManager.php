@@ -10,21 +10,21 @@ use Socialbox\Classes\Utilities;
 use Socialbox\Enums\Status\CaptchaStatus;
 use Socialbox\Exceptions\DatabaseOperationException;
 use Socialbox\Objects\Database\CaptchaRecord;
-use Socialbox\Objects\Database\RegisteredPeerRecord;
+use Socialbox\Objects\Database\PeerRecord;
 
 class CaptchaManager
 {
     /**
      * Creates a new captcha for the given peer UUID.
      *
-     * @param string|RegisteredPeerRecord $peer_uuid The UUID of the peer to create the captcha for.
+     * @param string|PeerRecord $peer_uuid The UUID of the peer to create the captcha for.
      * @return string The answer to the captcha.
      * @throws DatabaseOperationException If the operation fails.
      */
-    public static function createCaptcha(string|RegisteredPeerRecord $peer_uuid): string
+    public static function createCaptcha(string|PeerRecord $peer_uuid): string
     {
         // If the peer_uuid is a RegisteredPeerRecord, get the UUID
-        if($peer_uuid instanceof RegisteredPeerRecord)
+        if($peer_uuid instanceof PeerRecord)
         {
             $peer_uuid = $peer_uuid->getUuid();
         }
@@ -73,14 +73,14 @@ class CaptchaManager
     /**
      * Answers a captcha for the given peer UUID.
      *
-     * @param string|RegisteredPeerRecord $peer_uuid The UUID of the peer to answer the captcha for.
+     * @param string|PeerRecord $peer_uuid The UUID of the peer to answer the captcha for.
      * @param string $answer The answer to the captcha.
      * @return bool True if the answer is correct, false otherwise.
      * @throws DatabaseOperationException If the operation fails.
      */
-    public static function answerCaptcha(string|RegisteredPeerRecord $peer_uuid, string $answer): bool
+    public static function answerCaptcha(string|PeerRecord $peer_uuid, string $answer): bool
     {
-        if($peer_uuid instanceof RegisteredPeerRecord)
+        if($peer_uuid instanceof PeerRecord)
         {
             $peer_uuid = $peer_uuid->getUuid();
         }
@@ -129,14 +129,14 @@ class CaptchaManager
     /**
      * Retrieves the captcha record for the given peer UUID.
      *
-     * @param string|RegisteredPeerRecord $peer_uuid The UUID of the peer to retrieve the captcha for.
+     * @param string|PeerRecord $peer_uuid The UUID of the peer to retrieve the captcha for.
      * @return CaptchaRecord|null The captcha record.
      * @throws DatabaseOperationException If the operation fails.
      */
-    public static function getCaptcha(string|RegisteredPeerRecord $peer_uuid): ?CaptchaRecord
+    public static function getCaptcha(string|PeerRecord $peer_uuid): ?CaptchaRecord
     {
         // If the peer_uuid is a RegisteredPeerRecord, get the UUID
-        if($peer_uuid instanceof RegisteredPeerRecord)
+        if($peer_uuid instanceof PeerRecord)
         {
             $peer_uuid = $peer_uuid->getUuid();
         }
@@ -166,14 +166,14 @@ class CaptchaManager
     /**
      * Checks if a captcha exists for the given peer UUID.
      *
-     * @param string|RegisteredPeerRecord $peer_uuid The UUID of the peer to check for a captcha.
+     * @param string|PeerRecord $peer_uuid The UUID of the peer to check for a captcha.
      * @return bool True if a captcha exists, false otherwise.
      * @throws DatabaseOperationException If the operation fails.
      */
-    public static function captchaExists(string|RegisteredPeerRecord $peer_uuid): bool
+    public static function captchaExists(string|PeerRecord $peer_uuid): bool
     {
         // If the peer_uuid is a RegisteredPeerRecord, get the UUID
-        if($peer_uuid instanceof RegisteredPeerRecord)
+        if($peer_uuid instanceof PeerRecord)
         {
             $peer_uuid = $peer_uuid->getUuid();
         }

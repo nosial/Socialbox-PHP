@@ -17,10 +17,14 @@
         private bool $passwordRequired;
         private bool $otpRequired;
         private bool $displayNameRequired;
+        private bool $firstNameRequired;
+        private bool $middleNameRequired;
+        private bool $lastNameRequired;
         private bool $displayPictureRequired;
         private bool $emailAddressRequired;
         private bool $phoneNumberRequired;
         private bool $birthdayRequired;
+        private bool $urlRequired;
         private bool $imageCaptchaVerificationRequired;
 
         /**
@@ -49,10 +53,14 @@
             $this->passwordRequired = (bool)$data['password_required'];
             $this->otpRequired = (bool)$data['otp_required'];
             $this->displayNameRequired = (bool)$data['display_name_required'];
+            $this->firstNameRequired = (bool)$data['first_name_required'];
+            $this->middleNameRequired = (bool)$data['middle_name_required'];
+            $this->lastNameRequired = (bool)$data['last_name_required'];
             $this->displayPictureRequired = (bool)$data['display_picture_required'];
             $this->emailAddressRequired = (bool)$data['email_address_required'];
             $this->phoneNumberRequired = (bool)$data['phone_number_required'];
             $this->birthdayRequired = (bool)$data['birthday_required'];
+            $this->urlRequired = (bool)$data['url_required'];
             $this->imageCaptchaVerificationRequired = (bool)$data['image_captcha_verification_required'];
         }
 
@@ -187,6 +195,36 @@
         }
 
         /**
+         * Checks if a first name is required.
+         *
+         * @return bool Returns true if a first name is required, false otherwise.
+         */
+        public function isFirstNameRequired(): bool
+        {
+            return $this->firstNameRequired;
+        }
+
+        /**
+         * Checks if a middle name is required.
+         *
+         * @return bool Returns true if a middle name is required, false otherwise.
+         */
+        public function isMiddleNameRequired(): bool
+        {
+            return $this->middleNameRequired;
+        }
+
+        /**
+         * Checks if a last name is required.
+         *
+         * @return bool Returns true if a last name is required, false otherwise.
+         */
+        public function isLastNameRequired(): bool
+        {
+            return $this->lastNameRequired;
+        }
+
+        /**
          * Checks if a display picture is required.
          *
          * @return bool Returns true if a display picture is required, false otherwise.
@@ -224,6 +262,16 @@
         public function isBirthdayRequired(): bool
         {
             return $this->birthdayRequired;
+        }
+
+        /**
+         * Determines if a URL is required.
+         *
+         * @return bool Returns true if a URL is required, false otherwise.
+         */
+        public function isUrlRequired(): bool
+        {
+            return $this->urlRequired;
         }
 
         /**

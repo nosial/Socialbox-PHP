@@ -17,20 +17,16 @@
     use Socialbox\Classes\StandardMethods\GetTermsOfService;
     use Socialbox\Classes\StandardMethods\Ping;
     use Socialbox\Classes\StandardMethods\ResolvePeer;
+    use Socialbox\Classes\StandardMethods\SettingsAddInformationField;
     use Socialbox\Classes\StandardMethods\SettingsAddSigningKey;
-    use Socialbox\Classes\StandardMethods\SettingsDeleteBirthday;
-    use Socialbox\Classes\StandardMethods\SettingsDeleteDisplayName;
-    use Socialbox\Classes\StandardMethods\SettingsDeleteDisplayPicture;
-    use Socialbox\Classes\StandardMethods\SettingsDeleteEmailAddress;
+    use Socialbox\Classes\StandardMethods\SettingsDeleteInformationField;
+    use Socialbox\Classes\StandardMethods\SettingsDeleteOtp;
     use Socialbox\Classes\StandardMethods\SettingsDeletePassword;
-    use Socialbox\Classes\StandardMethods\SettingsDeletePhoneNumber;
     use Socialbox\Classes\StandardMethods\SettingsGetSigningKeys;
-    use Socialbox\Classes\StandardMethods\SettingsSetBirthday;
-    use Socialbox\Classes\StandardMethods\SettingsSetDisplayName;
-    use Socialbox\Classes\StandardMethods\SettingsSetDisplayPicture;
-    use Socialbox\Classes\StandardMethods\SettingsSetEmailAddress;
+    use Socialbox\Classes\StandardMethods\SettingsSetOtp;
     use Socialbox\Classes\StandardMethods\SettingsSetPassword;
-    use Socialbox\Classes\StandardMethods\SettingsSetPhoneNumber;
+    use Socialbox\Classes\StandardMethods\SettingsUpdateInformationField;
+    use Socialbox\Classes\StandardMethods\SettingsUpdateInformationPrivacy;
     use Socialbox\Classes\StandardMethods\SettingsUpdatePassword;
     use Socialbox\Classes\StandardMethods\VerificationAnswerImageCaptcha;
     use Socialbox\Classes\StandardMethods\VerificationGetImageCaptcha;
@@ -61,22 +57,16 @@
 
         case VERIFICATION_EMAIL = 'verificationEmail'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_EMAIL = 'verificationAnswerEmail'; // NOT IMPLEMENTED
-
         case VERIFICATION_SMS = 'verificationSms'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_SMS = 'verificationAnswerSms'; // NOT IMPLEMENTED
-
         case VERIFICATION_PHONE_CALL = 'verificationPhoneCall'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_PHONE_CALL = 'verificationAnswerPhoneCall'; // NOT IMPLEMENTED
-
         case VERIFICATION_GET_IMAGE_CAPTCHA = 'verificationGetImageCaptcha';
         case VERIFICATION_ANSWER_IMAGE_CAPTCHA = 'verificationAnswerImageCaptcha';
-
         case VERIFICATION_GET_TEXT_CAPTCHA = 'verificationGetTextCaptcha'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_TEXT_CAPTCHA = 'verificationAnswerTextCaptcha'; // NOT IMPLEMENTED
-
         case VERIFICATION_GET_EXTERNAL_URL = 'verificationGetExternalUrl'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_EXTERNAL_URL = 'verificationAnswerExternalUrl'; // NOT IMPLEMENTED
-        
         case VERIFICATION_PASSWORD_AUTHENTICATION = 'verificationPasswordAuthentication';
         case VERIFICATION_OTP_AUTHENTICATION = 'verificationOtpAuthentication';
 
@@ -85,16 +75,11 @@
         case SETTINGS_DELETE_PASSWORD = 'settingsDeletePassword';
         case SETTINGS_SET_OTP = 'settingsSetOtp';
         case SETTINGS_DELETE_OTP = 'settingsDeleteOtp';
-        case SETTINGS_SET_DISPLAY_NAME = 'settingsSetDisplayName';
-        case SETTINGS_DELETE_DISPLAY_NAME = 'settingsDeleteDisplayName';
-        case SETTINGS_SET_DISPLAY_PICTURE = 'settingsSetDisplayPicture';
-        case SETTINGS_DELETE_DISPLAY_PICTURE = 'settingsDeleteDisplayPicture';
-        case SETTINGS_SET_EMAIL = 'settingsSetEmail';
-        case SETTINGS_DELETE_EMAIL = 'settingsDeleteEmail';
-        case SETTINGS_SET_PHONE = 'settingsSetPhone';
-        case SETTINGS_DELETE_PHONE = 'settingsDeletePhone';
-        case SETTINGS_SET_BIRTHDAY = 'settingsSetBirthday';
-        case SETTINGS_DELETE_BIRTHDAY = 'settingsDeleteBirthday';
+        case SETTINGS_ADD_INFORMATION_FIELD = 'settingsAddInformationField';
+        case SETTINGS_GET_INFORMATION_FIELDS = 'settingsGetInformationFields';
+        case SETTINGS_UPDATE_INFORMATION_FIELD = 'settingsUpdateInformationField';
+        case SETTINGS_DELETE_INFORMATION_FIELD = 'settingsDeleteInformationField';
+        case SETTINGS_UPDATE_INFORMATION_PRIVACY = 'settingsUpdateInformationPrivacy';
 
         case SETTINGS_ADD_SIGNING_KEY = 'settingsAddSigningKey';
         case SETTINGS_GET_SIGNING_KEYS = 'settingsGetSigningKeys';
@@ -138,16 +123,14 @@
                 self::SETTINGS_SET_PASSWORD => SettingsSetPassword::execute($request, $rpcRequest),
                 self::SETTINGS_UPDATE_PASSWORD => SettingsUpdatePassword::execute($request, $rpcRequest),
                 self::SETTINGS_DELETE_PASSWORD => SettingsDeletePassword::execute($request, $rpcRequest),
-                self::SETTINGS_SET_DISPLAY_NAME => SettingsSetDisplayName::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_DISPLAY_NAME => SettingsDeleteDisplayName::execute($request, $rpcRequest),
-                self::SETTINGS_SET_DISPLAY_PICTURE => SettingsSetDisplayPicture::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_DISPLAY_PICTURE => SettingsDeleteDisplayPicture::execute($request, $rpcRequest),
-                self::SETTINGS_SET_EMAIL => SettingsSetEmailAddress::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_EMAIL => SettingsDeleteEmailAddress::execute($request, $rpcRequest),
-                self::SETTINGS_SET_PHONE => SettingsSetPhoneNumber::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_PHONE => SettingsDeletePhoneNumber::execute($request, $rpcRequest),
-                self::SETTINGS_SET_BIRTHDAY => SettingsSetBirthday::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_BIRTHDAY  => SettingsDeleteBirthday::execute($request, $rpcRequest),
+                self::SETTINGS_SET_OTP => SettingsSetOtp::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_OTP => SettingsDeleteOtp::execute($request, $rpcRequest),
+
+                self::SETTINGS_ADD_INFORMATION_FIELD => SettingsAddInformationField::execute($request, $rpcRequest),
+                self::SETTINGS_GET_INFORMATION_FIELDS => SettingsGetInformationFields::execute($request, $rpcRequest),
+                self::SETTINGS_UPDATE_INFORMATION_FIELD => SettingsUpdateInformationField::execute($request, $rpcRequest),
+                self::SETTINGS_UPDATE_INFORMATION_PRIVACY => SettingsUpdateInformationPrivacy::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_INFORMATION_FIELD => SettingsDeleteInformationField::execute($request, $rpcRequest),
 
                 self::SETTINGS_ADD_SIGNING_KEY => SettingsAddSigningKey::execute($request, $rpcRequest),
                 self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),
@@ -277,62 +260,20 @@
             $methods = [
                 self::SETTINGS_ADD_SIGNING_KEY,
                 self::SETTINGS_GET_SIGNING_KEYS,
-                self::SETTINGS_SET_DISPLAY_NAME,
-                self::SETTINGS_SET_DISPLAY_PICTURE,
+                self::SETTINGS_ADD_INFORMATION_FIELD,
+                self::SETTINGS_GET_INFORMATION_FIELDS,
+                self::SETTINGS_UPDATE_INFORMATION_FIELD,
+                self::SETTINGS_UPDATE_INFORMATION_PRIVACY,
+                self::SETTINGS_DELETE_INFORMATION_FIELD,
                 self::SETTINGS_SET_PASSWORD,
                 self::SETTINGS_UPDATE_PASSWORD,
                 self::SETTINGS_SET_OTP,
-                self::SETTINGS_SET_EMAIL,
-                self::SETTINGS_SET_PHONE,
-                self::SETTINGS_SET_BIRTHDAY,
                 self::RESOLVE_PEER,
 
                 self::ADDRESS_BOOK_ADD_CONTACT,
                 self::ADDRESS_BOOK_DELETE_CONTACT,
                 self::ADDRESS_BOOK_GET_CONTACTS,
             ];
-
-            // Prevent the user from deleting their display name if it is required
-            if(!Configuration::getRegistrationConfiguration()->isDisplayNameRequired())
-            {
-                $methods[] = self::SETTINGS_DELETE_DISPLAY_NAME;
-            }
-
-            // Prevent the user from deleting their password if it is required
-            if(!Configuration::getRegistrationConfiguration()->isPasswordRequired())
-            {
-                $methods[] = self::SETTINGS_DELETE_PASSWORD;
-            }
-
-            // Prevent the user from deleting their display picture if it is required
-            if(!Configuration::getRegistrationConfiguration()->isDisplayPictureRequired())
-            {
-                $methods[] = self::SETTINGS_DELETE_DISPLAY_PICTURE;
-            }
-
-            // Prevent the user from deleting their OTP if it is required
-            if(!Configuration::getRegistrationConfiguration()->isOtpRequired())
-            {
-                $methods[] = self::SETTINGS_DELETE_OTP;
-            }
-
-            // Prevent the user from deleting their Phone Number if it is required
-            if(!Configuration::getRegistrationConfiguration()->isPhoneNumberRequired())
-            {
-                $methods[] = self::SETTINGS_DELETE_PHONE;
-            }
-
-            // Prevent the user from deleting their email address if it is required
-            if(!Configuration::getRegistrationConfiguration()->isEmailAddressRequired())
-            {
-                $methods[] = self::SETTINGS_DELETE_EMAIL;
-            }
-
-            // Prevent the user from deleting their birthday if it is required
-            if(!Configuration::getRegistrationConfiguration()->isBirthdayRequired())
-            {
-                $methods[] = self::SETTINGS_DELETE_BIRTHDAY;
-            }
 
             return $methods;
         }
@@ -391,33 +332,18 @@
             }
 
             // If the flag `SET_DISPLAY_NAME` is set, then the user has to set a display name
-            if($session->flagExists(SessionFlags::SET_DISPLAY_NAME))
+            if($session->flagExists([
+                SessionFlags::SET_DISPLAY_NAME,
+                SessionFlags::SET_FIRST_NAME,
+                SessionFlags::SET_MIDDLE_NAME,
+                SessionFlags::SET_LAST_NAME,
+                SessionFlags::SET_BIRTHDAY,
+                SessionFlags::SET_PHONE,
+                SessionFlags::SET_EMAIL,
+                SessionFlags::SET_URL
+            ]))
             {
-                $methods[] = self::SETTINGS_SET_DISPLAY_NAME;
-            }
-
-            // If the flag `SET_DISPLAY_PICTURE` is set, then the user has to set a display picture
-            if($session->flagExists(SessionFlags::SET_DISPLAY_PICTURE))
-            {
-                $methods[] = self::SETTINGS_SET_DISPLAY_PICTURE;
-            }
-
-            // If the flag `SET_EMAIL` is set, then the user has to set an email address
-            if($session->flagExists(SessionFlags::SET_EMAIL))
-            {
-                $methods[] = self::SETTINGS_SET_EMAIL;
-            }
-
-            // If the flag `SET_PHONE` is set, then the user has to set a phone number
-            if($session->flagExists(SessionFlags::SET_PHONE))
-            {
-                $methods[] = self::SETTINGS_SET_PHONE;
-            }
-
-            // If the flag `SET_BIRTHDAY` is set, then the user has to set a birthday
-            if($session->flagExists(SessionFlags::SET_BIRTHDAY))
-            {
-                $methods[] = self::SETTINGS_SET_BIRTHDAY;
+                $methods[] = self::SETTINGS_ADD_INFORMATION_FIELD;
             }
 
             return $methods;

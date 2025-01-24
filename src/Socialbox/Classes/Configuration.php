@@ -133,10 +133,14 @@
             $config->setDefault('registration.password_required', true);
             $config->setDefault('registration.otp_required', false);
             $config->setDefault('registration.display_name_required', true);
+            $config->setDefault('registration.first_name_required', false);
+            $config->setDefault('registration.middle_name_required', false);
+            $config->setDefault('registration.last_name_required', false);
             $config->setDefault('registration.display_picture_required', false);
             $config->setDefault('registration.email_address_required', false);
             $config->setDefault('registration.phone_number_required', false);
             $config->setDefault('registration.birthday_required', false);
+            $config->setDefault('registration.url_required', false);
             $config->setDefault('registration.image_captcha_verification_required', true);
 
             // Authentication configuration
@@ -161,6 +165,16 @@
             // value that exceeds this limit, the server will use this limit instead.
             // recommendation: 100
             $config->setDefault('policies.get_contacts_limit', 100);
+
+            // Default privacy states for information fields associated with the peer
+            $config->setDefault('policies.default_display_picture_privacy', 'PUBLIC');
+            $config->setDefault('policies.default_first_name_privacy', 'CONTACTS');
+            $config->setDefault('policies.default_middle_name_privacy', 'PRIVATE');
+            $config->setDefault('policies.default_last_name_privacy', 'PRIVATE');
+            $config->setDefault('policies.default_email_address_privacy', 'CONTACTS');
+            $config->setDefault('policies.default_phone_number_privacy', 'CONTACTS');
+            $config->setDefault('policies.default_birthday_privacy', 'PRIVATE');
+            $config->setDefault('policies.default_url_privacy', 'PUBLIC');
 
             // Storage configuration
             $config->setDefault('storage.path', '/etc/socialbox'); // The main path for file storage

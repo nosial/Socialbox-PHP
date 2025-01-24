@@ -7,7 +7,9 @@
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\RpcClient;
     use Socialbox\Classes\Utilities;
+    use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\StandardMethods;
+    use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
@@ -15,6 +17,7 @@
     use Socialbox\Objects\ExportedSession;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
+    use Socialbox\Objects\Standard\InformationField;
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerDocument;
     use Socialbox\Objects\Standard\SessionState;
@@ -484,132 +487,66 @@
         }
 
         /**
-         * Sets the display name in the settings by sending a remote procedure call request.
+         * Updates the user's OTP settings by sending a remote procedure call request.
          *
-         * @param string $displayName The new display name to be set.
-         * @return true Returns true upon successful update of the display name.
+         * @param InformationFieldName $field The field to be updated.
+         * @param string $value The value to be set.
+         * @param PrivacyState|null $privacy The privacy state to be set. Default is null.
+         * @return bool True if the OTP was successfully updated, false otherwise.
          * @throws RpcException Thrown if the RPC request fails.
          */
-        public function settingsSetDisplayName(string $displayName): true
+        public function settingsAddInformationField(InformationFieldName $field, string $value, ?PrivacyState $privacy=null): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME, Utilities::randomCrc32(), [
-                    'name' => $displayName
-                ])
+                new RpcRequest(StandardMethods::SETTINGS_ADD_INFORMATION_FIELD, Utilities::randomCrc32(), [
+                    'field' => $field->value,
+                    'value' => $value,
+                    'privacy' => $privacy?->value
+                ]),
             )->getResponse()->getResult();
         }
 
         /**
+         * Deletes an information field by sending a remote procedure call request.
          *
-         */
-        public function settingsDeleteDisplayName(): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_DISPLAY_NAME, Utilities::randomCrc32())
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Updates the display picture by sending a remote procedure call request with the specified file identifier.
-         *
-         * @param string $fileId The identifier of the file to be set as the display picture.
-         * @return true Returns true upon successful update of the
+         * @param InformationField $field The field to be deleted.
+         * @return bool True if the field was successfully deleted, false otherwise.
          * @throws RpcException Thrown if the RPC request fails.
          */
-        public function settingsSetDisplayPicture(string $fileId): true
+        public function settingsDeleteInformationField(InformationField $field): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_PICTURE, Utilities::randomCrc32(), [
-                    'file_id' => $fileId
-                ])
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_INFORMATION_FIELD, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
         /**
-         * Updates the email address for the settings by sending a remote procedure call request.
+         * Updates an information field by sending a remote procedure call request.
          *
-         * @param string $emailAddress The new email address to set.
-         * @return true Returns true if the email address was successfully updated.
+         * @param InformationField $field The field to be updated.
+         * @param string $value The value to be set.
+         * @return bool True if the field was successfully updated, false otherwise.
          * @throws RpcException Thrown if the RPC request fails.
          */
-        public function settingsSetEmail(string $emailAddress): true
+        public function settingsUpdateInformationField(InformationField $field, string $value): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_EMAIL, Utilities::randomCrc32(), [
-                    'email_address' => $emailAddress
-                ])
+                new RpcRequest(StandardMethods::SETTINGS_UPDATE_INFORMATION_FIELD, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 
         /**
-         * Deletes the email associated with the user settings by sending a remote procedure call request.
+         * Updates the privacy of an information field by sending a remote procedure call request.
          *
-         * @return true Returns true if the email deletion request is successful.
-         * @throws RpcException
-         */
-        public function settingsDeleteEmail(): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_EMAIL, Utilities::randomCrc32())
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Updates the phone number in the settings by sending a remote procedure call request.
-         *
-         * @param string $phoneNumber The phone number to be set in the settings.
-         * @return true Returns true if the operation was successful
+         * @param InformationField $field The field to be updated.
+         * @param PrivacyState $privacy The privacy state to be set.
+         * @return bool True if the privacy was successfully updated, false otherwise.
          * @throws RpcException Thrown if the RPC request fails.
          */
-        public function settingsSetPhone(string $phoneNumber): true
+        public function settingsUpdateInformationPrivacy(InformationField $field, PrivacyState $privacy): true
         {
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_DISPLAY_NAME, Utilities::randomCrc32(), [
-                    'phone_number' => $phoneNumber
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         *
-         */
-        public function settingsDeletePhone(): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_PHONE, Utilities::randomCrc32())
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Updates the user's birthday by sending a remote procedure call request with the specified date.
-         *
-         * @param int $year The year of the user's birthday.
-         * @param int $month The month of the user's birthday.
-         * @param int $day The day of the user's birthday.
-         * @return true Returns true if the birthday was successfully updated.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsSetBirthday(int $year, int $month, int $day): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_BIRTHDAY, Utilities::randomCrc32(), [
-                    'year' => $year,
-                    'month' => $month,
-                    'day' => $day
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Deletes the saved birthday setting by sending a remote procedure call request.
-         *
-         * @return true Returns true if the birthday deletion request is successful.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function deleteBirthday(): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_BIRTHDAY, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::SETTINGS_UPDATE_INFORMATION_PRIVACY, Utilities::randomCrc32())
             )->getResponse()->getResult();
         }
 

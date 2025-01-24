@@ -13,11 +13,15 @@
         // Verification, require fields
         case SET_PASSWORD = 'SET_PASSWORD'; // Peer has to set a password
         case SET_OTP = 'SET_OTP'; // Peer has to set an OTP
-        case SET_DISPLAY_NAME = 'SET_DISPLAY_NAME'; // Peer has to set a display name
-        case SET_DISPLAY_PICTURE = 'SET_DISPLAY_PICTURE'; // Peer has to set a display picture
-        case SET_EMAIL = 'SET_EMAIL'; // Peer has to set an email
-        case SET_PHONE = 'SET_PHONE'; // Peer has to set a phone number
-        case SET_BIRTHDAY = 'SET_BIRTHDAY'; // Peer has to set a birthday
+        case SET_DISPLAY_NAME = 'SET_DISPLAY_NAME'; // Peer has to set a display name to their profile information
+        case SET_FIRST_NAME = 'SET_FIRST_NAME'; // Peer has to set a first name to their profile information
+        case SET_MIDDLE_NAME = 'SET_MIDDLE_NAME'; // Peer has to set a middle name to their profile information
+        case SET_LAST_NAME = 'SET_LAST_NAME'; // Peer has to set a last name to their profile information
+        case SET_DISPLAY_PICTURE = 'SET_DISPLAY_PICTURE'; // Peer has to set a display picture to their profile information
+        case SET_EMAIL = 'SET_EMAIL'; // Peer has to set an email to their profile information
+        case SET_PHONE = 'SET_PHONE'; // Peer has to set a phone number to their profile information
+        case SET_BIRTHDAY = 'SET_BIRTHDAY'; // Peer has to set a birthday to their profile information
+        case SET_URL = 'SET_URL'; // Peer has to set an url to their profile information
 
         // Verification, verification requirements
         case VER_PRIVACY_POLICY = 'VER_PRIVACY_POLICY'; // Peer has to accept the privacy policy
@@ -37,7 +41,7 @@
         case VER_AUTHENTICATION_CODE = 'VER_AUTHENTICATION_CODE'; // Peer has to enter their authentication code
 
         // Session Flags
-        case RATE_LIMITED = 'RATE_LIMITED'; // Peer is temporarily rate limited
+        case RATE_LIMITED = 'RATE_LIMITED'; // Peer is temporarily rate-limited
 
         /**
          * Retrieves a list of registration-related flags.
@@ -83,7 +87,7 @@
          * Converts an array of SessionFlags to a comma-separated string of their values.
          *
          * @param array $flags An array of SessionFlags objects to be converted.
-         * @return string A comma-separated string of the values of the provided SessionFlags.
+         * @return string A comma-separated string of the provided SessionFlags as string values.
          */
         public static function toString(array $flags): string
         {

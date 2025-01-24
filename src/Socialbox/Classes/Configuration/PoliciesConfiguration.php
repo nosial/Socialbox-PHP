@@ -2,6 +2,8 @@
 
     namespace Socialbox\Classes\Configuration;
 
+    use Socialbox\Enums\PrivacyState;
+
     class PoliciesConfiguration
     {
         private int $maxSigningKeys;
@@ -9,7 +11,29 @@
         private int $imageCaptchaExpires;
         private int $peerSyncInterval;
         private int $getContactsLimit;
+        private PrivacyState $defaultDisplayPicturePrivacy;
+        private PrivacyState $defaultFirstNamePrivacy;
+        private PrivacyState $defaultMiddleNamePrivacy;
+        private PrivacyState $defaultLastNamePrivacy;
+        private PrivacyState $defaultEmailAddressPrivacy;
+        private PrivacyState $defaultPhoneNumberPrivacy;
+        private PrivacyState $defaultBirthdayPrivacy;
+        private PrivacyState $defaultUrlPrivacy;
 
+        /**
+         * Constructor method for initializing the policies configuration
+         *
+         * @param array $data An associative array containing the following keys:
+         *                    'max_signing_keys', 'session_inactivity_expires',
+         *                    'image_captcha_expires', 'peer_sync_interval',
+         *                    'get_contacts_limit', 'default_display_picture_privacy',
+         *                    'default_first_name_privacy', 'default_middle_name_privacy',
+         *                    'default_last_name_privacy', 'default_email_address_privacy',
+         *                    'default_phone_number_privacy', 'default_birthday_privacy',
+         *                    'default_url_privacy'.
+         *
+         * @return void
+         */
         public function __construct(array $data)
         {
             $this->maxSigningKeys = $data['max_signing_keys'];
@@ -17,6 +41,14 @@
             $this->imageCaptchaExpires = $data['image_captcha_expires'];
             $this->peerSyncInterval = $data['peer_sync_interval'];
             $this->getContactsLimit = $data['get_contacts_limit'];
+            $this->defaultDisplayPicturePrivacy = PrivacyState::tryFrom($data['default_display_picture_privacy']) ?? PrivacyState::PRIVATE;
+            $this->defaultFirstNamePrivacy = PrivacyState::tryFrom($data['default_first_name_privacy']) ?? PrivacyState::PRIVATE;
+            $this->defaultMiddleNamePrivacy = PrivacyState::tryFrom($data['default_middle_name_privacy']) ?? PrivacyState::PRIVATE;
+            $this->defaultLastNamePrivacy = PrivacyState::tryFrom($data['default_last_name_privacy']) ?? PrivacyState::PRIVATE;
+            $this->defaultEmailAddressPrivacy = PrivacyState::tryFrom($data['default_email_address_privacy']) ?? PrivacyState::PRIVATE;
+            $this->defaultPhoneNumberPrivacy = PrivacyState::tryFrom($data['default_phone_number_privacy']) ?? PrivacyState::PRIVATE;
+            $this->defaultBirthdayPrivacy = PrivacyState::tryFrom($data['default_birthday_privacy']) ?? PrivacyState::PRIVATE;
+            $this->defaultUrlPrivacy = PrivacyState::tryFrom($data['default_url_privacy']) ?? PrivacyState::PRIVATE;
         }
 
         /**
@@ -69,5 +101,85 @@
         public function getGetContactsLimit(): int
         {
             return $this->getContactsLimit;
+        }
+
+        /**
+         * Returns the default privacy state for the display picture
+         *
+         * @return PrivacyState
+         */
+        public function getDefaultDisplayPicturePrivacy(): PrivacyState
+        {
+            return $this->defaultDisplayPicturePrivacy;
+        }
+
+        /**
+         * Returns the default privacy state for the first name
+         *
+         * @return PrivacyState
+         */
+        public function getDefaultFirstNamePrivacy(): PrivacyState
+        {
+            return $this->defaultFirstNamePrivacy;
+        }
+        
+        /**
+         * Returns the default privacy state for the middle name
+         *
+         * @return PrivacyState
+         */
+        public function getDefaultMiddleNamePrivacy(): PrivacyState
+        {
+            return $this->defaultMiddleNamePrivacy;
+        }
+
+        /**
+         * Returns the default privacy state for the last name
+         *
+         * @return PrivacyState
+         */
+        public function getDefaultLastNamePrivacy(): PrivacyState
+        {
+            return $this->defaultLastNamePrivacy;
+        }
+
+        /**
+         * Returns the default privacy state for the email address
+         *
+         * @return PrivacyState
+         */
+        public function getDefaultEmailAddressPrivacy(): PrivacyState
+        {
+            return $this->defaultEmailAddressPrivacy;
+        }
+
+        /**
+         * Returns the default privacy state for the phone number
+         *
+         * @return PrivacyState
+         */
+        public function getDefaultPhoneNumberPrivacy(): PrivacyState
+        {
+            return $this->defaultPhoneNumberPrivacy;
+        }
+
+        /**
+         * Returns the default privacy state for the birthday
+         *
+         * @return PrivacyState
+         */
+        public function getDefaultBirthdayPrivacy(): PrivacyState
+        {
+            return $this->defaultBirthdayPrivacy;
+        }
+
+        /**
+         * Returns the default privacy state for the URL
+         *
+         * @return PrivacyState
+         */
+        public function getDefaultUrlPrivacy(): PrivacyState
+        {
+            return $this->defaultUrlPrivacy;
         }
     }

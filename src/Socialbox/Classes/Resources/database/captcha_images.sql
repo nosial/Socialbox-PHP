@@ -10,7 +10,7 @@ create table captcha_images
     constraint captchas_peer_uuid_uindex
         unique (peer_uuid) comment 'The Primary Unique Index for the peer UUID',
     constraint captchas_registered_peers_uuid_fk
-        foreign key (peer_uuid) references registered_peers (uuid)
+        foreign key (peer_uuid) references peers (uuid)
             on update cascade on delete cascade
 );
 

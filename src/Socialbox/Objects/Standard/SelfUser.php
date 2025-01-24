@@ -5,7 +5,7 @@ namespace Socialbox\Objects\Standard;
 use DateTime;
 use Socialbox\Enums\Flags\PeerFlags;
 use Socialbox\Interfaces\SerializableInterface;
-use Socialbox\Objects\Database\RegisteredPeerRecord;
+use Socialbox\Objects\Database\PeerRecord;
 
 class SelfUser implements SerializableInterface
 {
@@ -23,11 +23,11 @@ class SelfUser implements SerializableInterface
     /**
      * Constructor for initializing the object with provided data.
      *
-     * @param array|RegisteredPeerRecord $data Data array containing initial values for object properties.
+     * @param array|PeerRecord $data Data array containing initial values for object properties.
      */
-    public function __construct(array|RegisteredPeerRecord $data)
+    public function __construct(array|PeerRecord $data)
     {
-        if($data instanceof RegisteredPeerRecord)
+        if($data instanceof PeerRecord)
         {
             $this->uuid = $data->getUuid();
             $this->enabled = $data->isEnabled();

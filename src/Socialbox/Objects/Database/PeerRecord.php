@@ -10,16 +10,11 @@
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\SelfUser;
 
-    class RegisteredPeerRecord implements SerializableInterface
+    class PeerRecord implements SerializableInterface
     {
         private string $uuid;
         private string $username;
         private string $server;
-        private ?string $displayName;
-        private ?string $displayPicture;
-        private ?string $emailAddress;
-        private ?string $phoneNumber;
-        private ?DateTime $birthday;
         /**
          * @var PeerFlags[]
          */
@@ -38,31 +33,6 @@
             $this->uuid = $data['uuid'];
             $this->username = $data['username'];
             $this->server = $data['server'];
-            $this->displayName = $data['display_name'] ?? null;
-            $this->displayPicture = $data['display_picture'] ?? null;
-            $this->emailAddress = $data['email_address'] ?? null;
-            $this->phoneNumber = $data['phone_number'] ?? null;
-
-            if(!isset($data['birthday']))
-            {
-                $this->birthday = null;
-            }
-            elseif(is_int($data['birthday']))
-            {
-                $this->birthday = (new DateTime())->setTimestamp($data['birthday']);
-            }
-            elseif(is_string($data['birthday']))
-            {
-                $this->birthday = new DateTime($data['birthday']);
-            }
-            elseif($data['birthday'] instanceof DateTime)
-            {
-                $this->birthday = $data['birthday'];
-            }
-            else
-            {
-                throw new InvalidArgumentException("The birthday field must be a valid timestamp or date string.");
-            }
 
             if($data['flags'])
             {
@@ -148,56 +118,6 @@
         public function getAddress(): string
         {
             return sprintf("%s@%s", $this->username, Configuration::getInstanceConfiguration()->getDomain());
-        }
-
-        /**
-         * Retrieves the display name.
-         *
-         * @return string|null The display name if set, or null otherwise.
-         */
-        public function getDisplayName(): ?string
-        {
-            return $this->displayName;
-        }
-
-        /**
-         * Retrieves the display picture.
-         *
-         * @return string|null The display picture if set, or null otherwise.
-         */
-        public function getDisplayPicture(): ?string
-        {
-            return $this->displayPicture;
-        }
-
-        /**
-         * Retrieves the email address.
-         *
-         * @return string|null The email address if set, or null otherwise.
-         */
-        public function getEmailAddress(): ?string
-        {
-            return $this->emailAddress;
-        }
-
-        /**
-         * Retrieves the phone number.
-         *
-         * @return string|null The phone number if set, or null otherwise.
-         */
-        public function getPhoneNumber(): ?string
-        {
-            return $this->phoneNumber;
-        }
-
-        /**
-         * Retrieves the birthday.
-         *
-         * @return DateTime|null The birthday if set, or null otherwise.
-         */
-        public function getBirthday(): ?DateTime
-        {
-            return $this->birthday;
         }
 
         /**
@@ -292,9 +212,9 @@
          */
         public function toStandardPeer(): Peer
         {
+            // TODO: TO be updated
             return Peer::fromArray([
                 'address' => $this->getAddress(),
-                'display_name' => $this->displayName,
                 'flags' => array_map(fn(PeerFlags $flag) => $flag->value, $this->flags),
                 'registered' => $this->created->getTimestamp()
             ]);
@@ -317,11 +237,6 @@
                 'uuid' => $this->uuid,
                 'username' => $this->username,
                 'server' => $this->server,
-                'display_name' => $this->displayName,
-                'display_picture' => $this->displayPicture,
-                'email_address' => $this->emailAddress,
-                'phone_number' => $this->phoneNumber,
-                'birthday' => $this->birthday?->getTimestamp(),
                 'flags' => PeerFlags::toString($this->flags),
                 'enabled' => $this->enabled,
                 'created' => $this->created,
