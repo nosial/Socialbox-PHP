@@ -59,4 +59,17 @@
                 'privacy_state' => $this->privacyState->value
             ];
         }
+
+        /**
+         * Converts the object to an InformationField instance.
+         *
+         * @return InformationField Returns the converted InformationField instance.
+         */
+        public function toInformationField(): InformationField
+        {
+            return new InformationField([
+                'name' => $this->name->value,
+                'value' => $this->value,
+            ]);
+        }
     }

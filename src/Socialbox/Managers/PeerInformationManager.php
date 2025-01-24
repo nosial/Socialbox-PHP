@@ -20,9 +20,7 @@
          * @param InformationFieldName $property The name of the property to add.
          * @param string $value The value of the property to add.
          * @param PrivacyState|null $privacyState The privacy state of the property to add.
-         *
          * @return void
-         *
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
         public static function addField(string|PeerRecord $peerUuid, InformationFieldName $property, string $value, ?PrivacyState $privacyState=null): void
@@ -70,9 +68,7 @@
          * @param string|PeerRecord $peerUuid The UUID of the peer to update the property for.
          * @param InformationFieldName $property The name of the property to update.
          * @param string $value The new value of the property.
-         *
          * @return void
-         *
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
         public static function updateField(string|PeerRecord $peerUuid, InformationFieldName $property, string $value): void
@@ -108,9 +104,7 @@
          * @param string|PeerRecord $peerUuid The UUID of the peer to update the privacy state for.
          * @param InformationFieldName $property The name of the property to update the privacy state for.
          * @param PrivacyState $privacyState The new privacy state of the property.
-         *
          * @return void
-         *
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
         public static function updatePrivacyState(string|PeerRecord $peerUuid, InformationFieldName $property, PrivacyState $privacyState): void
@@ -146,9 +140,7 @@
          *
          * @param string|PeerRecord $peerUuid The UUID of the peer to check for the property.
          * @param InformationFieldName $property The name of the property to check for.
-         *
          * @return bool
-         *
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
         public static function fieldExists(string|PeerRecord $peerUuid, InformationFieldName $property): bool
@@ -179,9 +171,7 @@
          *
          * @param string|PeerRecord $peerUuid The UUID of the peer to get the property from.
          * @param InformationFieldName $property The name of the property to get.
-         *
          * @return PeerInformationFieldRecord
-         *
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
         public static function getField(string|PeerRecord $peerUuid, InformationFieldName $property): PeerInformationFieldRecord
@@ -217,9 +207,7 @@
          * Gets all properties from a peer's information record.
          *
          * @param string|PeerRecord $peerUuid The UUID of the peer to get the properties from.
-         *
          * @return PeerInformationFieldRecord[]
-         *
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
         public static function getFields(string|PeerRecord $peerUuid): array
@@ -250,13 +238,52 @@
         }
 
         /**
+         * Gets all properties from a peer's information record that match the provided privacy filters.
+         *
+         * @param string|PeerRecord $peerUuid The UUID of the peer to get the properties from.
+         * @param PrivacyState[] $privacyFilters The privacy filters to apply.
+         * @return PeerInformationFieldRecord[] The filtered properties.
+         * @throws DatabaseOperationException Thrown if the operation fails.
+         */
+        public static function getFilteredFields(string|PeerRecord $peerUuid, array $privacyFilters): array
+        {
+            if($peerUuid instanceof PeerRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
+            $results = [];
+            /** @var PrivacyState $privacyState */
+            foreach($privacyFilters as $privacyState)
+            {
+                try
+                {
+                    $stmt = Database::getConnection()->prepare('SELECT * FROM peer_information WHERE peer_uuid=:peer_uuid AND privacy_state=:privacy_state');
+                    $stmt->bindValue(':peer_uuid', $peerUuid);
+                    $stmt->bindValue(':privacy_state', $privacyState->value);
+                    $stmt->execute();
+                    $results = array_merge($results, $stmt->fetchAll());
+                }
+                catch(PDOException $e)
+                {
+                    throw new DatabaseOperationException(sprintf('Failed to get properties for peer %s with privacy state %s', $peerUuid, $privacyState->value), $e);
+                }
+            }
+
+            if(!$results)
+            {
+                return [];
+            }
+
+            return array_map(fn($result) => PeerInformationFieldRecord::fromArray($result), $results);
+        }
+
+        /**
          * Deletes a property from a peer's information record.
          *
          * @param string|PeerRecord $peerUuid The UUID of the peer to delete the property from.
          * @param InformationFieldName $property The name of the property to delete.
-         *
          * @return void
-         *
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
         public static function deleteField(string|PeerRecord $peerUuid, InformationFieldName $property): void

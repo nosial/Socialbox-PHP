@@ -4,12 +4,16 @@
 
     use InvalidArgumentException;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Objects\Database\PeerInformationFieldRecord;
     use Socialbox\Objects\PeerAddress;
 
     class Peer implements SerializableInterface
     {
         private PeerAddress $address;
-        private string $displayName;
+        /**
+         * @var InformationField[]
+         */
+        private array $informationFields;
         private array $flags;
         private int $registered;
 
@@ -27,7 +31,6 @@
          */
         public function __construct(array $data)
         {
-            // TODO: Bug:  PHP message: PHP Warning:  Undefined array key "address" in /var/ncc/packages/net.nosial.socialbox=1.0.0/bin/src/Socialbox/Objects/Standard/Peer.php on line 28
             if(is_string($data['address']))
             {
                 $this->address = PeerAddress::fromAddress($data['address']);
@@ -41,7 +44,28 @@
                 throw new InvalidArgumentException('Invalid address value type, got type ' . gettype($data['address']));
             }
 
-            $this->displayName = $data['display_name'];
+            $informationFields = [];
+            foreach($data['information_fields'] as $field)
+            {
+                if($field instanceof PeerInformationFieldRecord)
+                {
+                    $informationFields[] = $field->toInformationField();
+                }
+                elseif($field instanceof InformationFieldState)
+                {
+                    $informationFields[] = $field->toInformationField();
+                }
+                elseif(is_array($field))
+                {
+                    $informationFields[] = new InformationField($field);
+                }
+                else
+                {
+                    throw new InvalidArgumentException('Invalid information field type, got type ' . gettype($field));
+                }
+            }
+
+            $this->informationFields = $informationFields;
             $this->flags = $data['flags'];
             $this->registered = $data['registered'];
         }
@@ -57,13 +81,13 @@
         }
 
         /**
-         * Retrieves the display name of the entity.
+         * Retrieves the information fields associated with the peer.
          *
-         * @return string The display name associated with the entity.
+         * @return InformationField[] An array containing the information fields.
          */
-        public function getDisplayName(): string
+        public function getInformationFields(): array
         {
-            return $this->displayName;
+            return $this->informationFields;
         }
 
         /**
@@ -101,7 +125,7 @@
         {
             return [
                 'address' => $this->address->getAddress(),
-                'display_name' => $this->displayName,
+                'information_fields' => array_map(fn($field) => $field->toArray(), $this->informationFields),
                 'flags' => $this->flags,
                 'registered' => $this->registered
             ];
