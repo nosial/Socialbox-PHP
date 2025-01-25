@@ -761,10 +761,11 @@
          * Resolves an external peer based on the given peer address or string identifier.
          *
          * @param PeerAddress|string $peerAddress The external peer address or string identifier to be resolved.
+         * @param PeerAddress|string|null $identifiedAs Optional. The peer address or string identifier by which the caller is identified
          * @return Peer The resolved external peer after synchronization.
          * @throws StandardException Thrown if there was an error with the resolution process
          */
-        public static function resolvePeer(PeerAddress|string $peerAddress): Peer
+        public static function resolvePeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null): Peer
         {
             if(is_string($peerAddress))
             {
@@ -842,6 +843,11 @@
             }
 
             return $registeredPeer;
+        }
+
+        private static function localResolvePeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null)
+        {
+
         }
 
         /**

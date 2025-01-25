@@ -52,12 +52,7 @@
                 throw new StandardException('Failed to get contacts', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
-            $results = [];
-            foreach($contacts as $contact)
-            {
-                $results[] = $contact->toStandard();
-            }
 
-            return $rpcRequest->produceResponse($results);
+            return $rpcRequest->produceResponse(array_map(function($contact) {return $contact->toStandard();}, $contacts));
         }
     }
