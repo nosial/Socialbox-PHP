@@ -11,11 +11,14 @@
     use Socialbox\Classes\ServerResolver;
     use Socialbox\Classes\Utilities;
     use Socialbox\Classes\Validator;
+    use Socialbox\Enums\Flags\PeerFlags;
+    use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\StandardMethods;
+    use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Enums\Types\RequestType;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -23,11 +26,12 @@
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
     use Socialbox\Exceptions\StandardException;
+    use Socialbox\Managers\ContactManager;
     use Socialbox\Managers\ExternalSessionManager;
+    use Socialbox\Managers\PeerInformationManager;
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
-    use Socialbox\Objects\Database\PeerRecord;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerInformation;
@@ -239,21 +243,21 @@
                 }
                 // If-clause for handling the host peer, host peers are always enabled unless the fist clause is true
                 // in which case the host was blocked by this server.
-                elseif($clientRequest->getIdentifyAs() === ReservedUsernames::HOST->value)
+                elseif($clientRequest->getIdentifyAs()->getUsername() === ReservedUsernames::HOST->value)
                 {
-                    $serverInformation = self::getExternalServerInformation($clientRequest->getIdentifyAs()->getDomain());
-
                     // If the host is not registered, register it
                     if($registeredPeer === null)
                     {
                         $peerUuid = RegisteredPeerManager::createPeer(PeerAddress::fromAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)));
-                        RegisteredPeerManager::updateDisplayName($peerUuid, $serverInformation->getServerName());
                         RegisteredPeerManager::enablePeer($peerUuid);
                     }
-                    // Otherwise, update the display name if it has changed
                     else
                     {
-                        RegisteredPeerManager::updateDisplayName($registeredPeer->getUuid(), $serverInformation->getServerName());
+                        // If the host is registered, but disabled, enable it
+                        if(!$registeredPeer->isEnabled())
+                        {
+                            RegisteredPeerManager::enablePeer($registeredPeer->getUuid());
+                        }
                     }
                 }
                 // Otherwise the peer isn't registered, so we need to register it
@@ -273,15 +277,22 @@
                 }
 
                 // Generate server's encryption keys for this session
-                $serverEncryptionKey = Cryptography::generateEncryptionKeyPair();
+                $serverEncryptionKeyPair = Cryptography::generateEncryptionKeyPair();
 
                 // Create the session passing on the registered peer, client name, version, and public keys
-                $sessionUuid = SessionManager::createSession($registeredPeer, $clientRequest->getClientName(), $clientRequest->getClientVersion(), $clientPublicSigningKey, $clientPublicEncryptionKey, $serverEncryptionKey);
+                $sessionUuid = SessionManager::createSession(
+                    peer: $registeredPeer,
+                    clientName: $clientRequest->getClientName(),
+                    clientVersion: $clientRequest->getClientVersion(),
+                    clientPublicSigningKey: $clientPublicSigningKey,
+                    clientPublicEncryptionKey: $clientPublicEncryptionKey,
+                    serverEncryptionKeyPair: $serverEncryptionKeyPair
+                );
 
                 // The server responds back with the session UUID & The server's public encryption key as the header
                 http_response_code(201); // Created
                 header('Content-Type: text/plain');
-                header(StandardHeaders::ENCRYPTION_PUBLIC_KEY->value . ': ' . $serverEncryptionKey->getPublicKey());
+                header(StandardHeaders::ENCRYPTION_PUBLIC_KEY->value . ': ' . $serverEncryptionKeyPair->getPublicKey());
                 print($sessionUuid); // Return the session UUID
             }
             catch(InvalidArgumentException $e)
@@ -514,7 +525,7 @@
                 // Synchronize the peer
                 try
                 {
-                    self::synchronizeExternalPeer($clientRequest->getIdentifyAs());
+                    self::resolvePeer($clientRequest->getIdentifyAs());
                 }
                 catch (DatabaseOperationException $e)
                 {
@@ -731,33 +742,6 @@
         }
 
         /**
-         * Synchronizes an external peer by resolving and integrating its information into the system.
-         *
-         * @param PeerAddress|Peer|string $externalPeer The external peer to synchronize, provided as a PeerAddress instance or a string.
-         * @return void
-         * @throws CryptographyException If there is an error in the cryptography
-         * @throws DatabaseOperationException If there is an error while processing the peer against the database
-         * @throws ResolutionException If the synchronization process fails due to unresolved peer information or other errors.
-         * @throws RpcException If there is an RPC exception while connecting to the remote server
-         */
-        public static function synchronizeExternalPeer(PeerAddress|Peer|string $externalPeer): void
-        {
-            if($externalPeer instanceof Peer)
-            {
-                RegisteredPeerManager::synchronizeExternalPeer($externalPeer);
-                return;
-            }
-
-            if($externalPeer instanceof PeerAddress)
-            {
-                $externalPeer = $externalPeer->getAddress();
-            }
-
-            $client = self::getExternalSession($externalPeer->getDomain());
-            RegisteredPeerManager::synchronizeExternalPeer($client->resolvePeer($externalPeer));
-        }
-
-        /**
          * Resolves an external peer based on the given peer address or string identifier.
          *
          * @param PeerAddress|string $peerAddress The external peer address or string identifier to be resolved.
@@ -767,87 +751,184 @@
          */
         public static function resolvePeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null): Peer
         {
+            if($peerAddress->getDomain() !== Configuration::getInstanceConfiguration()->getDomain())
+            {
+                return self::resolveExternalPeer($peerAddress, $identifiedAs);
+            }
+
+            return self::resolveLocalPeer($peerAddress);
+        }
+
+        /**
+         * Resolves a peer based on the given peer address or string identifier.
+         *
+         * @param PeerAddress|string $peerAddress The peer address or string identifier to be resolved.
+         * @param PeerAddress|string|null $identifiedAs Optional. The peer address or string identifier by which the caller is identified
+         * @return Peer The resolved peer after synchronization.
+         * @throws StandardException Thrown if there was an error with the resolution process
+         */
+        private static function resolveExternalPeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null): Peer
+        {
             if(is_string($peerAddress))
             {
                 $peerAddress = PeerAddress::fromAddress($peerAddress);
             }
 
+            if(is_string($identifiedAs))
+            {
+                $identifiedAs = PeerAddress::fromAddress($identifiedAs);
+            }
+
+            // Resolve the peer from the local database if it exists
             try
             {
-                $registeredPeer = RegisteredPeerManager::getPeerByAddress($peerAddress);
+                $existingPeer = RegisteredPeerManager::getPeerByAddress($peerAddress);
+            }
+            catch(DatabaseOperationException $e)
+            {
+                throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
+
+            if($existingPeer === null)
+            {
+                // if the peer doesn't exist, resolve it externally and synchronize it
+
+                try
+                {
+                    $peer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress, $identifiedAs);
+                }
+                catch(Exception $e)
+                {
+                    throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
+                }
+
+                try
+                {
+                    RegisteredPeerManager::synchronizeExternalPeer($peer);
+                }
+                catch(DatabaseOperationException $e)
+                {
+                    throw new StandardException('Failed to synchronize the external peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                }
+
+                return $peer;
+            }
+
+            // If the peer exists, but it's outdated, synchronize it
+            if($existingPeer->getUpdated()->getTimestamp() < time() - Configuration::getPoliciesConfiguration()->getPeerSyncInterval())
+            {
+                try
+                {
+                    $peer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress, $identifiedAs);
+                }
+                catch(Exception $e)
+                {
+                    throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
+                }
+
+                try
+                {
+                    RegisteredPeerManager::synchronizeExternalPeer($peer);
+                }
+                catch(DatabaseOperationException $e)
+                {
+                    throw new StandardException('Failed to synchronize the external peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                }
+
+                return $peer;
+            }
+
+            // If the peer exists and is up to date, return it
+            return $existingPeer->toStandardPeer();
+        }
+
+        /**
+         * Resolves a peer locally based on the given peer address or string identifier.
+         *
+         * @param PeerAddress|string $peerAddress The peer address or string identifier to be resolved.
+         * @param PeerAddress|string|null $identifiedAs Optional. The peer address or string identifier by which the caller is identified
+         * @return Peer The resolved peer after synchronization.
+         * @throws StandardException Thrown if there was an error with the resolution process
+         */
+        private static function resolveLocalPeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null): Peer
+        {
+            if(is_string($peerAddress))
+            {
+                $peerAddress = PeerAddress::fromAddress($peerAddress);
+            }
+
+            if(is_string($identifiedAs))
+            {
+                $identifiedAs = PeerAddress::fromAddress($identifiedAs);
+            }
+
+            // Resolve the peer
+            try
+            {
+                $peer = RegisteredPeerManager::getPeerByAddress($peerAddress);
+
+                if($peer === null)
+                {
+                    throw new StandardException('The requested peer was not found', StandardError::PEER_NOT_FOUND);
+                }
+            }
+            catch(DatabaseOperationException $e)
+            {
+                throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
+
+            try
+            {
+                // Get the initial peer information fields, public always
+                $peerInformationFields = PeerInformationManager::getFilteredFields($peer, [PrivacyState::PUBLIC]);
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException('There was an unexpected error while trying to resolve the peer internally', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardException('Failed to resolve peer information: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
-            // Return not found if the peer was found but is disabled
-            if($registeredPeer !== null && !$registeredPeer->isEnabled())
+            // If there's an identifier, we can resolve more information fields if the target peer has added the caller
+            // as a contact or if the caller is a trusted contact
+            if($identifiedAs !== null)
             {
-                throw new StandardException('The requested peer is disabled', StandardError::PEER_NOT_FOUND);
-            }
+                try
+                {
+                    $peerContact = ContactManager::getContact($peer->getUuid(), $identifiedAs);
+                }
+                catch (DatabaseOperationException $e)
+                {
+                    throw new StandardException('Failed to resolve peer because there was an error while trying to retrieve contact information for the peer', StandardError::INTERNAL_SERVER_ERROR, $e);
+                }
 
-            // If the peer was not found but the peer resides in an external server, resolve it
-            try
-            {
-                if($registeredPeer === null && $peerAddress->getDomain() !== Configuration::getInstanceConfiguration()->getDomain())
+                // If it is a contact, what sort of contact? retrieve depending on the contact type
+                if($peerContact !== null)
                 {
                     try
                     {
-                        $registeredPeer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress);
+                        if($peerContact->getRelationship() === ContactRelationshipType::MUTUAL)
+                        {
+                            // Retrieve the mutual information fields
+                            array_merge($peerInformationFields, PeerInformationManager::getFilteredFields($peer, [PrivacyState::CONTACTS]));
+                        }
+                        elseif($peerContact->getRelationship() === ContactRelationshipType::TRUSTED)
+                        {
+                            // Retrieve the mutual and trusted information fields
+                            array_merge($peerInformationFields, PeerInformationManager::getFilteredFields($peer, [PrivacyState::CONTACTS, PrivacyState::TRUSTED]));
+                        }
                     }
                     catch (DatabaseOperationException $e)
                     {
-                        throw new StandardException('There was an unexpected error while trying to resolve the peer externally: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
-                    }
-
-                    // Synchronize the peer for future use
-                    self::synchronizeExternalPeer($registeredPeer);
-                }
-                // If the peer was found and the peer does reside in an external server, re-resolve it if necessary
-                elseif($registeredPeer !== null && $peerAddress->getDomain() !== Configuration::getInstanceConfiguration()->getDomain())
-                {
-                    if($registeredPeer->getUpdated()->getTimestamp() < time() - Configuration::getPoliciesConfiguration()->getPeerSyncInterval())
-                    {
-                        try
-                        {
-                            $registeredPeer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress);
-                        }
-                        catch (DatabaseOperationException $e)
-                        {
-                            throw new StandardException('There was an unexpected error while trying to resolve the peer externally: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
-                        }
-
-                        // Synchronize the peer for future use
-                        self::synchronizeExternalPeer($registeredPeer);
+                        throw new StandardException('Failed to resolve peer information: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
                     }
                 }
             }
-            catch(StandardException $e)
-            {
-                throw $e;
-            }
-            catch(Exception $e)
-            {
-                throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
-            }
 
-            if($registeredPeer === null)
-            {
-                throw new StandardException('The requested peer was not found', StandardError::PEER_NOT_FOUND);
-            }
-
-            if($registeredPeer instanceof PeerRecord)
-            {
-                $registeredPeer = $registeredPeer->toStandardPeer();
-            }
-
-            return $registeredPeer;
-        }
-
-        private static function localResolvePeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null)
-        {
-
+            return new Peer([
+                'address' => $peer->getAddress(),
+                'information_fields' => $peerInformationFields,
+                'flags' => PeerFlags::toString($peer->getFlags()),
+                'registered' => $peer->getCreated()->getTimestamp()
+            ]);
         }
 
         /**
