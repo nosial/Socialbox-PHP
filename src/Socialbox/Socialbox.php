@@ -243,9 +243,10 @@
                     self::returnError(403, StandardError::FORBIDDEN, 'Unauthorized: The requested peer is disabled/banned');
                     return;
                 }
+
                 // If-clause for handling the host peer, host peers are always enabled unless the fist clause is true
                 // in which case the host was blocked by this server.
-                elseif($clientRequest->getIdentifyAs()->getUsername() === ReservedUsernames::HOST->value)
+                if($clientRequest->getIdentifyAs()->getUsername() === ReservedUsernames::HOST->value)
                 {
                     // If the host is not registered, register it
                     if($registeredPeer === null)
@@ -262,8 +263,8 @@
                         }
                     }
                 }
-                // Otherwise the peer isn't registered, so we need to register it
-                else
+
+                if($registeredPeer === null)
                 {
                     // Check if registration is enabled
                     if(!Configuration::getRegistrationConfiguration()->isRegistrationEnabled())
@@ -290,22 +291,24 @@
                     clientPublicEncryptionKey: $clientPublicEncryptionKey,
                     serverEncryptionKeyPair: $serverEncryptionKeyPair
                 );
-
-                // The server responds back with the session UUID & The server's public encryption key as the header
-                http_response_code(201); // Created
-                header('Content-Type: text/plain');
-                header(StandardHeaders::ENCRYPTION_PUBLIC_KEY->value . ': ' . $serverEncryptionKeyPair->getPublicKey());
-                print($sessionUuid); // Return the session UUID
             }
             catch(InvalidArgumentException $e)
             {
                 // This is usually thrown due to an invalid input
                 self::returnError(400, StandardError::BAD_REQUEST, $e->getMessage(), $e);
+                return;
             }
             catch(Exception $e)
             {
                 self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'An internal error occurred while initiating the session', $e);
+                return;
             }
+
+            // The server responds back with the session UUID & The server's public encryption key as the header
+            http_response_code(201); // Created
+            header('Content-Type: text/plain');
+            header(StandardHeaders::ENCRYPTION_PUBLIC_KEY->value . ': ' . $serverEncryptionKeyPair->getPublicKey());
+            print($sessionUuid); // Return the session UUID
         }
 
         /**
