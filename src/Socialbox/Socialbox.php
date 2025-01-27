@@ -253,6 +253,7 @@
                     {
                         $peerUuid = RegisteredPeerManager::createPeer(PeerAddress::fromAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)));
                         RegisteredPeerManager::enablePeer($peerUuid);
+                        $registeredPeer = RegisteredPeerManager::getPeer($peerUuid);
                     }
                     else
                     {
