@@ -11,6 +11,7 @@
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Logger;
     use Socialbox\Enums\Flags\PeerFlags;
+    use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\PeerRecord;
@@ -234,6 +235,25 @@
                     throw new DatabaseOperationException('Failed to update the external peer in the database', $e);
                 }
 
+                foreach($peer->getInformationFields() as $informationField)
+                {
+                    try
+                    {
+                        if(PeerInformationManager::fieldExists($existingPeer, $informationField->getName()))
+                        {
+                            PeerInformationManager::updateField($existingPeer, $informationField->getName(), $informationField->getValue());
+                        }
+                        else
+                        {
+                            PeerInformationManager::addField($existingPeer, $informationField->getName(), $informationField->getValue(), PrivacyState::PUBLIC);
+                        }
+                    }
+                    catch(DatabaseOperationException $e)
+                    {
+                        throw new DatabaseOperationException('Failed to update the external peer information in the database', $e);
+                    }
+                }
+
                 return;
             }
 
@@ -253,6 +273,18 @@
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to synchronize the external peer in the database', $e);
+            }
+
+            foreach($peer->getInformationFields() as $informationField)
+            {
+                try
+                {
+                    PeerInformationManager::addField($uuid, $informationField->getName(), $informationField->getValue(), PrivacyState::PUBLIC);
+                }
+                catch(DatabaseOperationException $e)
+                {
+                    throw new DatabaseOperationException('Failed to add the external peer information in the database', $e);
+                }
             }
         }
 
