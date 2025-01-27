@@ -13,7 +13,7 @@ create table signing_keys
     constraint signing_keys_pk
         unique (peer_uuid, uuid) comment 'The Unique Index pair for the signing key name and the UUID of the peer',
     constraint signing_keys_registered_peers_uuid_fk
-        foreign key (peer_uuid) references registered_peers (uuid)
+        foreign key (peer_uuid) references peers (uuid)
             on update cascade on delete cascade
 )
     comment 'Table for housing public signing keys for peers on the network';
@@ -28,5 +28,5 @@ create index signing_keys_state_index
 
 create index signing_keys_uuid_index
     on signing_keys (uuid)
-    comment 'The index for the signing key name';
+    comment 'The index for the signing key namee';
 

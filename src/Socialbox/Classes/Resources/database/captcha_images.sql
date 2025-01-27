@@ -1,7 +1,7 @@
 create table captcha_images
 (
-    uuid      varchar(36)                 default uuid()              not null comment 'The Unique Universal Identifier of the captcha record'
-        primary key comment 'The Unique index for the UUID column',
+    uuid      varchar(36)                 default uuid()              not null comment 'The Unique index for the UUID column'
+        primary key,
     peer_uuid varchar(36)                                             not null comment 'The UUID of the peer that is associated with this captcha challenge',
     status    enum ('UNSOLVED', 'SOLVED') default 'UNSOLVED'          not null comment 'The status of the current captcha',
     answer    varchar(8)                                              null comment 'The current answer for the captcha',
