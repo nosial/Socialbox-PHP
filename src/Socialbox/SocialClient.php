@@ -587,7 +587,7 @@
             return Peer::fromArray($this->sendRequest(
                 new RpcRequest(StandardMethods::RESOLVE_PEER, Utilities::randomCrc32(), [
                     'peer' => $peerAddress
-                ]), $identifiedAs
+                ]), true, $identifiedAs
             )->getResponse()->getResult());
         }
     }
