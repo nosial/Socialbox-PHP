@@ -51,11 +51,16 @@
 
             try
             {
+                $peer = $request->getPeer();
+                if($peer->getAddress() == $address)
+                {
+                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Cannot add self as contact');
+                }
+
                 // Resolve the peer, this would throw a StandardException if something goes wrong
                 Socialbox::resolvePeer($address);
 
                 // Check if the contact already exists
-                $peer = $request->getPeer();
                 if(ContactManager::isContact($peer, $address))
                 {
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Contact already exists');
