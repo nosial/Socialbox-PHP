@@ -46,7 +46,7 @@
         public function toArray(): array
         {
             return [
-                'name' => $this->name->getValue(),
+                'name' => $this->name->value,
                 'value' => $this->value,
             ];
         }
