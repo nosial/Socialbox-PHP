@@ -6,6 +6,7 @@
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
+    use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RpcException;
@@ -41,10 +42,17 @@
                 throw new StandardException('Peer Address Error: ' . $e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
             }
 
+            // Check if host is making the request & the identifier is not empty
+            $identifyAs = null;
+            if($request->getPeer()->getUsername() == ReservedUsernames::HOST && $request->getIdentifyAs() != null)
+            {
+                $identifyAs = $request->getIdentifyAs();
+            }
+
             // Resolve the peer using the server's peer resolver, this will resolve both internal peers and external peers
             try
             {
-                return $rpcRequest->produceResponse(Socialbox::resolvePeer($peerAddress));
+                return $rpcRequest->produceResponse(Socialbox::resolvePeer($peerAddress, $identifyAs));
             }
             catch(Exception $e)
             {
