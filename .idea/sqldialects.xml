@@ -3,10 +3,13 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/authentication_otp.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/captcha_images.sql" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/contact_known_keys.sql" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/contacts.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/external_sessions.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/peer_information.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/peers.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/sessions.sql" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/signing_keys.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Classes/Resources/database/variables.sql" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/CaptchaManager.php" dialect="MariaDB" />
     <file url="file://$PROJECT_DIR$/src/Socialbox/Managers/ContactManager.php" dialect="MariaDB" />

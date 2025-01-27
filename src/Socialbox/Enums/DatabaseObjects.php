@@ -14,7 +14,11 @@
         case AUTHENTICATION_OTP = 'authentication_otp.sql';
         case CAPTCHA_IMAGES = 'captcha_images.sql';
         case SESSIONS = 'sessions.sql';
+        case CONTACTS = 'contacts.sql';
+        case SIGNING_KEYS = 'signing_keys.sql';
         case EXTERNAL_SESSIONS = 'external_sessions.sql';
+
+        case CONTACT_KNOWN_KEYS = 'contact_known_keys.sql';
 
         /**
          * Returns the priority of the database object
@@ -34,8 +38,12 @@
                 self::AUTHENTICATION_PASSWORDS,
                 self::AUTHENTICATION_OTP,
                 self::CAPTCHA_IMAGES,
+                self::CONTACTS,
                 self::SESSIONS,
+                self::SIGNING_KEYS,
                 self::EXTERNAL_SESSIONS => 2,
+
+                self::CONTACT_KNOWN_KEYS => 3,
             };
         }
 
