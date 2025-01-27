@@ -11,7 +11,7 @@ create table contacts
     constraint peer_contacts_peer_uuid_contact_peer_address_uindex
         unique (peer_uuid, contact_peer_address) comment 'The Unique Peer UUID & Contact Peer Address combination pair',
     constraint peer_contacts_registered_peers_uuid_fk
-        foreign key (peer_uuid) references registered_peers (uuid)
+        foreign key (peer_uuid) references peers (uuid)
             on update cascade on delete cascade
 )
     comment 'Table for housing personal contacts for peers';
