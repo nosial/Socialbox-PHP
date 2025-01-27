@@ -19,6 +19,7 @@
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Enums\Types\ContactRelationshipType;
+    use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Enums\Types\RequestType;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -33,6 +34,7 @@
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\InformationField;
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerInformation;
     use Throwable;
@@ -756,7 +758,23 @@
                 return self::resolveExternalPeer($peerAddress, $identifiedAs);
             }
 
-            return self::resolveLocalPeer($peerAddress);
+            if($peerAddress->getUsername() === ReservedUsernames::HOST->value)
+            {
+                return new Peer([
+                    'address' => sprintf('%s@%s', ReservedUsernames::HOST->value, Configuration::getInstanceConfiguration()->getDomain()),
+                    'information_fields' => [
+                        new InformationField([
+                            'name' => InformationFieldName::DISPLAY_NAME,
+                            'value' => Configuration::getInstanceConfiguration()->getName()
+                        ])
+                    ],
+                    'flags' => [],
+                    // TODO: Should use existed-since field
+                    'registered' => 0
+                ]);
+            }
+
+            return self::resolveLocalPeer($peerAddress, $identifiedAs);
         }
 
         /**
