@@ -572,17 +572,22 @@
          * @return Peer The resolved peer object.
          * @throws RpcException Thrown if the RPC request fails.
          */
-        public function resolvePeer(string|PeerAddress $peerAddress): Peer
+        public function resolvePeer(string|PeerAddress $peerAddress, null|string|PeerAddress $identifiedAs=null): Peer
         {
             if($peerAddress instanceof PeerAddress)
             {
                 $peerAddress = $peerAddress->getAddress();
             }
 
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
             return Peer::fromArray($this->sendRequest(
                 new RpcRequest(StandardMethods::RESOLVE_PEER, Utilities::randomCrc32(), [
                     'peer' => $peerAddress
-                ])
+                ]), $identifiedAs
             )->getResponse()->getResult());
         }
     }
