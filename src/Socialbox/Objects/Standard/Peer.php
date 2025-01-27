@@ -3,6 +3,7 @@
     namespace Socialbox\Objects\Standard;
 
     use InvalidArgumentException;
+    use Socialbox\Enums\Flags\PeerFlags;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\Database\PeerInformationFieldRecord;
     use Socialbox\Objects\PeerAddress;
@@ -66,7 +67,35 @@
             }
 
             $this->informationFields = $informationFields;
-            $this->flags = $data['flags'];
+
+            if(is_array($data['flags']))
+            {
+                $this->flags = [];
+                foreach($data['flags'] as $flag)
+                {
+                    if($flag instanceof PeerFlags)
+                    {
+                        $this->flags[] = $flag->value;
+                    }
+                    elseif(is_string($flag))
+                    {
+                        $this->flags[] = $flag;
+                    }
+                    else
+                    {
+                        throw new InvalidArgumentException('Invalid flag type, got type ' . gettype($flag));
+                    }
+                }
+            }
+            elseif(is_string($data['flags']))
+            {
+                $this->flags = PeerFlags::fromString($data['flags']);
+            }
+            else
+            {
+                throw new InvalidArgumentException('Invalid flags value type, got type ' . gettype($data['flags']));
+            }
+
             $this->registered = $data['registered'];
         }
 
