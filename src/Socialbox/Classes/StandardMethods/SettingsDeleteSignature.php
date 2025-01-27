@@ -32,7 +32,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid UUID');
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid UUID', $e);
             }
 
             try
