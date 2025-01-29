@@ -37,13 +37,21 @@
                 throw new StandardException('Failed to check One Time Password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
-            try
+            if($peer->isEnabled())
             {
-                $usesPassword = PasswordManager::usesPassword($peer);
+                try
+                {
+                    // If the peer is disabled, the password is not used because we assume the peer is registering
+                    $usesPassword = PasswordManager::usesPassword($peer);
+                }
+                catch (DatabaseOperationException $e)
+                {
+                    throw new StandardException('Failed to check password usage due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                }
             }
-            catch (DatabaseOperationException $e)
+            else
             {
-                throw new StandardException('Failed to check password usage due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                $usesPassword = false;
             }
 
             // Password verification is required to set an OTP if a password is set
