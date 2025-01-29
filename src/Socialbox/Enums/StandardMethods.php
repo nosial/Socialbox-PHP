@@ -9,6 +9,7 @@
     use Socialbox\Classes\StandardMethods\AddressBookAddContact;
     use Socialbox\Classes\StandardMethods\AddressBookDeleteContact;
     use Socialbox\Classes\StandardMethods\AddressBookGetContacts;
+    use Socialbox\Classes\StandardMethods\AddressBookUpdateRelationship;
     use Socialbox\Classes\StandardMethods\Authenticate;
     use Socialbox\Classes\StandardMethods\GetAllowedMethods;
     use Socialbox\Classes\StandardMethods\GetCommunityGuidelines;
@@ -17,12 +18,16 @@
     use Socialbox\Classes\StandardMethods\GetTermsOfService;
     use Socialbox\Classes\StandardMethods\Ping;
     use Socialbox\Classes\StandardMethods\ResolvePeer;
+    use Socialbox\Classes\StandardMethods\ResolvePeerSignature;
     use Socialbox\Classes\StandardMethods\SettingsAddInformationField;
-    use Socialbox\Classes\StandardMethods\SettingsAddSigningKey;
+    use Socialbox\Classes\StandardMethods\SettingsAddSignature;
     use Socialbox\Classes\StandardMethods\SettingsDeleteInformationField;
     use Socialbox\Classes\StandardMethods\SettingsDeleteOtp;
     use Socialbox\Classes\StandardMethods\SettingsDeletePassword;
+    use Socialbox\Classes\StandardMethods\SettingsDeleteSignature;
+    use Socialbox\Classes\StandardMethods\SettingsGetInformationField;
     use Socialbox\Classes\StandardMethods\SettingsGetInformationFields;
+    use Socialbox\Classes\StandardMethods\SettingsGetSigningKey;
     use Socialbox\Classes\StandardMethods\SettingsGetSigningKeys;
     use Socialbox\Classes\StandardMethods\SettingsSetOtp;
     use Socialbox\Classes\StandardMethods\SettingsSetPassword;
@@ -56,6 +61,7 @@
         case GET_COMMUNITY_GUIDELINES = 'getCommunityGuidelines';
         case ACCEPT_COMMUNITY_GUIDELINES = 'acceptCommunityGuidelines';
 
+        case VERIFICATION_AUTHENTICATE = 'authenticate';
         case VERIFICATION_EMAIL = 'verificationEmail'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_EMAIL = 'verificationAnswerEmail'; // NOT IMPLEMENTED
         case VERIFICATION_SMS = 'verificationSms'; // NOT IMPLEMENTED
@@ -78,19 +84,60 @@
         case SETTINGS_DELETE_OTP = 'settingsDeleteOtp';
         case SETTINGS_ADD_INFORMATION_FIELD = 'settingsAddInformationField';
         case SETTINGS_GET_INFORMATION_FIELDS = 'settingsGetInformationFields';
+        case SETTINGS_GET_INFORMATION_FIELD = 'settingsGetInformationField';
         case SETTINGS_UPDATE_INFORMATION_FIELD = 'settingsUpdateInformationField';
         case SETTINGS_DELETE_INFORMATION_FIELD = 'settingsDeleteInformationField';
         case SETTINGS_UPDATE_INFORMATION_PRIVACY = 'settingsUpdateInformationPrivacy';
 
-        case SETTINGS_ADD_SIGNING_KEY = 'settingsAddSigningKey';
-        case SETTINGS_GET_SIGNING_KEYS = 'settingsGetSigningKeys';
+        case SETTINGS_ADD_SIGNATURE = 'settingsAddSigningKey';
+        case SETTINGS_DELETE_SIGNATURE = 'settingsDeleteSigningKey';
+        case SETTINGS_GET_SIGNATURES = 'settingsGetSigningKeys';
+        case SETTINGS_GET_SIGNATURE = 'settingsGetSigningKey';
 
         case ADDRESS_BOOK_ADD_CONTACT = 'addressBookAddContact';
         case ADDRESS_BOOK_DELETE_CONTACT = 'addressBookDeleteContact';
         case ADDRESS_BOOK_GET_CONTACTS = 'addressBookGetContacts';
+        case ADDRESS_BOOK_UPDATE_RELATIONSHIP = 'addressBookUpdateRelationship';
+        case ADDRESS_BOOK_TRUST_SIGNATURE = 'addressBookTrustSignature';
 
-        case AUTHENTICATE = 'authenticate';
+        case GET_STATE = 'getState';
+
+        // End-to-End channels for communication purposes
+        case END_TO_END_CREATE_REQUEST = 'e2eCreateRequest';
+        case END_TO_END_GET_REQUESTS = 'e2eGetRequests';
+        case END_TO_END_ACCEPT_REQUEST = 'e2eAcceptRequest';
+        case END_TO_END_REJECT_REQUEST = 'e2eRejectRequest';
+        case END_TO_END_GET_CHANNELS = 'e2eGetChannels';
+        case END_TO_END_CLOSE_CHANNEL = 'e2eCloseChannel';
+
+        // Messaging methods
+        case MESSAGES_GET_INBOX = 'messagesGetInbox';
+        case MESSAGES_GET_UNTRUSTED = 'messagesGetUntrusted';
+        case MESSAGES_GET_ARCHIVED = 'messagesGetArchived';
+        case MESSAGES_GET_OUTBOX = 'messagesGetOutbox';
+        case MESSAGES_GET_MESSAGE = 'messagesGetMessage';
+        case MESSAGES_GET_DRAFTS = 'messagesGetDrafts';
+        case MESSAGES_GET_DRAFT = 'messagesGetDraft';
+        case MESSAGES_TOGGLE_MESSAGE_READ = 'messagesToggleMessageRead';
+        case MESSAGES_TOGGLE_MESSAGE_STAR = 'messagesToggleMessageStar';
+        case MESSAGES_TOGGLE_MESSAGE_FLAG = 'messagesToggleMessageFlag';
+        case MESSAGES_ARCHIVE_MESSAGE = 'messagesArchiveMessage';
+        case MESSAGES_UNARCHIVE_MESSAGE = 'messagesUnarchiveMessage';
+        case MESSAGES_DELETE_MESSAGE = 'messagesDeleteMessage';
+        case MESSAGES_DELETE_DRAFT = 'messagesDeleteDraft';
+        case MESSAGES_COMPOSE_NEW_MESSAGE = 'messagesComposeNewMessage';
+        case MESSAGES_COMPOSE_REPLY_MESSAGE = 'messagesComposeReplyMessage';
+        case MESSAGES_COMPOSE_FORWARD_MESSAGE = 'messagesComposeForwardMessage';
+        case MESSAGES_SET_MESSAGE_RECIPIENTS = 'messagesSetMessageRecipients';
+        case MESSAGES_SET_MESSAGE_CARBON_COPY_RECIPIENTS = 'messagesSetMessageCarbonCopyRecipients';
+        case MESSAGES_SET_MESSAGE_BLIND_CARBON_COPY_RECIPIENTS = 'messagesSetMessageBlindCarbonCopyRecipients';
+        case MESSAGES_SET_MESSAGE_ENCRYPTION_CHANNEL = 'messagesSetMessageEncryptionChannel';
+        case MESSAGES_SET_MESSAGE_SUBJECT = 'messagesSetMessageSubject';
+        case MESSAGES_SET_MESSAGE_BODY = 'messagesSetMessageBody';
+        case MESSAGES_SEND_MESSAGE = 'messagesSendMessage';
+
         case RESOLVE_PEER = 'resolvePeer';
+        case RESOLVE_PEER_SIGNATURE = 'resolvePeerSignature';
 
         /**
          * Executes the appropriate operation based on the current context and requests provided.
@@ -129,19 +176,25 @@
 
                 self::SETTINGS_ADD_INFORMATION_FIELD => SettingsAddInformationField::execute($request, $rpcRequest),
                 self::SETTINGS_GET_INFORMATION_FIELDS => SettingsGetInformationFields::execute($request, $rpcRequest),
+                self::SETTINGS_GET_INFORMATION_FIELD => SettingsGetInformationField::execute($request, $rpcRequest),
                 self::SETTINGS_UPDATE_INFORMATION_FIELD => SettingsUpdateInformationField::execute($request, $rpcRequest),
                 self::SETTINGS_UPDATE_INFORMATION_PRIVACY => SettingsUpdateInformationPrivacy::execute($request, $rpcRequest),
                 self::SETTINGS_DELETE_INFORMATION_FIELD => SettingsDeleteInformationField::execute($request, $rpcRequest),
 
-                self::SETTINGS_ADD_SIGNING_KEY => SettingsAddSigningKey::execute($request, $rpcRequest),
-                self::SETTINGS_GET_SIGNING_KEYS => SettingsGetSigningKeys::execute($request, $rpcRequest),
+                self::SETTINGS_ADD_SIGNATURE => SettingsAddSignature::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_SIGNATURE => SettingsDeleteSignature::execute($request, $rpcRequest),
+                self::SETTINGS_GET_SIGNATURES => SettingsGetSigningKeys::execute($request, $rpcRequest),
+                self::SETTINGS_GET_SIGNATURE => SettingsGetSigningKey::execute($request, $rpcRequest),
 
                 self::ADDRESS_BOOK_ADD_CONTACT => AddressBookAddContact::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_DELETE_CONTACT => AddressBookDeleteContact::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_GET_CONTACTS => AddressBookGetContacts::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_UPDATE_RELATIONSHIP => AddressBookUpdateRelationship::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_TRUST_SIGNATURE => AddressBookTrustSignature::execute($request, $rpcRequest),
 
-                self::AUTHENTICATE => Authenticate::execute($request, $rpcRequest),
+                self::VERIFICATION_AUTHENTICATE => Authenticate::execute($request, $rpcRequest),
                 self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
+                self::RESOLVE_PEER_SIGNATURE => ResolvePeerSignature::execute($request, $rpcRequest),
 
                 default => $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, sprintf("The method %s is not supported by the server", $rpcRequest->getMethod()))
             };
@@ -239,7 +292,7 @@
             $session = $clientRequest->getSession();
             if(!$session->isAuthenticated() || $session->flagExists(SessionFlags::AUTHENTICATION_REQUIRED))
             {
-                $methods[] = self::AUTHENTICATE;
+                $methods[] = self::VERIFICATION_AUTHENTICATE;
             }
             else
             {
@@ -259,17 +312,24 @@
 
             // These methods are always allowed for authenticated users
             $methods = [
-                self::SETTINGS_ADD_SIGNING_KEY,
-                self::SETTINGS_GET_SIGNING_KEYS,
+                self::SETTINGS_ADD_SIGNATURE,
+                self::SETTINGS_GET_SIGNATURES,
+                self::SETTINGS_GET_SIGNATURE,
+
                 self::SETTINGS_ADD_INFORMATION_FIELD,
                 self::SETTINGS_GET_INFORMATION_FIELDS,
+                self::SETTINGS_GET_INFORMATION_FIELD,
                 self::SETTINGS_UPDATE_INFORMATION_FIELD,
                 self::SETTINGS_UPDATE_INFORMATION_PRIVACY,
                 self::SETTINGS_DELETE_INFORMATION_FIELD,
+
                 self::SETTINGS_SET_PASSWORD,
+                self::SETTINGS_DELETE_PASSWORD,
                 self::SETTINGS_UPDATE_PASSWORD,
                 self::SETTINGS_SET_OTP,
+                self::SETTINGS_DELETE_OTP,
                 self::RESOLVE_PEER,
+                self::RESOLVE_PEER_SIGNATURE,
 
                 self::ADDRESS_BOOK_ADD_CONTACT,
                 self::ADDRESS_BOOK_DELETE_CONTACT,
@@ -295,7 +355,10 @@
 
             $methods = [
                 self::SETTINGS_ADD_INFORMATION_FIELD,
+                self::SETTINGS_GET_INFORMATION_FIELDS,
+                self::SETTINGS_GET_INFORMATION_FIELD,
                 self::SETTINGS_UPDATE_INFORMATION_FIELD,
+                self::SETTINGS_UPDATE_INFORMATION_PRIVACY,
                 self::SETTINGS_DELETE_INFORMATION_FIELD
             ];
 
