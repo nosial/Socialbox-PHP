@@ -32,11 +32,13 @@
     use Socialbox\Managers\PeerInformationManager;
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
+    use Socialbox\Managers\SigningKeysManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\Standard\InformationField;
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerInformation;
+    use Socialbox\Objects\Standard\SigningKey;
     use Throwable;
 
     class Socialbox
@@ -744,6 +746,87 @@
             catch (Exception $e)
             {
                 throw new ResolutionException(sprintf('Failed to retrieve server information from %s: %s', $domain, $e->getMessage()), $e->getCode(), $e);
+            }
+        }
+
+        /**
+         * Resolves a peer signature key based on the given peer address or string identifier.
+         *
+         * @param PeerAddress|string $peerAddress The peer address or string identifier to be resolved.
+         * @param string $signatureUuid The UUID of the signature key to be resolved.
+         * @return SigningKey The resolved signing key for the peer.
+         * @throws StandardException If there was an error while resolving the peer signature key.
+         */
+        public static function resolvePeerSignature(PeerAddress|string $peerAddress, string $signatureUuid): SigningKey
+        {
+            // Convert string peer address to object PeerAddress
+            if(is_string($peerAddress))
+            {
+                try
+                {
+                    $peerAddress = PeerAddress::fromAddress($peerAddress);
+                }
+                catch(InvalidArgumentException $e)
+                {
+                    throw new StandardException($e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
+                }
+            }
+
+            // Prevent resolutions against any host
+            if($peerAddress->getUsername() == ReservedUsernames::HOST)
+            {
+                throw new StandardException('Cannot resolve signature for a host peer', StandardError::FORBIDDEN);
+            }
+
+            // If the peer is registered within this server
+            if($peerAddress->getDomain() === Configuration::getInstanceConfiguration()->getDomain())
+            {
+
+                try
+                {
+                    $peer = RegisteredPeerManager::getPeerByAddress($peerAddress);
+                    if($peer === null || !$peer?->isEnabled())
+                    {
+                        // Fail if the peer is not found or enabled
+                        throw new StandardException(sprintf('The peer %s does not exist', $peerAddress), StandardError::PEER_NOT_FOUND);
+                    }
+
+                    $signingKey = SigningKeysManager::getSigningKey($peer->getUuid(), $signatureUuid);
+                    if($signingKey === null)
+                    {
+                        throw new StandardException(sprintf('The requested signing key %s was not found', $signatureUuid), StandardError::NOT_FOUND);
+                    }
+                }
+                catch(StandardException $e)
+                {
+                    throw $e;
+                }
+                catch(Exception $e)
+                {
+                    throw new StandardException('There was an error while trying to resolve the signature key for the peer locally', StandardError::INTERNAL_SERVER_ERROR, $e);
+                }
+
+                return $signingKey->toStandard();
+            }
+
+            // The requested peer is coming from an external server
+            try
+            {
+                $client = self::getExternalSession($peerAddress->getDomain());
+            }
+            catch(Exception $e)
+            {
+                throw new StandardException(sprintf('There was an error while trying to communicate with %s', $peerAddress->getDomain()), StandardError::RESOLUTION_FAILED, $e);
+            }
+
+            try
+            {
+                return $client->resolvePeerSignature($peerAddress, $signatureUuid);
+            }
+            catch(RpcException $e)
+            {
+                // Reflect the server error to the client
+                throw new StandardException($e->getMessage(), StandardError::tryFrom((int)$e->getCode()) ?? StandardError::UNKNOWN, $e);
             }
         }
 
