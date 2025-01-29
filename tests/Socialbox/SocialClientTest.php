@@ -42,11 +42,11 @@
             return 'user' . $randomString . '@' . $domain;
         }
 
-        private static function registerUser(string $domain): SocialClient
+        private static function registerUser(string $domain, string $displayName): SocialClient
         {
             $client = new SocialClient(self::generateUsername($domain));
             $client->settingsSetPassword("password");
-            $client->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, "Example User");
+            $client->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, $displayName);
             return $client;
         }
 
@@ -72,9 +72,9 @@
 
         public function testResolveDecentralizedPeer(): void
         {
-            $coffeeUser = self::registerUser(self::COFFEE_DOMAIN);
+            $coffeeUser = self::registerUser(self::COFFEE_DOMAIN, "Coffee Lover");
             $this->assertTrue($coffeeUser->getSessionState()->isAuthenticated());
-            $teapotUser = self::registerUser(self::TEAPOT_DOMAIN);
+            $teapotUser = self::registerUser(self::TEAPOT_DOMAIN, "Tea & Biscuits");
             $this->assertTrue($teapotUser->getSessionState()->isAuthenticated());
 
             $coffeePeer = $coffeeUser->resolvePeer($teapotUser->getIdentifiedAs());
