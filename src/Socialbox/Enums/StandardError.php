@@ -13,8 +13,9 @@ enum StandardError : int
     case BAD_REQUEST = -102;
     case FORBIDDEN = -103;
     case UNAUTHORIZED = -104;
-    case RESOLUTION_FAILED = -105;
-    case CRYPTOGRAPHIC_ERROR = -106;
+    case NOT_FOUND = -105;
+    case RESOLUTION_FAILED = -106;
+    case CRYPTOGRAPHIC_ERROR = -107;
 
     // RPC Errors
     case RPC_METHOD_NOT_FOUND = -1000;
