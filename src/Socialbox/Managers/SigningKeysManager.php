@@ -229,6 +229,7 @@
          */
         public static function verifySignature(string $message, string $signature, string $uuid): bool
         {
+            // TODO: Complete this
             $signingKey = self::getSigningKey($uuid);
             if($signingKey === null)
             {
