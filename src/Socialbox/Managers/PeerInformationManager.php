@@ -171,10 +171,10 @@
          *
          * @param string|PeerRecord $peerUuid The UUID of the peer to get the property from.
          * @param InformationFieldName $property The name of the property to get.
-         * @return PeerInformationFieldRecord
+         * @return PeerInformationFieldRecord|null The property record, or null if it does not exist.
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function getField(string|PeerRecord $peerUuid, InformationFieldName $property): PeerInformationFieldRecord
+        public static function getField(string|PeerRecord $peerUuid, InformationFieldName $property): ?PeerInformationFieldRecord
         {
             if($peerUuid instanceof PeerRecord)
             {
@@ -192,7 +192,7 @@
                 $result = $stmt->fetch();
                 if($result === false)
                 {
-                    throw new DatabaseOperationException(sprintf('Property %s does not exist for peer %s', $property->value, $peerUuid));
+                    return null;
                 }
 
                 return PeerInformationFieldRecord::fromArray($result);
