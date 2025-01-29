@@ -15,44 +15,6 @@
 
     class SigningKeysManager
     {
-        /**
-         * Retrieves the state of a signing key identified by its UUID.
-         *
-         * @param string $uuid The UUID of the signing key whose state is to be retrieved.
-         * @return SigningKeyState The state of the signing key. Returns SigningKeyState::EXPIRED if the key is expired,
-         *                         SigningKeyState::NOT_FOUND if the key does not exist, or the state as defined in the database.
-         * @throws DatabaseOperationException If an error occurs during the database operation.
-         */
-        public static function getSigningKeyState(string $uuid): SigningKeyState
-        {
-            try
-            {
-                $statement = Database::getConnection()->prepare("SELECT state, expires FROM signing_keys WHERE uuid=:uuid");
-                $statement->bindParam(':uuid', $uuid);
-                $statement->execute();
-
-                if($row = $statement->fetch())
-                {
-                    if(is_int($row['expires']) && $row['expires'] < time())
-                    {
-                        return SigningKeyState::EXPIRED;
-                    }
-
-                    if($row['expires'] instanceof DateTime && $row['expires'] < new DateTime())
-                    {
-                        return SigningKeyState::EXPIRED;
-                    }
-
-                    return SigningKeyState::tryFrom($row['state']) ?? SigningKeyState::NOT_FOUND;
-                }
-            }
-            catch (PDOException $e)
-            {
-                throw new DatabaseOperationException('Failed to get the signing key state from the database', $e);
-            }
-
-            return SigningKeyState::NOT_FOUND;
-        }
 
         /**
          * Retrieves the count of signing keys associated with a specific peer UUID.
@@ -104,17 +66,27 @@
                 throw new InvalidArgumentException('The name cannot be empty');
             }
 
-            if($expires !== null && $expires < time())
+            if($expires !== null)
             {
-                throw new InvalidArgumentException('The expiration time is in the past');
-            }
+                if($expires === 0)
+                {
+                    $expires = null;
+                }
+                else
+                {
+                    if($expires < time())
+                    {
+                        throw new InvalidArgumentException('The expiration time is in the past');
+                    }
 
-            // At least more than 1 hour
-            if($expires !== null && $expires < time() + 3600)
-            {
-                throw new InvalidArgumentException('The expiration time is too soon, must be at least 1 hour in the future');
-            }
+                    if($expires < time() + 3600)
+                    {
+                        throw new InvalidArgumentException('The expiration time is too soon, must be at least 1 hour in the future');
+                    }
 
+                    $expires = (new DateTime())->setTimestamp($expires)->format('Y-m-d H:i:s');
+                }
+            }
 
             $uuid = UuidV4::v4()->toRfc4122();
 
@@ -139,19 +111,21 @@
         /**
          * Updates the state of a signing key in the database identified by its UUID.
          *
+         * @param string $peerUuid The UUID of the peer associated with the signing key.
          * @param string $uuid The unique identifier of the signing key to update.
          * @param SigningKeyState $state The new state to set for the signing key.
          * @return void
          * @throws DatabaseOperationException
          */
-        public static function updateSigningKeyState(string $uuid, SigningKeyState $state): void
+        public static function updateSigningKeyState(string $peerUuid, string $uuid, SigningKeyState $state): void
         {
             $state = $state->value;
 
             try
             {
-                $statement = Database::getConnection()->prepare("UPDATE signing_keys SET state=:state WHERE uuid=:uuid");
+                $statement = Database::getConnection()->prepare("UPDATE signing_keys SET state=:state WHERE peer_uuid=:peer_uuid AND uuid=:uuid");
                 $statement->bindParam(':state', $state);
+                $statement->bindParam(':peer_uuid', $peerUuid);
                 $statement->bindParam(':uuid', $uuid);
                 $statement->execute();
             }
@@ -164,16 +138,18 @@
         /**
          * Retrieves a signing key from the database using the provided UUID.
          *
+         * @param string $peerUuid The UUID of the peer associated with the signing key.
          * @param string $uuid The UUID of the signing key to retrieve.
          * @return SigningKeyRecord|null The signing key record if found, or null if no record exists.
          * @throws DatabaseOperationException If a database error occurs during the operation.
          */
-        public static function getSigningKey(string $uuid): ?SigningKeyRecord
+        public static function getSigningKey(string $peerUuid, string $uuid): ?SigningKeyRecord
         {
             try
             {
-                $statement = Database::getConnection()->prepare("SELECT * FROM signing_keys WHERE uuid=:uuid");
+                $statement = Database::getConnection()->prepare("SELECT * FROM signing_keys WHERE uuid=:uuid AND peer_uuid=:peer_uuid");
                 $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':peer_uuid', $peerUuid);
                 $statement->execute();
 
                 if($row = $statement->fetch())
@@ -215,6 +191,29 @@
             catch (PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to get the signing keys from the database', $e);
+            }
+        }
+
+        /**
+         * Deletes a signing key from the database using the provided UUID.
+         *
+         * @param string $peerUuid The UUID of the peer associated with the signing key.
+         * @param string $uuid The UUID of the signing key to delete.
+         * @return void
+         * @throws DatabaseOperationException If a database error occurs during the operation.
+         */
+        public static function deleteSigningKey(string $peerUuid, string $uuid): void
+        {
+            try
+            {
+                $statement = Database::getConnection()->prepare("DELETE FROM signing_keys WHERE uuid=:uuid AND peer_uuid=:peer_uuid");
+                $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':peer_uuid', $peerUuid);
+                $statement->execute();
+            }
+            catch (PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to delete the signing key from the database', $e);
             }
         }
 
