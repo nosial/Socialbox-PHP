@@ -4,7 +4,6 @@
 
     enum SigningKeyState : string
     {
-        case ACTIVE = 'active';
-        case EXPIRED = 'expired';
-        case NOT_FOUND = 'not_found';
+        case ACTIVE = 'ACTIVE';
+        case EXPIRED = 'EXPIRED';
     }
