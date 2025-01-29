@@ -13,7 +13,7 @@
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
 
-    class SettingsAddSigningKey extends Method
+    class SettingsAddSignature extends Method
     {
         /**
          * @inheritDoc
@@ -26,13 +26,13 @@
             }
 
             $expires = null;
-            if($rpcRequest->containsParameter('expires'))
+            if($rpcRequest->containsParameter('expires') && $rpcRequest->getParameter('expires') !== null)
             {
                 $expires = (int)$rpcRequest->getParameter('expires');
             }
 
             $name = null;
-            if($rpcRequest->containsParameter('name'))
+            if($rpcRequest->containsParameter('name') && $rpcRequest->getParameter('name') !== null)
             {
                 $name = $rpcRequest->getParameter('name');
             }
