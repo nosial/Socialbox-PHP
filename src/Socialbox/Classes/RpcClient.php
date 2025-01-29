@@ -2,6 +2,7 @@
 
     namespace Socialbox\Classes;
 
+    use InvalidArgumentException;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\Types\RequestType;
@@ -9,7 +10,8 @@
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Objects\ExportedSession;
+    use Socialbox\Objects\Client\ExportedSession;
+    use Socialbox\Objects\Client\SignatureKeyPair;
     use Socialbox\Objects\KeyPair;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
@@ -35,6 +37,8 @@
         private string $rpcEndpoint;
         private string $remoteServer;
         private string $sessionUuid;
+        private ?string $defaultSigningKey;
+        private array $signingKeys;
 
         /**
          * Constructs a new instance with the specified peer address.
@@ -72,6 +76,8 @@
                 $this->privateSharedSecret = $exportedSession->getPrivateSharedSecret();
                 $this->clientTransportEncryptionKey = $exportedSession->getClientTransportEncryptionKey();
                 $this->serverTransportEncryptionKey = $exportedSession->getServerTransportEncryptionKey();
+                $this->signingKeys = $exportedSession->getSigningKeys();
+                $this->defaultSigningKey = $exportedSession->getDefaultSigningKey();
 
                 // Still solve the server information
                 $this->serverInformation = self::getServerInformation();
@@ -100,6 +106,8 @@
             }
 
             // Set the initial properties
+            $this->signingKeys = [];
+            $this->defaultSigningKey = null;
             $this->identifiedAs = $identifiedAs;
             $this->remoteServer = $server ?? $identifiedAs->getDomain();
 
@@ -702,6 +710,94 @@
         }
 
         /**
+         * Returns the signing keys associated with the current instance.
+         *
+         * @return SignatureKeyPair[] The signing keys.
+         */
+        public function getSigningKeys(): array
+        {
+            return $this->signingKeys;
+        }
+
+        /**
+         * Adds a new signing key to the current instance.
+         *
+         * @param SignatureKeyPair $key The signing key to be added.
+         * @return void
+         */
+        protected function addSigningKey(SignatureKeyPair $key): void
+        {
+            $this->signingKeys[$key->getUuid()] = $key;
+
+            if($this->defaultSigningKey === null)
+            {
+                $this->defaultSigningKey = $key->getUuid();
+            }
+        }
+
+        /**
+         * @param string $uuid
+         * @return bool
+         */
+        public function signingKeyExists(string $uuid): bool
+        {
+            return isset($this->signingKeys[$uuid]);
+        }
+
+        /**
+         * Removes a signing key from the current instance.
+         *
+         * @param string $uuid The UUID of the signing key to be removed.
+         * @return void
+         */
+        protected function removeSigningKey(string $uuid): void
+        {
+            unset($this->signingKeys[$uuid]);
+
+            if($this->defaultSigningKey === $uuid)
+            {
+                $this->defaultSigningKey = null;
+            }
+        }
+
+        /**
+         * Retrieves the signing key associated with the specified UUID.
+         *
+         * @param string $uuid The UUID of the signing key to be retrieved.
+         * @return SignatureKeyPair|null The signing key associated with the UUID, or null if not found.
+         */
+        public function getSigningKey(string $uuid): ?SignatureKeyPair
+        {
+            return $this->signingKeys[$uuid] ?? null;
+        }
+
+        /**
+         * Retrieves the default signing key associated with the current instance.
+         *
+         * @return SignatureKeyPair|null The default signing key.
+         */
+        public function getDefaultSigningKey(): ?SignatureKeyPair
+        {
+            return $this->signingKeys[$this->defaultSigningKey] ?? null;
+        }
+
+        /**
+         * Sets the default signing key for the current instance.
+         *
+         * @param string $uuid The UUID of the signing key to be set as default.
+         * @return void
+         */
+        public function setDefaultSigningKey(string $uuid): void
+        {
+            if(!isset($this->signingKeys[$uuid]))
+            {
+                throw new InvalidArgumentException('The specified signing key does not exist');
+            }
+
+            $this->defaultSigningKey = $uuid;
+        }
+
+        /**
          * Exports the current session details into an ExportedSession object.
          *
          * @return ExportedSession The exported session containing session-specific details.
@@ -723,7 +819,9 @@
                 'client_private_encryption_key' => $this->clientEncryptionKeyPair->getPrivateKey(),
                 'private_shared_secret' => $this->privateSharedSecret,
                 'client_transport_encryption_key' => $this->clientTransportEncryptionKey,
-                'server_transport_encryption_key' => $this->serverTransportEncryptionKey
+                'server_transport_encryption_key' => $this->serverTransportEncryptionKey,
+                'default_signing_key' => $this->defaultSigningKey,
+                'signing_keys' => array_map(fn(SignatureKeyPair $key) => $key->toArray(), $this->signingKeys)
             ]);
         }
     }
