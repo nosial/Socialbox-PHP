@@ -104,7 +104,7 @@
          */
         public function getState(): SigningKeyState
         {
-            if(time() > $this->expires)
+            if($this->expires > 0 && time() > $this->expires)
             {
                 return SigningKeyState::EXPIRED;
             }
@@ -143,7 +143,7 @@
                 'uuid' => $record->getUuid(),
                 'name' => $record->getName(),
                 'public_key' => $record->getPublicKey(),
-                'state' => $record->getState(),
+                'state' => $record->getState()->value,
                 'expires' => $record->getExpires(),
                 'created' => $record->getCreated()
             ]);
@@ -166,7 +166,7 @@
                 'uuid' => $this->uuid,
                 'name' => $this->name,
                 'public_key' => $this->publicKey,
-                'state' => $this->state->value,
+                'state' => $this->getState()->value,
                 'expires' => $this->expires,
                 'created' => $this->created
             ];
