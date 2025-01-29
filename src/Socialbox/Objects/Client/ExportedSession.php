@@ -1,6 +1,6 @@
 <?php
 
-    namespace Socialbox\Objects;
+    namespace Socialbox\Objects\Client;
 
     use Socialbox\Interfaces\SerializableInterface;
 
@@ -24,6 +24,11 @@
         private string $privateSharedSecret;
         private string $clientTransportEncryptionKey;
         private string $serverTransportEncryptionKey;
+        private ?string $defaultSigningKey;
+        /**
+         * @var SignatureKeyPair[]
+         */
+        private array $signingKeys;
 
         /**
          * Constructor method to initialize class properties from the provided data array.
@@ -55,6 +60,8 @@
             $this->privateSharedSecret = $data['private_shared_secret'];
             $this->clientTransportEncryptionKey = $data['client_transport_encryption_key'];
             $this->serverTransportEncryptionKey = $data['server_transport_encryption_key'];
+            $this->defaultSigningKey = $data['default_signing_key'] ?? null;
+            $this->signingKeys = array_map(fn($key) => SignatureKeyPair::fromArray($key), $data['signing_keys']);
         }
 
         /**
@@ -208,6 +215,26 @@
         }
 
         /**
+         * Retrieves the default signing key associated with the current instance.
+         *
+         * @return string|null The default signing key.
+         */
+        public function getDefaultSigningKey(): ?string
+        {
+            return $this->defaultSigningKey;
+        }
+
+        /**
+         * Retrieves the signing keys associated with the current instance.
+         *
+         * @return SignatureKeyPair[] The signing keys.
+         */
+        public function getSigningKeys(): array
+        {
+            return $this->signingKeys;
+        }
+
+        /**
          * @inheritDoc
          */
         public function toArray(): array
@@ -228,6 +255,8 @@
                 'private_shared_secret' => $this->privateSharedSecret,
                 'client_transport_encryption_key' => $this->clientTransportEncryptionKey,
                 'server_transport_encryption_key' => $this->serverTransportEncryptionKey,
+                'default_signing_key' => $this->defaultSigningKey,
+                'signing_keys' => array_map(fn($key) => $key->toArray(), $this->signingKeys)
             ];
         }
 
