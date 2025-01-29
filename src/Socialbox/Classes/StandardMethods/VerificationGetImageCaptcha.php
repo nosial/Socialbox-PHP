@@ -12,7 +12,7 @@
     use Socialbox\Managers\CaptchaManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
-    use Socialbox\Objects\Standard\ImageCaptcha;
+    use Socialbox\Objects\Standard\ImageCaptchaVerification;
 
     class VerificationGetImageCaptcha extends Method
     {
@@ -59,7 +59,7 @@
             // Build the captcha
             // Returns HTML base64 encoded image of the captcha
             // Important note: Must always be HTML-BASE64 which means it must be prefixed with `data:image/jpeg;base64,`
-            return $rpcRequest->produceResponse(new ImageCaptcha([
+            return $rpcRequest->produceResponse(new ImageCaptchaVerification([
                 'expires' => $captchaRecord->getExpires(),
                 'content' => (new CaptchaBuilder($answer))->build()->inline()
             ]));
