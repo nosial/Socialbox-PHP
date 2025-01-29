@@ -7,7 +7,7 @@
     use Socialbox\Classes\Database;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Objects\ExportedSession;
+    use Socialbox\Objects\Client\ExportedSession;
 
     class ExternalSessionManager
     {
