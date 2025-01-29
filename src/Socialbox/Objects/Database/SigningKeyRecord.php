@@ -47,9 +47,24 @@
             {
                 $this->expires = $data['expires']->getTimestamp();
             }
+            elseif(is_string($data['expires']))
+            {
+                if(empty($data['expires']))
+                {
+                    $this->expires = 0;
+                }
+                else
+                {
+                    $this->expires = strtotime($data['expires']);
+                }
+            }
+            elseif($data['expires'] === null)
+            {
+                $this->expires = 0;
+            }
             else
             {
-                throw new InvalidArgumentException('Invalid expires value');
+                throw new InvalidArgumentException('Invalid expires value, got type: ' . gettype($data['expires']));
             }
 
             if(is_int($data['created']))
@@ -60,9 +75,20 @@
             {
                 $this->created = $data['created']->getTimestamp();
             }
+            elseif(is_string($data['created']))
+            {
+                if(empty($data['created']))
+                {
+                    $this->created = 0;
+                }
+                else
+                {
+                    $this->created = strtotime($data['created']);
+                }
+            }
             else
             {
-                throw new InvalidArgumentException('Invalid created value');
+                throw new InvalidArgumentException('Invalid created value type, got ' . gettype($data['created']));
             }
         }
 
