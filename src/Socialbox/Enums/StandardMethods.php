@@ -6,6 +6,7 @@
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookAddContact;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookDeleteContact;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookGetContacts;
+    use Socialbox\Classes\StandardMethods\AddressBook\AddressBookTrustSignature;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookUpdateRelationship;
     use Socialbox\Classes\StandardMethods\Core\GetAllowedMethods;
     use Socialbox\Classes\StandardMethods\Core\GetSessionState;

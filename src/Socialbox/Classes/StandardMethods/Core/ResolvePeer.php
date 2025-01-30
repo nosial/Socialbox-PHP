@@ -7,6 +7,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
@@ -25,7 +26,7 @@
             // Check if the required 'peer' parameter is set.
             if(!$rpcRequest->containsParameter('peer'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'peer' parameter");
+                throw new MissingRpcArgumentException('peer');
             }
 
             // Parse the peer address
