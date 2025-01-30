@@ -19,6 +19,7 @@
          * @param string $peerUuid The unique identifier of the peer.
          * @param string|PeerAddress $contactAddress The contact's address, either as a string or a PeerAddress instance.
          * @return bool Returns true if the contact exists in the database; otherwise, returns false.
+         * @throws DatabaseOperationException If the operation fails.
          */
         public static function isContact(string $peerUuid, string|PeerAddress $contactAddress): bool
         {
