@@ -8,6 +8,7 @@
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RequestException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\Database\PeerRecord;
@@ -168,6 +169,8 @@
          * Retrieves the current session associated with the session UUID.
          *
          * @return SessionRecord|null Returns the associated SessionRecord if the session UUID exists, or null if no session UUID is set.
+         * @throws DatabaseOperationException Thrown if an error occurs while retrieving the session.
+         * @throws StandardRpcException Thrown if the session UUID is invalid.
          */
         public function getSession(): ?SessionRecord
         {
@@ -184,6 +187,7 @@
          *
          * @return PeerRecord|null Returns the associated RegisteredPeerRecord if available, or null if no session exists.
          * @throws DatabaseOperationException Thrown if an error occurs while retrieving the peer.
+         * @throws StandardRpcException Thrown if the session UUID is invalid.
          */
         public function getPeer(): ?PeerRecord
         {
@@ -212,6 +216,8 @@
          *
          * @param string $decryptedContent The decrypted content to verify the signature against.
          * @return bool True if the signature is valid, false otherwise.
+         * @throws DatabaseOperationException Thrown if an error occurs while retrieving the client's public signing key.
+         * @throws StandardRpcException Thrown if the session UUID is invalid.
          */
         private function verifySignature(string $decryptedContent): bool
         {
