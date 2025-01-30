@@ -6,7 +6,7 @@
     use Socialbox\Classes\Logger;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardMethods;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
 
     class RpcRequest implements SerializableInterface

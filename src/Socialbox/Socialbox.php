@@ -26,7 +26,7 @@
     use Socialbox\Exceptions\RequestException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Managers\ContactManager;
     use Socialbox\Managers\ExternalSessionManager;
     use Socialbox\Managers\PeerInformationManager;

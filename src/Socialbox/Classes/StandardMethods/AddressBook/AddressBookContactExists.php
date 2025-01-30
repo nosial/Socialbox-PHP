@@ -5,15 +5,13 @@
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
-    use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\ContactManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
-    use Socialbox\Socialbox;
 
     class AddressBookContactExists extends Method
     {

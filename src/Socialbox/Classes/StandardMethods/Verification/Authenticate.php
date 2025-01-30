@@ -6,7 +6,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;

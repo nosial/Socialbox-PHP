@@ -9,7 +9,6 @@
 
     class GetSessionState extends Method
     {
-
         /**
          * @inheritDoc
          */

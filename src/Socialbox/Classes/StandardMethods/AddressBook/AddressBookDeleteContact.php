@@ -6,7 +6,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\ContactManager;
     use Socialbox\Objects\ClientRequest;
@@ -22,7 +22,7 @@
         {
             if(!$rpcRequest->containsParameter('peer'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Missing required \'peer\' parameter');
+                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Missing required peer parameter');
             }
 
             try

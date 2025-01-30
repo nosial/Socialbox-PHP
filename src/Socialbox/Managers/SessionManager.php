@@ -15,7 +15,7 @@
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Objects\Database\PeerRecord;
     use Socialbox\Objects\Database\SessionRecord;
     use Socialbox\Objects\KeyPair;

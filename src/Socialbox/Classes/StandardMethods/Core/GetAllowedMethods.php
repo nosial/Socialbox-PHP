@@ -6,15 +6,16 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
 
     class GetAllowedMethods extends Method
     {
-
         /**
+         * Returns a list of allowed methods for the current session.
+         *
          * @inheritDoc
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface

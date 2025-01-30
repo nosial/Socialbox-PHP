@@ -1,6 +1,6 @@
 <?php
 
-    namespace Socialbox\Exceptions;
+    namespace Socialbox\Exceptions\Standard;
 
     use Exception;
     use Socialbox\Classes\Configuration;

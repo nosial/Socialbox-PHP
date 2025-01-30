@@ -7,7 +7,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;

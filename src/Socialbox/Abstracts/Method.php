@@ -2,7 +2,7 @@
 
     namespace Socialbox\Abstracts;
 
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;

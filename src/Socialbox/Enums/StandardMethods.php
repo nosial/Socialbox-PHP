@@ -40,7 +40,7 @@
     use Socialbox\Classes\StandardMethods\Verification\VerificationPasswordAuthentication;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\OneTimePasswordManager;
     use Socialbox\Managers\PasswordManager;

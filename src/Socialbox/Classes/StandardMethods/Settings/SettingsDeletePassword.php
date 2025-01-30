@@ -8,7 +8,7 @@
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
-    use Socialbox\Exceptions\StandardException;
+    use Socialbox\Exceptions\Standard\StandardException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
     use Socialbox\Objects\ClientRequest;
