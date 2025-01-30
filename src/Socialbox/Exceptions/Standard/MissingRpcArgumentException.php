@@ -4,12 +4,12 @@
 
     use Socialbox\Enums\StandardError;
 
-    class MissingArgumentException extends StandardException
+    class MissingRpcArgumentException extends StandardException
     {
         /**
          * Thrown when a required parameter is missing
          *
-         * @param string $parameterName
+         * @param string $parameterName The name of the missing parameter
          */
         public function __construct(string $parameterName)
         {
