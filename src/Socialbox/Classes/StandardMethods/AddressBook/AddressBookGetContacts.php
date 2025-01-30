@@ -6,6 +6,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\ContactManager;
@@ -23,9 +24,9 @@
             if($rpcRequest->containsParameter('limit'))
             {
                 $limit = (int)$rpcRequest->getParameter('limit');
-                if($limit < 1)
+                if($limit <= 0)
                 {
-                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid limit, must be greater than 0');
+                    throw new InvalidRpcArgumentException('limit', 'Invalid limit, must be greater than 0');
                 }
 
                 $limit = min($limit, Configuration::getPoliciesConfiguration()->getGetContactsLimit());
@@ -37,7 +38,7 @@
                 $page = (int)$rpcRequest->getParameter('page');
                 if($page < 0)
                 {
-                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid page, must be greater than or equal to 0');
+                    throw new InvalidRpcArgumentException('page', 'Invalid page, must be greater than or equal to 0');
                 }
 
                 $page = max($page, 0);
