@@ -7,7 +7,7 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\CaptchaManager;
     use Socialbox\Objects\ClientRequest;
@@ -53,7 +53,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException("There was an unexpected error while trying create the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException("There was an unexpected error while trying create the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // Build the captcha

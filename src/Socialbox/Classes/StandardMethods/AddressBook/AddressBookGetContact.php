@@ -6,7 +6,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\ContactManager;
     use Socialbox\Objects\ClientRequest;
@@ -31,7 +31,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardException('Invalid peer address', StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new StandardRpcException('Invalid peer address', StandardError::RPC_INVALID_ARGUMENTS, $e);
             }
 
             try
@@ -45,7 +45,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to get contact', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to get contact', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse($contact->toStandard());

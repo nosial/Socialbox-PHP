@@ -6,7 +6,7 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PeerInformationManager;
     use Socialbox\Objects\ClientRequest;
@@ -53,7 +53,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to update the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to update the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
 

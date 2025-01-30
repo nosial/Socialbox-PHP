@@ -6,7 +6,7 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
@@ -31,7 +31,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to retrieve allowed methods due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to retrieve allowed methods due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse($allowedMethods);

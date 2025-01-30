@@ -8,7 +8,7 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\OneTimePasswordManager;
     use Socialbox\Managers\PasswordManager;
@@ -34,7 +34,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to check One Time Password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to check One Time Password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             if($peer->isEnabled())
@@ -46,7 +46,7 @@
                 }
                 catch (DatabaseOperationException $e)
                 {
-                    throw new StandardException('Failed to check password usage due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                    throw new StandardRpcException('Failed to check password usage due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
             }
             else
@@ -76,7 +76,7 @@
                 }
                 catch(Exception $e)
                 {
-                    throw new StandardException('Failed to verify password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                    throw new StandardRpcException('Failed to verify password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
             }
 
@@ -90,7 +90,7 @@
             }
             catch(Exception $e)
             {
-                throw new StandardException('Failed to set password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to set password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse($totpUri);

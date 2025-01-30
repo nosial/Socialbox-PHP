@@ -6,7 +6,7 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\CaptchaManager;
     use Socialbox\Managers\SessionManager;
@@ -37,7 +37,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException("There was an unexpected error while trying to get the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException("There was an unexpected error while trying to get the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             try
@@ -51,7 +51,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException("There was an unexpected error while trying to answer the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException("There was an unexpected error while trying to answer the captcha", StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse($result);

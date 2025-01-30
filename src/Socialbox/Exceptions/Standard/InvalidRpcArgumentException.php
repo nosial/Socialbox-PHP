@@ -4,7 +4,7 @@
 
     use Socialbox\Enums\StandardError;
 
-    class InvalidRpcArgumentException extends StandardException
+    class InvalidRpcArgumentException extends StandardRpcException
     {
         /**
          * Thrown when a required parameter is missing

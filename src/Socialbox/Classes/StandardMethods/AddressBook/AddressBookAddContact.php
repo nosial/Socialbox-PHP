@@ -9,7 +9,7 @@
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\ContactManager;
     use Socialbox\Objects\ClientRequest;
@@ -76,7 +76,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to add contact', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to add contact', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // Return success

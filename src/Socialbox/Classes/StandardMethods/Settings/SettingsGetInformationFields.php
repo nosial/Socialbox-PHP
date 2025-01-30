@@ -5,7 +5,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PeerInformationManager;
     use Socialbox\Objects\ClientRequest;
@@ -24,7 +24,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to retrieve existing information fields', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to retrieve existing information fields', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse(array_map(fn($result) => $result->toInformationFieldState(), $fieldRecords));

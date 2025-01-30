@@ -7,7 +7,7 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\ContactManager;
     use Socialbox\Objects\ClientRequest;
@@ -32,7 +32,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardException('Invalid peer address', StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new StandardRpcException('Invalid peer address', StandardError::RPC_INVALID_ARGUMENTS, $e);
             }
 
             if(!$rpcRequest->containsParameter('relationship'))
@@ -42,7 +42,7 @@
             $relationship = ContactRelationshipType::tryFrom(strtoupper($rpcRequest->getParameter('relationship')));
             if($relationship === null)
             {
-                throw new StandardException('Invalid relationship type', StandardError::RPC_INVALID_ARGUMENTS);
+                throw new StandardRpcException('Invalid relationship type', StandardError::RPC_INVALID_ARGUMENTS);
             }
 
             try
@@ -59,7 +59,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to update contact relationship', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to update contact relationship', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // Return success

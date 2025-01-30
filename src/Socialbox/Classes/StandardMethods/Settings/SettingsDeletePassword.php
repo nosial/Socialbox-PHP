@@ -8,7 +8,7 @@
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
     use Socialbox\Objects\ClientRequest;
@@ -67,7 +67,7 @@
             }
             catch (Exception $e)
             {
-                throw new StandardException('Failed to check password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to check password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // Success

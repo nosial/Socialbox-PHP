@@ -6,7 +6,7 @@
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
@@ -39,7 +39,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardException('Invalid UUID', StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new StandardRpcException('Invalid UUID', StandardError::RPC_INVALID_ARGUMENTS, $e);
             }
 
             // Parse the peer address
@@ -49,20 +49,20 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardException('Peer Address Error: ' . $e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new StandardRpcException('Peer Address Error: ' . $e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
             }
 
             try
             {
                 return $rpcRequest->produceResponse(Socialbox::resolvePeerSignature($peerAddress, $uuid->toRfc4122()));
             }
-            catch(StandardException $e)
+            catch(StandardRpcException $e)
             {
                 throw $e;
             }
             catch (Exception $e)
             {
-                throw new StandardException('Failed to resolve peer signature', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to resolve peer signature', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
         }
     }

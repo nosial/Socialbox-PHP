@@ -26,7 +26,7 @@
     use Socialbox\Exceptions\RequestException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Managers\ContactManager;
     use Socialbox\Managers\ExternalSessionManager;
     use Socialbox\Managers\PeerInformationManager;
@@ -567,7 +567,7 @@
                 {
                     $method->checkAccess($clientRequest);
                 }
-                catch (StandardException $e)
+                catch (StandardRpcException $e)
                 {
                     $response = $e->produceError($rpcRequest);
                     $results[] = $response->toArray();
@@ -587,7 +587,7 @@
                         $response = $method->execute($clientRequest, $rpcRequest);
                         Logger::getLogger()->debug(sprintf('%s method executed successfully', $rpcRequest->getMethod()));
                     }
-                    catch(StandardException $e)
+                    catch(StandardRpcException $e)
                     {
                         Logger::getLogger()->error('An error occurred while processing the RPC request', $e);
                         $response = $e->produceError($rpcRequest);
@@ -755,7 +755,7 @@
          * @param PeerAddress|string $peerAddress The peer address or string identifier to be resolved.
          * @param string $signatureUuid The UUID of the signature key to be resolved.
          * @return SigningKey The resolved signing key for the peer.
-         * @throws StandardException If there was an error while resolving the peer signature key.
+         * @throws StandardRpcException If there was an error while resolving the peer signature key.
          */
         public static function resolvePeerSignature(PeerAddress|string $peerAddress, string $signatureUuid): SigningKey
         {
@@ -768,14 +768,14 @@
                 }
                 catch(InvalidArgumentException $e)
                 {
-                    throw new StandardException($e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
+                    throw new StandardRpcException($e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
                 }
             }
 
             // Prevent resolutions against any host
             if($peerAddress->getUsername() == ReservedUsernames::HOST)
             {
-                throw new StandardException('Cannot resolve signature for a host peer', StandardError::FORBIDDEN);
+                throw new StandardRpcException('Cannot resolve signature for a host peer', StandardError::FORBIDDEN);
             }
 
             // If the peer is registered within this server
@@ -788,22 +788,22 @@
                     if($peer === null || !$peer?->isEnabled())
                     {
                         // Fail if the peer is not found or enabled
-                        throw new StandardException(sprintf('The peer %s does not exist', $peerAddress), StandardError::PEER_NOT_FOUND);
+                        throw new StandardRpcException(sprintf('The peer %s does not exist', $peerAddress), StandardError::PEER_NOT_FOUND);
                     }
 
                     $signingKey = SigningKeysManager::getSigningKey($peer->getUuid(), $signatureUuid);
                     if($signingKey === null)
                     {
-                        throw new StandardException(sprintf('The requested signing key %s was not found', $signatureUuid), StandardError::NOT_FOUND);
+                        throw new StandardRpcException(sprintf('The requested signing key %s was not found', $signatureUuid), StandardError::NOT_FOUND);
                     }
                 }
-                catch(StandardException $e)
+                catch(StandardRpcException $e)
                 {
                     throw $e;
                 }
                 catch(Exception $e)
                 {
-                    throw new StandardException('There was an error while trying to resolve the signature key for the peer locally', StandardError::INTERNAL_SERVER_ERROR, $e);
+                    throw new StandardRpcException('There was an error while trying to resolve the signature key for the peer locally', StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
 
                 return $signingKey->toStandard();
@@ -816,7 +816,7 @@
             }
             catch(Exception $e)
             {
-                throw new StandardException(sprintf('There was an error while trying to communicate with %s', $peerAddress->getDomain()), StandardError::RESOLUTION_FAILED, $e);
+                throw new StandardRpcException(sprintf('There was an error while trying to communicate with %s', $peerAddress->getDomain()), StandardError::RESOLUTION_FAILED, $e);
             }
 
             try
@@ -826,7 +826,7 @@
             catch(RpcException $e)
             {
                 // Reflect the server error to the client
-                throw new StandardException($e->getMessage(), StandardError::tryFrom((int)$e->getCode()) ?? StandardError::UNKNOWN, $e);
+                throw new StandardRpcException($e->getMessage(), StandardError::tryFrom((int)$e->getCode()) ?? StandardError::UNKNOWN, $e);
             }
         }
 
@@ -836,7 +836,7 @@
          * @param PeerAddress|string $peerAddress The external peer address or string identifier to be resolved.
          * @param PeerAddress|string|null $identifiedAs Optional. The peer address or string identifier by which the caller is identified
          * @return Peer The resolved external peer after synchronization.
-         * @throws StandardException Thrown if there was an error with the resolution process
+         * @throws StandardRpcException Thrown if there was an error with the resolution process
          */
         public static function resolvePeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null): Peer
         {
@@ -870,7 +870,7 @@
          * @param PeerAddress|string $peerAddress The peer address or string identifier to be resolved.
          * @param PeerAddress|string|null $identifiedAs Optional. The peer address or string identifier by which the caller is identified
          * @return Peer The resolved peer after synchronization.
-         * @throws StandardException Thrown if there was an error with the resolution process
+         * @throws StandardRpcException Thrown if there was an error with the resolution process
          */
         private static function resolveExternalPeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null): Peer
         {
@@ -891,7 +891,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             if($existingPeer === null)
@@ -904,7 +904,7 @@
                 }
                 catch(Exception $e)
                 {
-                    throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
+                    throw new StandardRpcException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
                 }
 
                 try
@@ -913,7 +913,7 @@
                 }
                 catch(DatabaseOperationException $e)
                 {
-                    throw new StandardException('Failed to synchronize the external peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                    throw new StandardRpcException('Failed to synchronize the external peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
 
                 return $peer;
@@ -928,7 +928,7 @@
                 }
                 catch(Exception $e)
                 {
-                    throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
+                    throw new StandardRpcException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
                 }
 
                 try
@@ -937,7 +937,7 @@
                 }
                 catch(DatabaseOperationException $e)
                 {
-                    throw new StandardException('Failed to synchronize the external peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                    throw new StandardRpcException('Failed to synchronize the external peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
 
                 return $peer;
@@ -953,7 +953,7 @@
          * @param PeerAddress|string $peerAddress The peer address or string identifier to be resolved.
          * @param PeerAddress|string|null $identifiedAs Optional. The peer address or string identifier by which the caller is identified
          * @return Peer The resolved peer after synchronization.
-         * @throws StandardException Thrown if there was an error with the resolution process
+         * @throws StandardRpcException Thrown if there was an error with the resolution process
          */
         private static function resolveLocalPeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null): Peer
         {
@@ -974,12 +974,12 @@
 
                 if($peer === null)
                 {
-                    throw new StandardException('The requested peer was not found', StandardError::PEER_NOT_FOUND);
+                    throw new StandardRpcException('The requested peer was not found', StandardError::PEER_NOT_FOUND);
                 }
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             try
@@ -989,7 +989,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to resolve peer information: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to resolve peer information: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // If there's an identifier, we can resolve more information fields if the target peer has added the caller
@@ -1002,7 +1002,7 @@
                 }
                 catch (DatabaseOperationException $e)
                 {
-                    throw new StandardException('Failed to resolve peer because there was an error while trying to retrieve contact information for the peer', StandardError::INTERNAL_SERVER_ERROR, $e);
+                    throw new StandardRpcException('Failed to resolve peer because there was an error while trying to retrieve contact information for the peer', StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
 
                 // If it is a contact, what sort of contact? retrieve depending on the contact type
@@ -1023,7 +1023,7 @@
                     }
                     catch (DatabaseOperationException $e)
                     {
-                        throw new StandardException('Failed to resolve peer information: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                        throw new StandardRpcException('Failed to resolve peer information: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
                     }
                 }
             }

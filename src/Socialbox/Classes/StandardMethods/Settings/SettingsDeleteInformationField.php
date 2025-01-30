@@ -7,7 +7,7 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PeerInformationManager;
     use Socialbox\Objects\ClientRequest;
@@ -40,7 +40,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to check if the information field exists', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to check if the information field exists', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             switch($fieldName)
@@ -111,7 +111,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to delete the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to delete the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse(true);

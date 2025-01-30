@@ -15,7 +15,7 @@
     use Socialbox\Enums\SessionState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Objects\Database\PeerRecord;
     use Socialbox\Objects\Database\SessionRecord;
     use Socialbox\Objects\KeyPair;
@@ -181,7 +181,7 @@
          * @param string $uuid The unique identifier of the session.
          * @return SessionRecord The session record corresponding to the given UUID.
          * @throws DatabaseOperationException If the session record cannot be found or if there is an error during retrieval.
-         * @throws StandardException
+         * @throws StandardRpcException
          */
         public static function getSession(string $uuid): SessionRecord
         {
@@ -196,7 +196,7 @@
 
                 if ($data === false)
                 {
-                    throw new StandardException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
+                    throw new StandardRpcException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
                 }
 
                 // Convert the timestamp fields to DateTime objects
@@ -308,7 +308,7 @@
          *
          * @param string $uuid The UUID of the session to retrieve flags for.
          * @return SessionFlags[] An array of flags associated with the specified session.
-         * @throws StandardException If the specified session does not exist.
+         * @throws StandardRpcException If the specified session does not exist.
          * @throws DatabaseOperationException If there
          */
         private static function getFlags(string $uuid): array
@@ -324,7 +324,7 @@
 
                 if ($data === false)
                 {
-                    throw new StandardException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
+                    throw new StandardRpcException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
                 }
 
                 return SessionFlags::fromString($data['flags']);
@@ -341,7 +341,7 @@
          * @param string $uuid The unique identifier of the session to which the flags will be added.
          * @param array $flags The flags to add to the session.
          * @return void
-         * @throws DatabaseOperationException|StandardException If there is an error while updating the session in the database.
+         * @throws DatabaseOperationException|StandardRpcException If there is an error while updating the session in the database.
          */
         public static function addFlags(string $uuid, array $flags): void
         {
@@ -372,7 +372,7 @@
          * @param string $uuid The UUID of the session from which the flags will be removed.
          * @param SessionFlags[] $flags An array of flags to be removed from the session.
          * @return void
-         * @throws DatabaseOperationException|StandardException If there is an error while updating the session in the database.
+         * @throws DatabaseOperationException|StandardRpcException If there is an error while updating the session in the database.
          */
         public static function removeFlags(string $uuid, array $flags): void
         {
@@ -429,7 +429,7 @@
          * @param array $flagsToRemove An array of flags to remove from the session if it is marked as complete.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the session in the database.
-         * @throws StandardException If the session record cannot be found or if there is an error during retrieval.
+         * @throws StandardRpcException If the session record cannot be found or if there is an error during retrieval.
          */
         public static function updateFlow(SessionRecord $session, array $flagsToRemove=[]): void
         {

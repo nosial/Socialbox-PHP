@@ -10,7 +10,7 @@
     use Socialbox\Objects\RpcRequest;
     use Throwable;
 
-    class StandardException extends Exception
+    class StandardRpcException extends Exception
     {
         /**
          * Thrown as a standard error, with a message and a code

@@ -6,7 +6,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
@@ -35,7 +35,7 @@
             }
             catch(Exception $e)
             {
-                throw new StandardException('An error occurred while authenticating the peer', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('An error occurred while authenticating the peer', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
 

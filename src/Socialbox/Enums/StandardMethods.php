@@ -40,7 +40,7 @@
     use Socialbox\Classes\StandardMethods\Verification\VerificationPasswordAuthentication;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\OneTimePasswordManager;
     use Socialbox\Managers\PasswordManager;
@@ -145,7 +145,7 @@
          * @param ClientRequest $request The client request object containing necessary data for execution.
          * @param RpcRequest $rpcRequest The RPC request object providing additional parameters for execution.
          * @return SerializableInterface|null The result of the operation as a serializable interface or null if no operation matches.
-         * @throws StandardException If an error occurs during execution
+         * @throws StandardRpcException If an error occurs during execution
          */
         public function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
@@ -206,7 +206,7 @@
          * @param ClientRequest $clientRequest The client request instance to check access against.
          * @return void
          * @throws DatabaseOperationException If an error occurs while checking the database for session information.
-         * @throws StandardException If the method is not allowed for the given client request.
+         * @throws StandardRpcException If the method is not allowed for the given client request.
          */
         public function checkAccess(ClientRequest $clientRequest): void
         {
@@ -215,7 +215,7 @@
                 return;
             }
 
-            throw new StandardException(StandardError::METHOD_NOT_ALLOWED->getMessage(), StandardError::METHOD_NOT_ALLOWED);
+            throw new StandardRpcException(StandardError::METHOD_NOT_ALLOWED->getMessage(), StandardError::METHOD_NOT_ALLOWED);
         }
 
         /**

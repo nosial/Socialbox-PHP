@@ -9,7 +9,7 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PeerInformationManager;
     use Socialbox\Managers\SessionManager;
@@ -62,7 +62,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to retrieve current peer information', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to retrieve current peer information', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             try
@@ -76,7 +76,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardException('Failed to add the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to add the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // Update the session flow if necessary
@@ -130,15 +130,15 @@
                 catch (DatabaseOperationException $e)
                 {
                     // Something is seriously wrong if we can't roll back the information field
-                    throw new StandardException('Failed to rollback the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
+                    throw new StandardRpcException('Failed to rollback the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
 
-                if($e instanceof StandardException)
+                if($e instanceof StandardRpcException)
                 {
                     throw $e;
                 }
 
-                throw new StandardException('Failed to update the session flow', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to update the session flow', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
 

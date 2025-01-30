@@ -6,7 +6,7 @@
     use Socialbox\Classes\Logger;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardMethods;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
 
     class RpcRequest implements SerializableInterface
@@ -162,10 +162,10 @@
         }
 
         /**
-         * @param StandardException $e
+         * @param StandardRpcException $e
          * @return RpcError|null
          */
-        public function handleStandardException(StandardException $e): ?RpcError
+        public function handleStandardException(StandardRpcException $e): ?RpcError
         {
             return $this->produceError($e->getStandardError(), $e->getMessage());
         }

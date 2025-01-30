@@ -7,7 +7,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
-    use Socialbox\Exceptions\Standard\StandardException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
@@ -35,7 +35,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardException('Peer Address Error: ' . $e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new StandardRpcException('Peer Address Error: ' . $e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
             }
 
             // Check if host is making the request & the identifier is not empty
@@ -52,7 +52,7 @@
             }
             catch(Exception $e)
             {
-                throw new StandardException(sprintf('There was an error while trying to resolve the peer %s: %s', $peerAddress, $e->getMessage()), StandardError::RESOLUTION_FAILED, $e);
+                throw new StandardRpcException(sprintf('There was an error while trying to resolve the peer %s: %s', $peerAddress, $e->getMessage()), StandardError::RESOLUTION_FAILED, $e);
             }
         }
     }
