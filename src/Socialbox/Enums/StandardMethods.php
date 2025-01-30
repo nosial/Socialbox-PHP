@@ -225,6 +225,7 @@
          * @param ClientRequest $clientRequest The client request for which allowed methods are determined.
          * @return array Returns an array of allowed methods for the provided client request.
          * @throws DatabaseOperationException If an error occurs while checking the database for session information.
+         * @throws StandardRpcException
          */
         public static function getAllowedMethods(ClientRequest $clientRequest): array
         {
@@ -285,6 +286,8 @@
          *
          * @param ClientRequest $clientRequest The client request object containing all the request parameters
          * @return array Returns an array methods that are available for external sessions
+         * @throws DatabaseOperationException If an error occurs while checking the database for session information.
+         * @throws StandardRpcException If an error occurs while checking the database for session information.
          */
         private static function getExternalMethods(ClientRequest $clientRequest): array
         {
@@ -410,6 +413,7 @@
          * @param ClientRequest $clientRequest The client request for which the authentication methods are determined.
          * @return array The list of available authentication methods as an array of constants.
          * @throws DatabaseOperationException If an error occurs while checking the database for authentication methods.
+         * @throws StandardRpcException
          */
         private static function getAuthenticationMethods(ClientRequest $clientRequest): array
         {
