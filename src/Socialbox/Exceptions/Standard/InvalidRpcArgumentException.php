@@ -14,6 +14,6 @@
          */
         public function __construct(string $parameterName, string $reason)
         {
-            parent::__construct(sprintf('The parameter %s is invalid: %s', $parameterName, $reason), StandardError::RPC_INVALID_ARGUMENTS);
+            parent::__construct(sprintf('Invalid parameter %s: %s', $parameterName, $reason), StandardError::RPC_INVALID_ARGUMENTS);
         }
     }
