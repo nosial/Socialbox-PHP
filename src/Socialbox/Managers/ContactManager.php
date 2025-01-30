@@ -9,7 +9,9 @@
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\ContactDatabaseRecord;
+    use Socialbox\Objects\Database\ContactKnownKeyRecord;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\SigningKey;
 
     class ContactManager
     {
@@ -277,5 +279,201 @@
                 throw new DatabaseOperationException('Failed to get contacts from the database', $e);
             }
             return $contacts;
+        }
+
+        /**
+         * Adds a signing key to a contact in the database.
+         *
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to add the signing key to.
+         * @param SigningKey $signingKey The signing key to add to the contact.
+         * @return void
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function addContactSigningKey(string|ContactDatabaseRecord $contactUuid, SigningKey $signingKey): void
+        {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('INSERT INTO contacts_known_keys (contact_uuid, signature_uuid, signature_name, signature_key, expires, created, trusted_on) VALUES (:contact_uuid, :signature_uuid, :signature_name, :signature_key, :expires, :created, :trusted_on)');
+
+                $statement->bindParam(':contact_uuid', $contactUuid);
+                $signatureUuid = $signingKey->getUuid();
+                $statement->bindParam(':signature_uuid', $signatureUuid);
+                $signatureName = $signingKey->getName();
+                $statement->bindParam(':signature_name', $signatureName);
+                $signatureKey = $signingKey->getPublicKey();
+                $statement->bindParam(':signature_key', $signatureKey);
+                $expires = $signingKey->getExpires();
+                $statement->bindParam(':expires', $expires);
+                $created = $signingKey->getCreated();
+                $statement->bindParam(':created', $created);
+                $trustedOn = (new \DateTime())->format('Y-m-d H:i:s');
+                $statement->bindParam(':trusted_on', $trustedOn);
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to add a signing key to a contact in the database', $e);
+            }
+        }
+
+        /**
+         * Determines if a signing key UUID exists for a contact in the database.
+         *
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to check.
+         * @param string $signatureUuid The UUID of the signing key to check.
+         * @return bool Returns true if the signing key UUID exists for the contact; otherwise, returns false.
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function contactSigningKeyUuidExists(string|ContactDatabaseRecord $contactUuid, string $signatureUuid): bool
+        {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('SELECT COUNT(*) FROM contacts_known_keys WHERE contact_uuid=:contact_uuid AND signature_uuid=:signature_uuid');
+                $statement->bindParam(':contact_uuid', $contactUuid);
+                $statement->bindParam(':signature_uuid', $signatureUuid);
+                $statement->execute();
+                return $statement->fetchColumn() > 0;
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to check if a signing key UUID exists for a contact in the database', $e);
+            }
+        }
+
+        /**
+         * Determines if a signing key exists for a contact in the database.
+         *
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to check.
+         * @param string $signatureKey The public key of the signing key to check.
+         * @return bool Returns true if the signing key exists for the contact; otherwise, returns false.
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function contactSigningKeyExists(string|ContactDatabaseRecord $contactUuid, string $signatureKey): bool
+        {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('SELECT COUNT(*) FROM contacts_known_keys WHERE contact_uuid=:contact_uuid AND signature_key=:signature_key');
+                $statement->bindParam(':contact_uuid', $contactUuid);
+                $statement->bindParam(':signature_key', $signatureKey);
+                $statement->execute();
+                return $statement->fetchColumn() > 0;
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to check if a signing key exists for a contact in the database', $e);
+            }
+        }
+
+        /**
+         * Retrieves a signing key for a contact from the database.
+         *
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to retrieve the signing key for.
+         * @param string $signatureUuid The UUID of the signing key to retrieve.
+         * @return ContactKnownKeyRecord|null The retrieved ContactKnownKeyRecord instance if found, or null if no matching signing key exists.
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function contactGetSigningKey(string|ContactDatabaseRecord $contactUuid, string $signatureUuid): ?ContactKnownKeyRecord
+        {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('SELECT * FROM contacts_known_keys WHERE contact_uuid=:contact_uuid AND signature_uuid=:signature_uuid LIMIT 1');
+                $statement->bindParam(':contact_uuid', $contactUuid);
+                $statement->bindParam(':signature_uuid', $signatureUuid);
+                $statement->execute();
+                $result = $statement->fetch();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to get a signing key for a contact from the database', $e);
+            }
+
+            if($result === false)
+            {
+                return null;
+            }
+
+            return ContactKnownKeyRecord::fromArray($result);
+        }
+
+        /**
+         * Retrieves all signing keys for a contact from the database.
+         *
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to retrieve the signing keys for.
+         * @return ContactKnownKeyRecord[] An array of ContactKnownKeyRecord instances representing the signing keys for the contact.
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function contactGetSigningKeys(string|ContactDatabaseRecord $contactUuid): array
+        {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
+            $signingKeys = [];
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('SELECT * FROM contacts_known_keys WHERE contact_uuid=:contact_uuid');
+                $statement->bindParam(':contact_uuid', $contactUuid);
+                $statement->execute();
+                $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach($results as $result)
+                {
+                    $signingKeys[] = ContactKnownKeyRecord::fromArray($result);
+                }
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to get signing keys for a contact from the database', $e);
+            }
+
+            return $signingKeys;
+        }
+
+        /**
+         * Retrieves the number of signing keys for a contact from the database.
+         *
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to retrieve the signing keys count for.
+         * @return int The number of signing keys for the contact.
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function contactGetSigningKeysCount(string|ContactDatabaseRecord $contactUuid): int
+        {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('SELECT COUNT(*) FROM contacts_known_keys WHERE contact_uuid=:contact_uuid');
+                $statement->bindParam(':contact_uuid', $contactUuid);
+                $statement->execute();
+                return $statement->fetchColumn();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to get the number of signing keys for a contact from the database', $e);
+            }
         }
     }

@@ -12,7 +12,7 @@
     {
         private string $peerUuid;
         private string $uuid;
-        private ?string $name;
+        private string $name;
         private string $publicKey;
         private SigningKeyState $state;
         private int $expires;
@@ -35,7 +35,7 @@
         {
             $this->peerUuid = $data['peer_uuid'];
             $this->uuid = $data['uuid'];
-            $this->name = $data['name'] ?? null;
+            $this->name = $data['name'];
             $this->publicKey = $data['public_key'];
             $this->state = SigningKeyState::tryFrom($data['state']);
 
@@ -115,9 +115,9 @@
         /**
          * Retrieves the name.
          *
-         * @return string|null The name, or null if not set.
+         * @return string The name, or null if not set.
          */
-        public function getName(): ?string
+        public function getName(): string
         {
             return $this->name;
         }

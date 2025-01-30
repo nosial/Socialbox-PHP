@@ -7,6 +7,8 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\ContactManager;
@@ -23,7 +25,7 @@
         {
             if(!$rpcRequest->containsParameter('peer'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Missing required peer parameter');
+                throw new MissingRpcArgumentException('peer');
             }
 
             try
@@ -32,17 +34,17 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardRpcException('Invalid peer address', StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new InvalidRpcArgumentException('peer', 'Invalid peer address');
             }
 
             if(!$rpcRequest->containsParameter('relationship'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Missing required relationship parameter');
+                throw new MissingRpcArgumentException('relationship');
             }
             $relationship = ContactRelationshipType::tryFrom(strtoupper($rpcRequest->getParameter('relationship')));
             if($relationship === null)
             {
-                throw new StandardRpcException('Invalid relationship type', StandardError::RPC_INVALID_ARGUMENTS);
+                throw new InvalidRpcArgumentException('relationship', 'Invalid relationship type');
             }
 
             try

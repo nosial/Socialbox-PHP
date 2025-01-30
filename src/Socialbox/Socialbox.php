@@ -754,10 +754,10 @@
          *
          * @param PeerAddress|string $peerAddress The peer address or string identifier to be resolved.
          * @param string $signatureUuid The UUID of the signature key to be resolved.
-         * @return SigningKey The resolved signing key for the peer.
+         * @return SigningKey|null The resolved signing key for the peer. Null if not found
          * @throws StandardRpcException If there was an error while resolving the peer signature key.
          */
-        public static function resolvePeerSignature(PeerAddress|string $peerAddress, string $signatureUuid): SigningKey
+        public static function resolvePeerSignature(PeerAddress|string $peerAddress, string $signatureUuid): ?SigningKey
         {
             // Convert string peer address to object PeerAddress
             if(is_string($peerAddress))
@@ -788,13 +788,13 @@
                     if($peer === null || !$peer?->isEnabled())
                     {
                         // Fail if the peer is not found or enabled
-                        throw new StandardRpcException(sprintf('The peer %s does not exist', $peerAddress), StandardError::PEER_NOT_FOUND);
+                        return null;
                     }
 
                     $signingKey = SigningKeysManager::getSigningKey($peer->getUuid(), $signatureUuid);
                     if($signingKey === null)
                     {
-                        throw new StandardRpcException(sprintf('The requested signing key %s was not found', $signatureUuid), StandardError::NOT_FOUND);
+                        return null;
                     }
                 }
                 catch(StandardRpcException $e)

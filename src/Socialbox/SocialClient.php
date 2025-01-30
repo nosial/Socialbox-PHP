@@ -729,21 +729,24 @@
          *
          * @param string|PeerAddress $peerAddress The peer address as a string or an instance of PeerAddress.
          * @param string $signatureUuid The UUID of the signature to resolve.
-         * @return SigningKey The resolved signing key.
+         * @return SigningKey|null The resolved signing key. Null if the resolved key was not found
          * @throws RpcException Thrown if the RPC request fails.
          */
-        public function resolvePeerSignature(string|PeerAddress $peerAddress, string $signatureUuid): SigningKey
+        public function resolvePeerSignature(string|PeerAddress $peerAddress, string $signatureUuid): ?SigningKey
         {
             if($peerAddress instanceof PeerAddress)
             {
                 $peerAddress = $peerAddress->getAddress();
             }
 
-            return SigningKey::fromArray($this->sendRequest(
+            $result = $this->sendRequest(
                 new RpcRequest(StandardMethods::RESOLVE_PEER_SIGNATURE, Utilities::randomCrc32(), [
                     'peer' => $peerAddress,
                     'uuid' => $signatureUuid
                 ])
-            )->getResponse()->getResult());
+            )->getResponse()->getResult();
+
+            // Conditional null-return
+            return $result ? SigningKey::fromArray($result) : null;
         }
     }

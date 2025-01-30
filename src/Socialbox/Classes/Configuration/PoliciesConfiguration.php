@@ -7,6 +7,7 @@
     class PoliciesConfiguration
     {
         private int $maxSigningKeys;
+        private int $maxContactSigningKeys;
         private int $sessionInactivityExpires;
         private int $imageCaptchaExpires;
         private int $peerSyncInterval;
@@ -37,6 +38,7 @@
         public function __construct(array $data)
         {
             $this->maxSigningKeys = $data['max_signing_keys'];
+            $this->maxContactSigningKeys = $data['max_contact_signing_keys'];
             $this->sessionInactivityExpires = $data['session_inactivity_expires'];
             $this->imageCaptchaExpires = $data['image_captcha_expires'];
             $this->peerSyncInterval = $data['peer_sync_interval'];
@@ -59,6 +61,11 @@
         public function getMaxSigningKeys(): int
         {
             return $this->maxSigningKeys;
+        }
+
+        public function getMaxContactSigningKeys(): int
+        {
+            return $this->maxContactSigningKeys;
         }
 
         /**

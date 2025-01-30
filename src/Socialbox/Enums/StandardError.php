@@ -15,7 +15,8 @@
         case UNAUTHORIZED = -104;
         case NOT_FOUND = -105;
         case RESOLUTION_FAILED = -106;
-        case CRYPTOGRAPHIC_ERROR = -107;
+        case CONFLICT = -107;
+        case CRYPTOGRAPHIC_ERROR = -108;
 
         // RPC Errors
         case RPC_METHOD_NOT_FOUND = -1000;

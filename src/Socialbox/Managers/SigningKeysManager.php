@@ -44,26 +44,27 @@
          *
          * @param string $peerUuid The unique identifier of the peer associated with the signing key.
          * @param string $publicKey The public signing key to be added. Must be valid according to the Cryptography::validatePublicSigningKey method.
+         * @param string $name Optional name associated with the signing key. Must not exceed 64 characters in length.
          * @param int|null $expires Optional expiration timestamp for the signing key. Can be null if the key does not expire.
-         * @param string|null $name Optional name associated with the signing key. Must not exceed 64 characters in length.
-         * @throws DatabaseOperationException If the operation to add the signing key to the database fails.
          * @return string The UUID of the newly added signing key.
+         * @throws DatabaseOperationException If the operation to add the signing key to the database fails.
          */
-        public static function addSigningKey(string $peerUuid, string $publicKey, ?int $expires=null, ?string $name=null): string
+        public static function addSigningKey(string $peerUuid, string $publicKey, string $name, ?int $expires=null): string
         {
             if(!Cryptography::validatePublicSigningKey($publicKey))
             {
                 throw new InvalidArgumentException('The public key is invalid');
             }
 
+
+            if(empty($name))
+            {
+                throw new InvalidArgumentException('The name cannot be empty');
+            }
+
             if(strlen($name) > 64)
             {
                 throw new InvalidArgumentException('The name is too long');
-            }
-
-            if($name !== null && empty($name))
-            {
-                throw new InvalidArgumentException('The name cannot be empty');
             }
 
             if($expires !== null)

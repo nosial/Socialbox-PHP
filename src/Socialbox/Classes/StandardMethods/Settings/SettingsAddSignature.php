@@ -7,6 +7,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\SigningKeysManager;
@@ -22,13 +23,18 @@
         {
             if(!$rpcRequest->containsParameter('public_key'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'public_key' parameter");
+                throw new MissingRpcArgumentException('public_key');
             }
 
             $expires = null;
             if($rpcRequest->containsParameter('expires') && $rpcRequest->getParameter('expires') !== null)
             {
                 $expires = (int)$rpcRequest->getParameter('expires');
+            }
+
+            if(!$rpcRequest->containsParameter('name'))
+            {
+                throw new MissingRpcArgumentException('name');
             }
 
             $name = null;
@@ -46,7 +52,7 @@
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The maximum number of signing keys has been reached');
                 }
 
-                $uuid = SigningKeysManager::addSigningKey($peerUuid, $rpcRequest->getParameter('public_key'), $expires, $name);
+                $uuid = SigningKeysManager::addSigningKey($peerUuid, $rpcRequest->getParameter('public_key'), $name, $expires);
             }
             catch(InvalidArgumentException $e)
             {

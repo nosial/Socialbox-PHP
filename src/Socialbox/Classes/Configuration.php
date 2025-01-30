@@ -150,6 +150,7 @@
             // Server Policies
             // The maximum number of signing keys a peer can register onto the server at once
             $config->setDefault('policies.max_signing_keys', 20);
+            $config->setDefault('policies.max_contact_signing_keys', 50);
             // The amount of time in seconds it takes before a session is considered expired due to inactivity
             // Default: 12hours
             $config->setDefault('policies.session_inactivity_expires', 43200);
