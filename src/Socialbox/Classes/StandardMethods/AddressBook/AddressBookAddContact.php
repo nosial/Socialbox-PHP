@@ -18,6 +18,8 @@
     class AddressBookAddContact extends Method
     {
         /**
+         * Adds a contact to the authenticated   peer's address book
+         *
          * @inheritDoc
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
