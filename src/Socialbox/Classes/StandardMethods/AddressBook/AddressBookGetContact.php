@@ -6,6 +6,8 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\ContactManager;
@@ -22,7 +24,7 @@
         {
             if(!$rpcRequest->containsParameter('peer'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Missing required peer parameter');
+                throw new MissingRpcArgumentException('peer');
             }
 
             try
@@ -31,14 +33,14 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardRpcException('Invalid peer address', StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new InvalidRpcArgumentException('peer', $e->getMessage());
             }
 
             try
             {
                 if(!ContactManager::isContact($request->getPeer(), $address))
                 {
-                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Contact does not exist');
+                    return $rpcRequest->produceError(StandardError::NOT_FOUND, 'Contact does not exist');
                 }
 
                 $contact = ContactManager::getContact($request->getPeer(), $address);
