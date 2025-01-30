@@ -20,7 +20,8 @@
     class AddressBookAddContact extends Method
     {
         /**
-         * Adds a contact to the authenticated peer's address book
+         * Adds a contact to the authenticated peer's address book, returns True if the contact was added
+         * false if the contact already exists.
          *
          * @inheritDoc
          */
@@ -67,7 +68,7 @@
                 // Check if the contact already exists
                 if(ContactManager::isContact($peer, $address))
                 {
-                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Contact already exists');
+                    return $rpcRequest->produceResponse(false);
                 }
 
                 // Create the contact
