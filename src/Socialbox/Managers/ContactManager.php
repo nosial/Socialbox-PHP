@@ -8,13 +8,11 @@
     use Socialbox\Classes\Database;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Objects\Database\ContactDatabaseRecord;
     use Socialbox\Objects\Database\ContactKnownKeyRecord;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\Standard\ContactRecord;
     use Socialbox\Objects\Standard\SigningKey;
-    use Socialbox\Socialbox;
 
     class ContactManager
     {
