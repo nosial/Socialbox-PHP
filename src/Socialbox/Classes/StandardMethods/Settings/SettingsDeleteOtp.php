@@ -8,6 +8,7 @@
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\OneTimePasswordManager;
@@ -24,16 +25,15 @@
         {
             if(Configuration::getRegistrationConfiguration()->isOtpRequired())
             {
-                return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'One Time Password is required for this server');
+                return $rpcRequest->produceError(StandardError::FORBIDDEN, 'One Time Password is required for this server');
             }
-
-            $peer = $request->getPeer();
 
             try
             {
+                $peer = $request->getPeer();
                 if (!OneTimePasswordManager::usesOtp($peer->getUuid()))
                 {
-                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Cannot delete One Time Password when none is set");
+                    return $rpcRequest->produceResponse(false);
                 }
             }
             catch (DatabaseOperationException $e)
@@ -55,12 +55,12 @@
             {
                 if(!$rpcRequest->containsParameter('password'))
                 {
-                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'When a password is set, the current password must be provided to delete an OTP');
+                    throw new InvalidRpcArgumentException('password', 'When a password is set, the current password must be provided to delete an OTP');
                 }
 
                 if(!Cryptography::validateSha512($rpcRequest->getParameter('password')))
                 {
-                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The provided password is not a valid SHA-512 hash');
+                    throw new InvalidRpcArgumentException('password', 'The provided password is not a valid SHA-512 hash');
                 }
 
                 try
@@ -70,7 +70,7 @@
                         return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The provided password is incorrect');
                     }
                 }
-                catch(Exception $e)
+                catch(DatabaseOperationException $e)
                 {
                     throw new StandardRpcException('Failed to verify password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
@@ -81,7 +81,7 @@
                 // Delete the OTP
                 OneTimePasswordManager::deleteOtp($peer);
             }
-            catch(Exception $e)
+            catch(DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to set password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
