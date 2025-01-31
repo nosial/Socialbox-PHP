@@ -2,11 +2,13 @@
 
     namespace Socialbox\Classes\StandardMethods\Settings;
 
-    use Exception;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
@@ -22,29 +24,29 @@
         {
             if(!$rpcRequest->containsParameter('password'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'password' parameter");
+                throw new MissingRpcArgumentException('password');
             }
 
             if(!Cryptography::validatePasswordHash($rpcRequest->getParameter('password')))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'password' parameter, must be a valid argon2id hash");
+                throw new InvalidRpcArgumentException('password', 'Must be a valid argon2id hash');
             }
 
             if(!$rpcRequest->containsParameter('existing_password'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'existing_password' parameter");
+                throw new MissingRpcArgumentException('existing_password');
             }
 
             if(!Cryptography::validateSha512($rpcRequest->getParameter('existing_password')))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'existing_password' parameter, must be a valid SHA-512 hash");
+                throw new InvalidRpcArgumentException('existing_password', 'Must be a valid SHA-512 hash');
             }
 
             try
             {
                 if (!PasswordManager::usesPassword($request->getPeer()->getUuid()))
                 {
-                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Cannot update password when one isn't already set, use 'settingsSetPassword' instead");
+                    return $rpcRequest->produceResponse(false);
                 }
             }
             catch (DatabaseOperationException $e)
@@ -56,10 +58,14 @@
             {
                 if (!PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('existing_password')))
                 {
-                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Failed to update password due to incorrect existing password");
+                    return $rpcRequest->produceResponse(false);
                 }
             }
-            catch (Exception $e)
+            catch(CryptographyException $e)
+            {
+                throw new StandardRpcException($e->getMessage(), StandardError::CRYPTOGRAPHIC_ERROR, $e);
+            }
+            catch (DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to verify existing password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
@@ -69,7 +75,11 @@
                 // Set the password
                 PasswordManager::updatePassword($request->getPeer(), $rpcRequest->getParameter('password'));
             }
-            catch(Exception $e)
+            catch(CryptographyException $e)
+            {
+                throw new StandardRpcException($e->getMessage(), StandardError::CRYPTOGRAPHIC_ERROR, $e);
+            }
+            catch(DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to set password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
