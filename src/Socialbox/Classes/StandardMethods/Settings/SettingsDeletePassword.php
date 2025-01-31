@@ -2,12 +2,14 @@
 
     namespace Socialbox\Classes\StandardMethods\Settings;
 
-    use Exception;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
@@ -32,20 +34,21 @@
             // Check if the password parameter is present
             if(!$rpcRequest->containsParameter('password'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'password' parameter");
+                throw new MissingRpcArgumentException('password');
             }
 
             // Validate the password parameter
             if(!Cryptography::validateSha512($rpcRequest->getParameter('password')))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'password' parameter, must be a valid SHA-512 hash");
+                throw new InvalidRpcArgumentException('password', 'Must be a valid SHA-512 hash');
             }
 
-            // Get the peer
-            $peer = $request->getPeer();
 
             try
             {
+                // Get the peer
+                $peer = $request->getPeer();
+
                 // Check if the password is set
                 if (!PasswordManager::usesPassword($peer->getUuid()))
                 {
@@ -55,7 +58,7 @@
                 // Verify the existing password before deleting it
                 if (!PasswordManager::verifyPassword($peer->getUuid(), $rpcRequest->getParameter('password')))
                 {
-                    return $rpcRequest->produceError(StandardError::FORBIDDEN, "Failed to delete password due to incorrect existing password");
+                    return $rpcRequest->produceResponse(false);
                 }
 
                 // Delete the password
@@ -65,9 +68,9 @@
             {
                 return $rpcRequest->produceError(StandardError::CRYPTOGRAPHIC_ERROR, 'Failed to delete password due to a cryptographic error');
             }
-            catch (Exception $e)
+            catch (DatabaseOperationException $e)
             {
-                throw new StandardRpcException('Failed to check password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to delete password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // Success
