@@ -2,7 +2,6 @@
 
     namespace Socialbox\Classes\StandardMethods\Settings;
 
-    use Exception;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
