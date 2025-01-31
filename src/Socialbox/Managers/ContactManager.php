@@ -285,6 +285,54 @@
         }
 
         /**
+         * Retrieves a list of standard contacts associated with a specific peer.
+         *
+         * @param string $peerUuid The unique identifier for the peer whose contacts are to be retrieved.
+         * @param int $limit The maximum number of contacts to retrieve per page. Defaults to 100.
+         * @param int $page The page number to retrieve. Defaults to 1.
+         * @return ContactRecord[] An array of ContactRecord instances representing the contacts for the given peer.
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function getStandardContacts(string $peerUuid, int $limit=100, int $page=1): array
+        {
+            if ($page < 1)
+            {
+                $page = 1;
+            }
+
+            if ($limit < 1)
+            {
+                $limit = 1;
+            }
+
+            $contacts = [];
+
+            try
+            {
+                $statement = Database::getConnection()->prepare("SELECT uuid FROM contacts WHERE peer_uuid=:peer ORDER BY created DESC LIMIT :limit OFFSET :offset");
+                $offset = ($page - 1) * $limit;
+                $statement->bindParam(':peer', $peerUuid);
+                $statement->bindParam(':limit', $limit, PDO::PARAM_INT);
+                $statement->bindParam(':offset', $offset, PDO::PARAM_INT);
+                $statement->execute();
+
+                // Fetch results
+                $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+                // Convert results to ContactRecord instances
+                foreach ($results as $result)
+                {
+                    $contacts[] = self::getStandardContact($peerUuid, $result['uuid']);
+                }
+            }
+            catch (PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to get contacts from the database', $e);
+            }
+            return $contacts;
+        }
+
+        /**
          * Adds a signing key to a contact in the database.
          *
          * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to add the signing key to.

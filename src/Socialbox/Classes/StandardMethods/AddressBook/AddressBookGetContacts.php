@@ -46,14 +46,11 @@
 
             try
             {
-                $contacts = ContactManager::getContacts($request->getPeer(), $limit, $page);
+                return $rpcRequest->produceResponse(ContactManager::getStandardContacts($request->getPeer(), $limit, $page));
             }
             catch(DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to get contacts', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
-
-
-            return $rpcRequest->produceResponse(array_map(function($contact) {return $contact->toStandard();}, $contacts));
         }
     }
