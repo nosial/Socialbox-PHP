@@ -49,7 +49,7 @@
                 $peerUuid = $request->getPeer()->getUuid();
                 if(SigningKeysManager::getSigningKeyCount($peerUuid) >= Configuration::getPoliciesConfiguration()->getMaxSigningKeys())
                 {
-                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The maximum number of signing keys has been reached');
+                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The maximum number of signing keys has been reached, the server\'s configured limit is: ' . Configuration::getPoliciesConfiguration()->getMaxSigningKeys());
                 }
 
                 $uuid = SigningKeysManager::addSigningKey($peerUuid, $rpcRequest->getParameter('public_key'), $name, $expires);
