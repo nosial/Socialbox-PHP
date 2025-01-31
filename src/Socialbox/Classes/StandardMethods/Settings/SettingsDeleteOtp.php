@@ -7,6 +7,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
@@ -69,6 +70,10 @@
                     {
                         return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The provided password is incorrect');
                     }
+                }
+                catch(CryptographyException $e)
+                {
+                    throw new StandardRpcException($e->getMessage(), StandardError::CRYPTOGRAPHIC_ERROR, $e);
                 }
                 catch(DatabaseOperationException $e)
                 {
