@@ -31,7 +31,6 @@
             {
                 $expires = (int)$rpcRequest->getParameter('expires');
             }
-
             if(!$rpcRequest->containsParameter('name'))
             {
                 throw new MissingRpcArgumentException('name');
@@ -43,10 +42,9 @@
                 $name = $rpcRequest->getParameter('name');
             }
 
-            $peerUuid = $request->getPeer()->getUuid();
-
             try
             {
+                $peerUuid = $request->getPeer()->getUuid();
                 if(SigningKeysManager::getSigningKeyCount($peerUuid) >= Configuration::getPoliciesConfiguration()->getMaxSigningKeys())
                 {
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The maximum number of signing keys has been reached');

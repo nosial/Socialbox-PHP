@@ -38,7 +38,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new InvalidRpcArgumentException('peer', $e->getMessage());
+                throw new InvalidRpcArgumentException('peer', $e);
             }
 
             if($rpcRequest->containsParameter('relationship'))
@@ -46,7 +46,7 @@
                 $relationship = ContactRelationshipType::tryFrom(strtoupper($rpcRequest->getParameter('relationship')));
                 if($relationship === null)
                 {
-                    throw new InvalidRpcArgumentException('peer', 'Invalid relationship type');
+                    throw new InvalidRpcArgumentException('relationship');
                 }
             }
             else

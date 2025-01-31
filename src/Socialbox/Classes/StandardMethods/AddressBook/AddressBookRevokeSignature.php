@@ -34,7 +34,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new InvalidRpcArgumentException('peer', $e->getMessage());
+                throw new InvalidRpcArgumentException('peer', $e);
             }
 
             if(!$rpcRequest->containsParameter('uuid'))
@@ -48,7 +48,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new InvalidRpcArgumentException('uuid', $e->getMessage());
+                throw new InvalidRpcArgumentException('uuid', $e);
             }
 
             try

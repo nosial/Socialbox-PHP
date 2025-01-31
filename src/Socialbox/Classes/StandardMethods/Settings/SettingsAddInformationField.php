@@ -9,6 +9,8 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PeerInformationManager;
@@ -20,29 +22,30 @@
     {
         /**
          * @inheritDoc
+         * @noinspection DuplicatedCode
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
             // Field parameter is required
             if(!$rpcRequest->containsParameter('field'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The required field parameter is missing');
+                throw new MissingRpcArgumentException('field');
             }
             $fieldName = InformationFieldName::tryFrom(strtoupper($rpcRequest->getParameter('field')));
             if($fieldName === null)
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The provided field parameter is invalid');
+                throw new InvalidRpcArgumentException('field');
             }
 
             // Value parameter is required
             if(!$rpcRequest->containsParameter('value'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The required value parameter is missing');
+                throw new MissingRpcArgumentException('value');
             }
             $value = $rpcRequest->getParameter('value');
             if(!$fieldName->validate($value))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The provided value parameter is invalid');
+                throw new InvalidRpcArgumentException('value');
             }
 
             // Privacy parameter is optional
@@ -52,7 +55,7 @@
                 $privacy = PrivacyState::tryFrom(strtoupper($rpcRequest->getParameter('privacy')));
                 if($privacy === null)
                 {
-                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The provided privacy parameter is invalid');
+                    throw new InvalidRpcArgumentException('privacy');
                 }
             }
 
@@ -62,14 +65,15 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardRpcException('Failed to retrieve current peer information', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to retrieve peer information', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             try
             {
                 if (PeerInformationManager::fieldExists($peer, $fieldName))
                 {
-                    return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The provided field parameter is already registered, use settingsUpdateInformationField or settingsUpdateInformationPrivacy instead');
+                    // Return False, because the field already exists
+                    return $rpcRequest->produceResponse(false);
                 }
 
                 PeerInformationManager::addField($peer, $fieldName, $value, $privacy);

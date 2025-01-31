@@ -35,7 +35,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new InvalidRpcArgumentException('peer', $e->getMessage());
+                throw new InvalidRpcArgumentException('peer', $e);
             }
 
             try
