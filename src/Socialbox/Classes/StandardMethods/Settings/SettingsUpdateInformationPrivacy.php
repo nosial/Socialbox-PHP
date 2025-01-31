@@ -7,6 +7,8 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PeerInformationManager;
@@ -23,24 +25,24 @@
             // Field parameter is required
             if(!$rpcRequest->containsParameter('field'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The required field parameter is missing');
+                throw new MissingRpcArgumentException('field');
             }
             $fieldName = InformationFieldName::tryFrom(strtoupper($rpcRequest->getParameter('field')));
             if($fieldName === null)
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The provided field parameter is invalid');
+                throw new InvalidRpcArgumentException('field');
             }
 
             // Privacy parameter is required
-            $privacy = null;
             if(!$rpcRequest->containsParameter('privacy'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The required privacy parameter is missing');
+                throw new MissingRpcArgumentException('privacy');
             }
+
             $privacy = PrivacyState::tryFrom(strtoupper($rpcRequest->getParameter('privacy')));
             if($privacy === null)
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The provided privacy parameter is invalid');
+                throw new InvalidRpcArgumentException('privacy');
             }
 
             try
@@ -48,7 +50,7 @@
                 $peer = $request->getPeer();
                 if(!PeerInformationManager::fieldExists($peer, $fieldName))
                 {
-                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The information field does not exist');
+                    return $rpcRequest->produceResponse(false);
                 }
 
                 PeerInformationManager::updatePrivacyState($peer, $fieldName, $privacy);
