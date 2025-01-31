@@ -2,11 +2,11 @@
 
     namespace Socialbox\Classes\StandardMethods\Core;
 
-    use Exception;
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -40,20 +40,20 @@
             }
 
             // Check if host is making the request & the identifier is not empty
-            $identifyAs = null;
-            if($request->getPeer()->getUsername() == ReservedUsernames::HOST && $request->getIdentifyAs() != null)
+            try
             {
-                $identifyAs = $request->getIdentifyAs();
+                $identifyAs = null;
+                if ($request->getPeer()->getUsername() == ReservedUsernames::HOST && $request->getIdentifyAs() != null)
+                {
+                    $identifyAs = $request->getIdentifyAs();
+                }
+            }
+            catch (DatabaseOperationException $e)
+            {
+                throw new StandardRpcException('Failed to retrieve peer information', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // Resolve the peer using the server's peer resolver, this will resolve both internal peers and external peers
-            try
-            {
-                return $rpcRequest->produceResponse(Socialbox::resolvePeer($peerAddress, $identifyAs));
-            }
-            catch(Exception $e)
-            {
-                throw new StandardRpcException(sprintf('There was an error while trying to resolve the peer %s: %s', $peerAddress, $e->getMessage()), StandardError::RESOLUTION_FAILED, $e);
-            }
+            return $rpcRequest->produceResponse(Socialbox::resolvePeer($peerAddress, $identifyAs));
         }
     }
