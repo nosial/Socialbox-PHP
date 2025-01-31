@@ -43,13 +43,11 @@
                     return $rpcRequest->produceError(StandardError::NOT_FOUND, 'Contact does not exist');
                 }
 
-                $contact = ContactManager::getContact($request->getPeer(), $address);
+                $rpcRequest->produceResponse(ContactManager::getStandardContact($request->getPeer(), $address));
             }
             catch(DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to get contact', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
-
-            return $rpcRequest->produceResponse($contact->toStandard());
         }
     }

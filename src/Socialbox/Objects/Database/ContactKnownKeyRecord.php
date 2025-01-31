@@ -5,6 +5,7 @@
     use DateTime;
     use InvalidArgumentException;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Objects\Standard\KnownSigningKey;
 
     class ContactKnownKeyRecord implements SerializableInterface
     {
@@ -16,6 +17,12 @@
         private DateTime $created;
         private DateTime $trustedOn;
 
+        /**
+         * Constructs a new instance with the provided parameters.
+         *
+         * @param array $data The array of data to use for the object.
+         * @throws \DateMalformedStringException If the date string is malformed.
+         */
         public function __construct(array $data)
         {
             $this->contactUuid = $data['contact_uuid'];
@@ -96,36 +103,71 @@
             }
         }
 
+        /**
+         * Gets the contact UUID.
+         *
+         * @return string The contact UUID.
+         */
         public function getContactUuid(): string
         {
             return $this->contactUuid;
         }
 
+        /**
+         * Gets the signature UUID.
+         *
+         * @return string The signature UUID.
+         */
         public function getSignatureUuid(): string
         {
             return $this->signatureUuid;
         }
 
+        /**
+         * Gets the signature name.
+         *
+         * @return string The signature name.
+         */
         public function getSignatureName(): string
         {
             return $this->signatureName;
         }
 
+        /**
+         * Gets the signature key.
+         *
+         * @return string The signature key.
+         */
         public function getSignatureKey(): string
         {
             return $this->signatureKey;
         }
 
+        /**
+         * Gets the expiration date.
+         *
+         * @return DateTime|null The expiration date.
+         */
         public function getExpires(): ?DateTime
         {
             return $this->expires;
         }
 
+        /**
+         * Gets the creation date.
+         *
+         * @return DateTime The creation date.
+         */
         public function getCreated(): DateTime
         {
             return $this->created;
         }
 
+        /**
+         * Gets the trusted on date.
+         *
+         * @return DateTime The trusted on date.
+         */
         public function getTrustedOn(): DateTime
         {
             return $this->trustedOn;
@@ -137,6 +179,21 @@
         public static function fromArray(array $data): ContactKnownKeyRecord
         {
             return new self($data);
+        }
+
+        /**
+         * @inheritDoc
+         */
+        public function toStandard(): KnownSigningKey
+        {
+            return new KnownSigningKey([
+                'uuid' => $this->signatureUuid,
+                'name' => $this->signatureName,
+                'public_key' => $this->signatureKey,
+                'expires' => $this->expires?->getTimestamp(),
+                'created' => $this->created->getTimestamp(),
+                'trusted_on' => $this->trustedOn->getTimestamp()
+            ]);
         }
 
         /**

@@ -8,10 +8,13 @@
     use Socialbox\Classes\Database;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Objects\Database\ContactDatabaseRecord;
     use Socialbox\Objects\Database\ContactKnownKeyRecord;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\ContactRecord;
     use Socialbox\Objects\Standard\SigningKey;
+    use Socialbox\Socialbox;
 
     class ContactManager
     {
@@ -173,7 +176,7 @@
         }
 
         /**
-         * Updates the relationship type of a contact associated with a specific peer.
+         * Updates the relationship type of contact associated with a specific peer.
          *
          * @param string $peerUuid The unique identifier for the peer whose contact relationship is to be updated.
          * @param string|PeerAddress $contactAddress The address of the contact to update. Can be provided as a string or an instance of PeerAddress.
@@ -475,5 +478,39 @@
             {
                 throw new DatabaseOperationException('Failed to get the number of signing keys for a contact from the database', $e);
             }
+        }
+
+        /**
+         * Returns a standard contact record for a given peer UUID and contact address.
+         *
+         * @param string $peerUuid The unique identifier of the peer.
+         * @param string|PeerAddress $contactAddress The contact's address, either as a string or a PeerAddress instance.
+         * @return ContactRecord|null The standard contact record if found, or null if no matching contact exists.
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function getStandardContact(string $peerUuid, string|PeerAddress $contactAddress): ?ContactRecord
+        {
+            $contact = self::getContact($peerUuid, $contactAddress);
+            if($contact === null)
+            {
+                return null;
+            }
+
+            try
+            {
+                $peer = Socialbox::resolvePeer($contactAddress);
+            }
+            catch (StandardRpcException $e)
+            {
+                $peer = null;
+            }
+
+            return new ContactRecord([
+                'address' => $contact->getContactPeerAddress(),
+                'peer' => $peer,
+                'relationship' => $contact->getRelationship(),
+                'known_keys' => self::contactGetSigningKeys($contact),
+                'added_timestamp' => $contact->getCreated()->getTimestamp()
+            ]);
         }
     }
