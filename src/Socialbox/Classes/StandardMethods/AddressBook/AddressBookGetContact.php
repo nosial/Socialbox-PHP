@@ -18,6 +18,8 @@
     class AddressBookGetContact extends Method
     {
         /**
+         * Returns the contact information for the given peer address.
+         *
          * @inheritDoc
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
