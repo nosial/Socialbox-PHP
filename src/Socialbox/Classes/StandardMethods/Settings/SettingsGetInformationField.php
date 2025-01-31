@@ -6,6 +6,8 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PeerInformationManager;
@@ -21,12 +23,12 @@
         {
             if(!$rpcRequest->containsParameter('field'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The required field parameter is missing');
+                throw new MissingRpcArgumentException('field');
             }
             $fieldName = InformationFieldName::tryFrom(strtoupper($rpcRequest->getParameter('field')));
             if($fieldName === null)
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The provided field parameter is invalid');
+                throw new InvalidRpcArgumentException('field');
             }
 
             try
