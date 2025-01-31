@@ -6,6 +6,7 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\SessionManager;
     use Socialbox\Objects\ClientRequest;
@@ -20,7 +21,15 @@
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-            $session = $request->getSession();
+            try
+            {
+                $session = $request->getSession();
+            }
+            catch (DatabaseOperationException $e)
+            {
+                throw new StandardRpcException('Failed to retrieve session', StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
+
             if(!$session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
             {
                 return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Privacy policy has already been accepted');
@@ -33,7 +42,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                return $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to update session flow', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse(true);
