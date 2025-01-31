@@ -371,6 +371,26 @@
             }
         }
 
+        public static function removeContactSigningKey(string|ContactDatabaseRecord $contactUuid, string $signatureUuid): void
+        {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('DELETE FROM contacts_known_keys WHERE contact_uuid=:contact_uuid AND signature_uuid=:signature_uuid');
+                $statement->bindParam(':contact_uuid', $contactUuid);
+                $statement->bindParam(':signature_uuid', $signatureUuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to remove a signing key from a contact in the database', $e);
+            }
+        }
+
         /**
          * Determines if a signing key UUID exists for a contact in the database.
          *
