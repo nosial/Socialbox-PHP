@@ -7,6 +7,9 @@
     use ncc\ThirdParty\Symfony\Uid\Uuid;
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\SigningKeysManager;
@@ -22,23 +25,28 @@
         {
             if(!$rpcRequest->containsParameter('uuid'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'uuid' parameter");
+                throw new MissingRpcArgumentException('uuid');
             }
 
             try
             {
                 $uuid = Uuid::fromString($rpcRequest->getParameter('uuid'));
             }
-            catch(InvalidArgumentException $e)
+            catch(InvalidArgumentException)
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'Invalid UUID', $e);
+                throw new InvalidRpcArgumentException('uuid');
             }
 
             try
             {
+                if(!SigningKeysManager::signingKeyExists($request->getPeer()->getUuid(), $uuid))
+                {
+                    return $rpcRequest->produceResponse(false);
+                }
+
                 SigningKeysManager::deleteSigningKey($request->getPeer()->getUuid(), $uuid);
             }
-            catch(Exception $e)
+            catch(DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to delete the signing key', StandardError::INTERNAL_SERVER_ERROR, $e);
             }

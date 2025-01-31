@@ -196,6 +196,31 @@
         }
 
         /**
+         * Checks if a signing key exists in the database using the provided UUID.
+         *
+         * @param string $peerUuid The UUID of the peer associated with the signing key.
+         * @param string $uuid The UUID of the signing key to check.
+         * @return bool True if the signing key exists, false otherwise.
+         * @throws DatabaseOperationException If a database error occurs during the operation.
+         */
+        public static function signingKeyExists(string $peerUuid, string $uuid): bool
+        {
+            try
+            {
+                $statement = Database::getConnection()->prepare("SELECT COUNT(*) FROM signing_keys WHERE uuid=:uuid AND peer_uuid=:peer_uuid");
+                $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':peer_uuid', $peerUuid);
+                $statement->execute();
+
+                return $statement->fetchColumn() > 0;
+            }
+            catch (PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to check if the signing key exists in the database', $e);
+            }
+        }
+
+        /**
          * Deletes a signing key from the database using the provided UUID.
          *
          * @param string $peerUuid The UUID of the peer associated with the signing key.
