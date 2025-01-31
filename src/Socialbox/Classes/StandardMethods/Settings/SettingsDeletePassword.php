@@ -43,7 +43,6 @@
                 throw new InvalidRpcArgumentException('password', 'Must be a valid SHA-512 hash');
             }
 
-
             try
             {
                 // Get the peer
