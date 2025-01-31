@@ -14,7 +14,6 @@
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
-    use Socialbox\Socialbox;
     use Symfony\Component\Uid\Uuid;
 
     class AddressBookRevokeSignature extends Method
