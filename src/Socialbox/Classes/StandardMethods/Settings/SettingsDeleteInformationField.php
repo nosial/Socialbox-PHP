@@ -37,7 +37,7 @@
             {
                 if(!PeerInformationManager::fieldExists($request->getPeer(), $fieldName))
                 {
-                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The information field does not exist');
+                    return $rpcRequest->produceResponse(false);
                 }
             }
             catch(DatabaseOperationException $e)
@@ -45,6 +45,7 @@
                 throw new StandardRpcException('Failed to check if the information field exists', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
+            // Prevent the removal of required fields
             switch($fieldName)
             {
                 case InformationFieldName::DISPLAY_NAME:
