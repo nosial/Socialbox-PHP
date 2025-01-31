@@ -7,6 +7,8 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -54,9 +56,9 @@
             }
             catch(InvalidArgumentException $e)
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, $e->getMessage());
+                throw new InvalidRpcArgumentException($e);
             }
-            catch(Exception $e)
+            catch(DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to add the signing key', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
