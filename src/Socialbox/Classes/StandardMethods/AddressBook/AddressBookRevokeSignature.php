@@ -4,7 +4,6 @@
 
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Configuration;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
