@@ -7,6 +7,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\Flags\PeerFlags;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Objects\Standard\InformationFieldState;
     use Socialbox\Objects\Standard\Peer;
 
     class PeerDatabaseRecord implements SerializableInterface
@@ -197,13 +198,14 @@
         /**
          * Converts the current instance to a Peer object.
          *
+         * @param PeerInformationFieldRecord[]|InformationFieldState[]|array $informationFields 
          * @return Peer The Peer representation of the current instance.
          */
-        public function toStandardPeer(): Peer
+        public function toStandardPeer(array $informationFields): Peer
         {
-            // TODO: TO be updated
             return Peer::fromArray([
                 'address' => $this->getAddress(),
+                'information_fields' => $informationFields,
                 'flags' => array_map(fn(PeerFlags $flag) => $flag->value, $this->flags),
                 'registered' => $this->created->getTimestamp()
             ]);

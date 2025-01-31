@@ -891,41 +891,53 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardRpcException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to resolve the peer due to an internal server error', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             if($existingPeer === null)
             {
                 // if the peer doesn't exist, resolve it externally and synchronize it
-
                 try
                 {
                     $peer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress, $identifiedAs);
+                }
+                catch(RpcException $e)
+                {
+                    throw StandardRpcException::fromRpcException($e);
                 }
                 catch(Exception $e)
                 {
                     throw new StandardRpcException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
                 }
 
-                try
+                // Do not synchronize if this is a personal request, there may be information fields that
+                // the peer does not want to share with the server
+                if($identifiedAs !== null)
                 {
-                    RegisteredPeerManager::synchronizeExternalPeer($peer);
-                }
-                catch(DatabaseOperationException $e)
-                {
-                    throw new StandardRpcException('Failed to synchronize the external peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                    try
+                    {
+                        RegisteredPeerManager::synchronizeExternalPeer($peer);
+                    }
+                    catch(DatabaseOperationException $e)
+                    {
+                        throw new StandardRpcException('Failed to synchronize the external peer due to an internal server error', StandardError::INTERNAL_SERVER_ERROR, $e);
+                    }
                 }
 
                 return $peer;
             }
 
-            // If the peer exists, but it's outdated, synchronize it
-            if($existingPeer->getUpdated()->getTimestamp() < time() - Configuration::getPoliciesConfiguration()->getPeerSyncInterval())
+            // if we're not identifying as a personal peer and If the peer exists, but it's outdated, synchronize it
+            if($identifiedAs === null && $existingPeer->getUpdated()->getTimestamp() < time() - Configuration::getPoliciesConfiguration()->getPeerSyncInterval())
             {
                 try
                 {
                     $peer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress, $identifiedAs);
                 }
+                catch(RpcException $e)
+                {
+                    throw StandardRpcException::fromRpcException($e);
+                }
                 catch(Exception $e)
                 {
                     throw new StandardRpcException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
@@ -937,14 +949,28 @@
                 }
                 catch(DatabaseOperationException $e)
                 {
-                    throw new StandardRpcException('Failed to synchronize the external peer: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                    throw new StandardRpcException('Failed to synchronize the external peer due to an internal server error', StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
 
                 return $peer;
             }
 
-            // If the peer exists and is up to date, return it
-            return $existingPeer->toStandardPeer();
+            // If the peer exists and is up to date, return it from our local database instead. (Quicker)
+            try
+            {
+                $informationFields = PeerInformationManager::getFields($existingPeer);
+            }
+            catch(DatabaseOperationException $e)
+            {
+                throw new StandardRpcException('Failed to obtain local information fields about an external peer locally due to an internal server error', StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
+
+            return new Peer([
+                'address' => $existingPeer->getAddress(),
+                'information_fields' => $informationFields,
+                'flags' => $existingPeer->getFlags(),
+                'registered' => $existingPeer->getCreated()->getTimestamp()
+            ]);
         }
 
         /**

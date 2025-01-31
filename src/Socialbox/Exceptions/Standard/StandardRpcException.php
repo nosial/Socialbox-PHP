@@ -6,6 +6,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Utilities;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\RpcException;
     use Socialbox\Objects\RpcError;
     use Socialbox\Objects\RpcRequest;
     use Throwable;
@@ -37,5 +38,10 @@
             }
 
             return $request->produceError(StandardError::from($this->code), $this->message);
+        }
+
+        public static function fromRpcException(RpcException $e): StandardRpcException
+        {
+            return new self($e->getMessage(), StandardError::tryFrom($e->getCode()) ?? StandardError::UNKNOWN, $e);
         }
     }
