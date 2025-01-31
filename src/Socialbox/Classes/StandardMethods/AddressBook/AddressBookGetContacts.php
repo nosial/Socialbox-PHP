@@ -16,6 +16,8 @@
     class AddressBookGetContacts extends Method
     {
         /**
+         * Returns the contacts in the address book.
+         *
          * @inheritDoc
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
