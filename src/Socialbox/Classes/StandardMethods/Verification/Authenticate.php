@@ -26,11 +26,6 @@
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Only external peers can authenticate using this method');
                 }
 
-                if($request->getSession()->isAuthenticated())
-                {
-                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'External host is already authenticated');
-                }
-
                 SessionManager::updateFlow($request->getSession(), [SessionFlags::AUTHENTICATION_REQUIRED]);
             }
             catch(Exception $e)
