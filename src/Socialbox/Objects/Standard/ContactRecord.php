@@ -10,7 +10,6 @@
     class ContactRecord implements SerializableInterface
     {
         private PeerAddress $address;
-        private ?Peer $peer;
         private ContactRelationshipType $relationship;
         /**
          * @var KnownSigningKey[]
@@ -26,22 +25,6 @@
         public function __construct(array $data)
         {
             $this->address = PeerAddress::fromAddress($data['address']);
-            if(is_array($data['peer']))
-            {
-                $this->peer = Peer::fromArray($data['peer']);
-            }
-            elseif($data['peer'] instanceof Peer)
-            {
-                $this->peer = $data['peer'];
-            }
-            elseif(is_null($data['peer']))
-            {
-                $this->peer = null;
-            }
-            else
-            {
-                throw new InvalidArgumentException('Invalid peer data');
-            }
 
             if($data['relationship'] instanceof ContactRelationshipType)
             {
@@ -84,16 +67,6 @@
         public function getAddress(): PeerAddress
         {
             return $this->address;
-        }
-
-        /**
-         * Retrieves the peer of the contact.
-         *
-         * @return Peer|null Returns the peer of the contact. If the peer is not known, null is returned.
-         */
-        public function getPeer(): ?Peer
-        {
-            return $this->peer;
         }
 
         /**
@@ -141,7 +114,6 @@
         {
             return [
                 'address' => $this->address->getAddress(),
-                'peer' => $this->peer?->toArray(),
                 'relationship' => $this->relationship->value,
                 'known_keys' => array_map(function($key) {return $key->toArray();}, $this->knownKeys),
                 'added_timestamp' => $this->addedTimestamp

@@ -564,18 +564,8 @@
                 return null;
             }
 
-            try
-            {
-                $peer = Socialbox::resolvePeer($contactAddress);
-            }
-            catch (StandardRpcException $e)
-            {
-                $peer = null;
-            }
-
             return new ContactRecord([
                 'address' => $contact->getContactPeerAddress(),
-                'peer' => $peer,
                 'relationship' => $contact->getRelationship(),
                 'known_keys' => self::contactGetSigningKeys($contact),
                 'added_timestamp' => $contact->getCreated()->getTimestamp()
