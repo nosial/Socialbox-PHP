@@ -40,7 +40,8 @@
             {
                 if(!ContactManager::isContact($request->getPeer(), $address))
                 {
-                    return $rpcRequest->produceError(StandardError::NOT_FOUND, 'Contact does not exist');
+                    // Return empty response if the contact does not exist
+                    return $rpcRequest->produceResponse();
                 }
 
                 $rpcRequest->produceResponse(ContactManager::getStandardContact($request->getPeer(), $address));
