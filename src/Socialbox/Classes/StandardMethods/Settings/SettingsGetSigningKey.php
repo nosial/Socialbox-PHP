@@ -5,6 +5,7 @@
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\SigningKeysManager;
@@ -20,7 +21,7 @@
         {
             if(!$rpcRequest->containsParameter('uuid') && $rpcRequest->getParameter('uuid') !== null)
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'uuid' parameter");
+                throw new MissingRpcArgumentException('uuid');
             }
 
             try
