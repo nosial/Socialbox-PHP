@@ -2,12 +2,14 @@
 
     namespace Socialbox\Classes\StandardMethods\Settings;
 
-    use Exception;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
@@ -24,12 +26,12 @@
         {
             if(!$rpcRequest->containsParameter('password'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'password' parameter");
+                throw new MissingRpcArgumentException('password');
             }
 
             if(!Cryptography::validatePasswordHash($rpcRequest->getParameter('password')))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'password' parameter, must be a valid argon2id hash");
+                throw new InvalidRpcArgumentException('password', "Must be a valid argon2id hash");
             }
 
             try
@@ -52,7 +54,11 @@
                 // Remove the SET_PASSWORD flag & update the session flow if necessary
                 SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_PASSWORD]);
             }
-            catch(Exception $e)
+            catch(CryptographyException $e)
+            {
+                throw new StandardRpcException($e->getMessage(), StandardError::CRYPTOGRAPHIC_ERROR, $e);
+            }
+            catch(DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to set password due to an internal exception', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
