@@ -9,23 +9,23 @@
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\PeerInformationFieldRecord;
-    use Socialbox\Objects\Database\PeerRecord;
+    use Socialbox\Objects\Database\PeerDatabaseRecord;
 
     class PeerInformationManager
     {
         /**
          * Adds a property to a peer's information record.
          *
-         * @param string|PeerRecord $peerUuid The UUID of the peer to add the property to.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer to add the property to.
          * @param InformationFieldName $property The name of the property to add.
          * @param string $value The value of the property to add.
          * @param PrivacyState|null $privacyState The privacy state of the property to add.
          * @return void
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function addField(string|PeerRecord $peerUuid, InformationFieldName $property, string $value, ?PrivacyState $privacyState=null): void
+        public static function addField(string|PeerDatabaseRecord $peerUuid, InformationFieldName $property, string $value, ?PrivacyState $privacyState=null): void
         {
-            if($peerUuid instanceof PeerRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -65,15 +65,15 @@
         /**
          * Updates a property for a peer's information record.
          *
-         * @param string|PeerRecord $peerUuid The UUID of the peer to update the property for.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer to update the property for.
          * @param InformationFieldName $property The name of the property to update.
          * @param string $value The new value of the property.
          * @return void
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function updateField(string|PeerRecord $peerUuid, InformationFieldName $property, string $value): void
+        public static function updateField(string|PeerDatabaseRecord $peerUuid, InformationFieldName $property, string $value): void
         {
-            if($peerUuid instanceof PeerRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -101,15 +101,15 @@
         /**
          * Updates the privacy state for a property in a peer's information record.
          *
-         * @param string|PeerRecord $peerUuid The UUID of the peer to update the privacy state for.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer to update the privacy state for.
          * @param InformationFieldName $property The name of the property to update the privacy state for.
          * @param PrivacyState $privacyState The new privacy state of the property.
          * @return void
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function updatePrivacyState(string|PeerRecord $peerUuid, InformationFieldName $property, PrivacyState $privacyState): void
+        public static function updatePrivacyState(string|PeerDatabaseRecord $peerUuid, InformationFieldName $property, PrivacyState $privacyState): void
         {
-            if($peerUuid instanceof PeerRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -138,14 +138,14 @@
         /**
          * Checks if a property exists for a peer.
          *
-         * @param string|PeerRecord $peerUuid The UUID of the peer to check for the property.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer to check for the property.
          * @param InformationFieldName $property The name of the property to check for.
          * @return bool
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function fieldExists(string|PeerRecord $peerUuid, InformationFieldName $property): bool
+        public static function fieldExists(string|PeerDatabaseRecord $peerUuid, InformationFieldName $property): bool
         {
-            if($peerUuid instanceof PeerRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -169,14 +169,14 @@
         /**
          * Gets a property from a peer's information record.
          *
-         * @param string|PeerRecord $peerUuid The UUID of the peer to get the property from.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer to get the property from.
          * @param InformationFieldName $property The name of the property to get.
          * @return PeerInformationFieldRecord|null The property record, or null if it does not exist.
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function getField(string|PeerRecord $peerUuid, InformationFieldName $property): ?PeerInformationFieldRecord
+        public static function getField(string|PeerDatabaseRecord $peerUuid, InformationFieldName $property): ?PeerInformationFieldRecord
         {
-            if($peerUuid instanceof PeerRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -206,13 +206,13 @@
         /**
          * Gets all properties from a peer's information record.
          *
-         * @param string|PeerRecord $peerUuid The UUID of the peer to get the properties from.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer to get the properties from.
          * @return PeerInformationFieldRecord[]
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function getFields(string|PeerRecord $peerUuid): array
+        public static function getFields(string|PeerDatabaseRecord $peerUuid): array
         {
-            if($peerUuid instanceof PeerRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -240,14 +240,14 @@
         /**
          * Gets all properties from a peer's information record that match the provided privacy filters.
          *
-         * @param string|PeerRecord $peerUuid The UUID of the peer to get the properties from.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer to get the properties from.
          * @param PrivacyState[] $privacyFilters The privacy filters to apply.
          * @return PeerInformationFieldRecord[] The filtered properties.
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function getFilteredFields(string|PeerRecord $peerUuid, array $privacyFilters): array
+        public static function getFilteredFields(string|PeerDatabaseRecord $peerUuid, array $privacyFilters): array
         {
-            if($peerUuid instanceof PeerRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
@@ -281,14 +281,14 @@
         /**
          * Deletes a property from a peer's information record.
          *
-         * @param string|PeerRecord $peerUuid The UUID of the peer to delete the property from.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer to delete the property from.
          * @param InformationFieldName $property The name of the property to delete.
          * @return void
          * @throws DatabaseOperationException Thrown if the operation fails.
          */
-        public static function deleteField(string|PeerRecord $peerUuid, InformationFieldName $property): void
+        public static function deleteField(string|PeerDatabaseRecord $peerUuid, InformationFieldName $property): void
         {
-            if($peerUuid instanceof PeerRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }

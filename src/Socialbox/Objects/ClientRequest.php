@@ -11,7 +11,7 @@
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Managers\RegisteredPeerManager;
     use Socialbox\Managers\SessionManager;
-    use Socialbox\Objects\Database\PeerRecord;
+    use Socialbox\Objects\Database\PeerDatabaseRecord;
     use Socialbox\Objects\Database\SessionRecord;
 
     class ClientRequest
@@ -185,11 +185,11 @@
         /**
          * Retrieves the associated peer for the current session.
          *
-         * @return PeerRecord|null Returns the associated RegisteredPeerRecord if available, or null if no session exists.
+         * @return PeerDatabaseRecord|null Returns the associated RegisteredPeerRecord if available, or null if no session exists.
          * @throws DatabaseOperationException Thrown if an error occurs while retrieving the peer.
          * @throws StandardRpcException Thrown if the session UUID is invalid.
          */
-        public function getPeer(): ?PeerRecord
+        public function getPeer(): ?PeerDatabaseRecord
         {
             $session = $this->getSession();
 

@@ -8,9 +8,8 @@
     use Socialbox\Enums\Flags\PeerFlags;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\Standard\Peer;
-    use Socialbox\Objects\Standard\SelfUser;
 
-    class PeerRecord implements SerializableInterface
+    class PeerDatabaseRecord implements SerializableInterface
     {
         private string $uuid;
         private string $username;
@@ -193,16 +192,6 @@
         public function isExternal(): bool
         {
             return $this->username === 'host' && $this->server !== Configuration::getInstanceConfiguration()->getDomain();
-        }
-
-        /**
-         * Converts the current instance to a SelfUser object.
-         *
-         * @return SelfUser The SelfUser object.
-         */
-        public function toSelfUser(): SelfUser
-        {
-            return new SelfUser($this);
         }
 
         /**

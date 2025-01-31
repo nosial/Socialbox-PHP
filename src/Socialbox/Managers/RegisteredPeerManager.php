@@ -14,7 +14,7 @@
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Objects\Database\PeerRecord;
+    use Socialbox\Objects\Database\PeerDatabaseRecord;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\Standard\Peer;
     use Symfony\Component\Uid\Uuid;
@@ -88,13 +88,13 @@
          * Deletes a peer from the database based on the given UUID or RegisteredPeerRecord.
          * WARNING: This operation is cascading and will delete all associated data.
          *
-         * @param string|PeerRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer to be deleted.
+         * @param string|PeerDatabaseRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer to be deleted.
          * @return void
          * @throws DatabaseOperationException If the operation fails.
          */
-        public static function deletePeer(string|PeerRecord $uuid): void
+        public static function deletePeer(string|PeerDatabaseRecord $uuid): void
         {
-            if($uuid instanceof PeerRecord)
+            if($uuid instanceof PeerDatabaseRecord)
             {
                 $uuid = $uuid->getUuid();
             }
@@ -116,13 +116,13 @@
         /**
          * Retrieves a registered peer record based on the given unique identifier or RegisteredPeerRecord object.
          *
-         * @param string|PeerRecord $uuid The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
-         * @return PeerRecord Returns a RegisteredPeerRecord object containing the peer's information.
+         * @param string|PeerDatabaseRecord $uuid The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @return PeerDatabaseRecord Returns a RegisteredPeerRecord object containing the peer's information.
          * @throws DatabaseOperationException If there is an error during the database operation.
          */
-        public static function getPeer(string|PeerRecord $uuid): PeerRecord
+        public static function getPeer(string|PeerDatabaseRecord $uuid): PeerDatabaseRecord
         {
-            if($uuid instanceof PeerRecord)
+            if($uuid instanceof PeerDatabaseRecord)
             {
                 $uuid = $uuid->getUuid();
             }
@@ -142,7 +142,7 @@
                     throw new DatabaseOperationException(sprintf("The requested peer '%s' does not exist", $uuid));
                 }
 
-                return new PeerRecord($result);
+                return new PeerDatabaseRecord($result);
             }
             catch(Exception $e)
             {
@@ -154,10 +154,10 @@
          * Retrieves a peer record by the given username.
          *
          * @param PeerAddress $address The address of the peer to be retrieved.
-         * @return PeerRecord|null The record of the peer associated with the given username.
+         * @return PeerDatabaseRecord|null The record of the peer associated with the given username.
          * @throws DatabaseOperationException If there is an error while querying the database.
          */
-        public static function getPeerByAddress(PeerAddress $address): ?PeerRecord
+        public static function getPeerByAddress(PeerAddress $address): ?PeerDatabaseRecord
         {
             Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $address->getAddress()));
 
@@ -184,7 +184,7 @@
                     return null;
                 }
 
-                return new PeerRecord($result);
+                return new PeerDatabaseRecord($result);
             }
             catch(Exception $e)
             {
@@ -291,13 +291,13 @@
         /**
          * Enables a peer identified by the given UUID or RegisteredPeerRecord.
          *
-         * @param string|PeerRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer to be enabled.
+         * @param string|PeerDatabaseRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer to be enabled.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the database.
          */
-        public static function enablePeer(string|PeerRecord $uuid): void
+        public static function enablePeer(string|PeerDatabaseRecord $uuid): void
         {
-            if($uuid instanceof PeerRecord)
+            if($uuid instanceof PeerDatabaseRecord)
             {
                 $uuid = $uuid->getUuid();
             }
@@ -319,13 +319,13 @@
         /**
          * Disables the peer identified by the given UUID or RegisteredPeerRecord.
          *
-         * @param string|PeerRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer.
+         * @param string|PeerDatabaseRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the peer's status in the database.
          */
-        public static function disablePeer(string|PeerRecord $uuid): void
+        public static function disablePeer(string|PeerDatabaseRecord $uuid): void
         {
-            if($uuid instanceof PeerRecord)
+            if($uuid instanceof PeerDatabaseRecord)
             {
                 $uuid = $uuid->getUuid();
             }
@@ -347,14 +347,14 @@
         /**
          * Adds a specific flag to the peer identified by the given UUID or RegisteredPeerRecord.
          *
-         * @param string|PeerRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer.
+         * @param string|PeerDatabaseRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer.
          * @param PeerFlags|array $flags The flag or array of flags to be added to the peer.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the database.
          */
-        public static function addFlag(string|PeerRecord $uuid, PeerFlags|array $flags): void
+        public static function addFlag(string|PeerDatabaseRecord $uuid, PeerFlags|array $flags): void
         {
-            if($uuid instanceof PeerRecord)
+            if($uuid instanceof PeerDatabaseRecord)
             {
                 $uuid = $uuid->getUuid();
             }
@@ -390,12 +390,12 @@
         /**
          * Removes a specific flag from the peer identified by the given UUID or RegisteredPeerRecord.
          *
-         * @param string|PeerRecord $peer
+         * @param string|PeerDatabaseRecord $peer
          * @param PeerFlags $flag The flag to be removed from the peer.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the database.
          */
-        public static function removeFlag(string|PeerRecord $peer, PeerFlags $flag): void
+        public static function removeFlag(string|PeerDatabaseRecord $peer, PeerFlags $flag): void
         {
             if(is_string($peer))
             {

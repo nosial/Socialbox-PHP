@@ -16,7 +16,7 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
-    use Socialbox\Objects\Database\PeerRecord;
+    use Socialbox\Objects\Database\PeerDatabaseRecord;
     use Socialbox\Objects\Database\SessionRecord;
     use Socialbox\Objects\KeyPair;
     use Symfony\Component\Uid\Uuid;
@@ -26,7 +26,7 @@
         /**
          * Creates a new session for a given peer and client details, and stores it in the database.
          *
-         * @param PeerRecord $peer The peer record for which the session is being created.
+         * @param PeerDatabaseRecord $peer The peer record for which the session is being created.
          * @param string $clientName The name of the client application.
          * @param string $clientVersion The version of the client application.
          * @param string $clientPublicSigningKey The client's public signing key, which must be a valid Ed25519 key.
@@ -36,7 +36,7 @@
          * @throws InvalidArgumentException If the provided public signing key or encryption key is invalid.
          * @throws DatabaseOperationException If there is an error during the session creation in the database.
          */
-        public static function createSession(PeerRecord $peer, string $clientName, string $clientVersion, string $clientPublicSigningKey, string $clientPublicEncryptionKey, KeyPair $serverEncryptionKeyPair): string
+        public static function createSession(PeerDatabaseRecord $peer, string $clientName, string $clientVersion, string $clientPublicSigningKey, string $clientPublicEncryptionKey, KeyPair $serverEncryptionKeyPair): string
         {
             if($clientPublicSigningKey === '' || Cryptography::validatePublicSigningKey($clientPublicSigningKey) === false)
             {
