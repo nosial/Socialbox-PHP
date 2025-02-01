@@ -26,7 +26,14 @@
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Only external peers can authenticate using this method');
                 }
 
-                SessionManager::updateFlow($request->getSession(), [SessionFlags::AUTHENTICATION_REQUIRED]);
+                $session = $request->getSession();
+
+                if(!$session->flagExists(SessionFlags::AUTHENTICATION_REQUIRED))
+                {
+                    return $rpcRequest->produceResponse(false);
+                }
+
+                SessionManager::updateFlow($session, [SessionFlags::AUTHENTICATION_REQUIRED]);
             }
             catch(Exception $e)
             {
