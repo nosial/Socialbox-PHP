@@ -297,20 +297,32 @@
          * @return string The base64-encoded digital signature.
          * @throws CryptographyException If the message or private key is invalid, or if signing fails.
          */
-        public static function signMessage(string $message, string $privateKey): string
+        public static function signMessage(string $message, string $privateKey, bool $hash=true): string
         {
+            if (empty($message))
+            {
+                throw new CryptographyException("Empty message provided");
+            }
+
+            if (empty($privateKey))
+            {
+                throw new CryptographyException("Empty private key provided");
+            }
+
+            if($hash)
+            {
+                $message = hash('sha512', $message);
+            }
+            else
+            {
+                if(!self::validateSha512($message))
+                {
+                    throw new CryptographyException("Invalid SHA-512 hash provided");
+                }
+            }
+
             try
             {
-                if (empty($message))
-                {
-                    throw new CryptographyException("Empty message provided");
-                }
-
-                if (empty($privateKey))
-                {
-                    throw new CryptographyException("Empty private key provided");
-                }
-
                 $privateKey = self::validateAndExtractKey($privateKey, self::KEY_TYPE_SIGNING);
                 $decodedKey = sodium_base642bin($privateKey, self::BASE64_VARIANT, true);
 
@@ -326,6 +338,11 @@
             }
             catch (Exception $e)
             {
+                if($e instanceof CryptographyException)
+                {
+                    throw $e;
+                }
+
                 throw new CryptographyException("Failed to sign message: " . $e->getMessage());
             }
         }
@@ -336,18 +353,31 @@
          * @param string $message The original message that was signed.
          * @param string $signature The base64-encoded signature to be verified.
          * @param string $publicKey The base64-encoded public key used to verify the signature.
+         * @param bool $hash True to hash the message before verification, false to use the message directly.
          * @return bool True if the signature is valid; false otherwise.
          * @throws CryptographyException If any parameter is empty, if the public key or signature is invalid, or if the verification process fails.
          */
-        public static function verifyMessage(string $message, string $signature, string $publicKey): bool
+        public static function verifyMessage(string $message, string $signature, string $publicKey, bool $hash=true): bool
         {
+            if (empty($message) || empty($signature) || empty($publicKey))
+            {
+                throw new CryptographyException("Empty parameter(s) provided");
+            }
+
+            if($hash)
+            {
+                $message = hash('sha512', $message);
+            }
+            else
+            {
+                if(!self::validateSha512($message))
+                {
+                    throw new CryptographyException("Invalid SHA-512 hash provided");
+                }
+            }
+
             try
             {
-                if (empty($message) || empty($signature) || empty($publicKey))
-                {
-                    throw new CryptographyException("Empty parameter(s) provided");
-                }
-
                 $publicKey = self::validateAndExtractKey($publicKey, self::KEY_TYPE_SIGNING);
                 $decodedKey = sodium_base642bin($publicKey, self::BASE64_VARIANT, true);
                 $decodedSignature = sodium_base642bin($signature, self::BASE64_VARIANT, true);
