@@ -15,6 +15,7 @@
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\SessionState;
+    use Socialbox\Enums\SigningKeyState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\StandardMethods;
@@ -751,6 +752,11 @@
         }
 
         /**
+         * Verifies the signature of a message using the public key of the signing peer both locally and externally.
+         * If the peer is registered locally, the signature is verified using the local public key.
+         * If the peer is external, the signature is verified by resolving the peer's public key from the external server.
+         * The signature is verified against the resolved public key, and the status of the verification is returned.
+         *
          * @param PeerAddress|string $signingPeer The peer address or string identifier of the signing peer
          * @param string $signatureUuid The UUID of the signature key to be resolved
          * @param string $signatureKey The public key of the signature that was used to sign the message
@@ -761,12 +767,9 @@
          */
         public static function verifyPeerSignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signatureKey, string $signature, string $messageHash, int $signatureTime): SignatureVerificationStatus
         {
-            $messageHash = sprintf('%s:%d', $messageHash, $signatureTime);
-
-            // First verify the signature with the provided parameters
             try
             {
-                if (!Cryptography::verifyMessage($messageHash, $signature, $signatureKey, false))
+                if (!Cryptography::verifyTimedMessage($messageHash, $signature, $signatureKey, $signatureTime, false))
                 {
                     return SignatureVerificationStatus::INVALID;
                 }
@@ -779,17 +782,37 @@
             // Resolve the peer signature key
             try
             {
-                $signingKey = self::resolvePeerSignature($peerAddress, $signatureUuid);
+                $signingKey = self::resolvePeerSignature($signingPeer, $signatureUuid);
             }
             catch(StandardRpcException)
             {
                 return SignatureVerificationStatus::UNVERIFIED;
             }
 
+            if($signingKey === null)
+            {
+                return SignatureVerificationStatus::UNVERIFIED;
+            }
+
+            if($signingKey->getPublicKey() !== $signatureKey)
+            {
+                return SignatureVerificationStatus::PUBLIC_KEY_MISMATCH;
+            }
+
+            if($signingKey->getUuid() !== $signatureUuid)
+            {
+                return SignatureVerificationStatus::UUID_MISMATCH;
+            }
+
+            if(time() > $signingKey->getExpires())
+            {
+                return SignatureVerificationStatus::EXPIRED;
+            }
+
             // Verify the signature with the resolved key
             try
             {
-                if (!Cryptography::verifyMessage($messageHash, $signature, $signingKey->getPublicKey(), false))
+                if (!Cryptography::verifyTimedMessage($messageHash, $signature, $signingKey->getPublicKey(), $signatureTime, false))
                 {
                     return SignatureVerificationStatus::INVALID;
                 }
@@ -798,6 +821,8 @@
             {
                 return SignatureVerificationStatus::INVALID;
             }
+
+            return SignatureVerificationStatus::VERIFIED;
         }
 
         /**
