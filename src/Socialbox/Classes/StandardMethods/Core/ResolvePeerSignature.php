@@ -6,6 +6,8 @@
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\StandardError;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\ClientRequest;
@@ -25,12 +27,12 @@
             // Check if the required 'peer' parameter is set.
             if(!$rpcRequest->containsParameter('peer'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'peer' parameter");
+                throw new MissingRpcArgumentException('peer');
             }
 
             if(!$rpcRequest->containsParameter('uuid'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'uuid' parameter");
+                throw new MissingRpcArgumentException('uuid');
             }
 
             try
@@ -39,7 +41,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardRpcException('Invalid UUID', StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new InvalidRpcArgumentException('uuid', $e);
             }
 
             // Parse the peer address
@@ -49,20 +51,9 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new StandardRpcException('Peer Address Error: ' . $e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
+                throw new InvalidRpcArgumentException('peer', $e);
             }
 
-            try
-            {
-                return $rpcRequest->produceResponse(Socialbox::resolvePeerSignature($peerAddress, $uuid->toRfc4122()));
-            }
-            catch(StandardRpcException $e)
-            {
-                throw $e;
-            }
-            catch (Exception $e)
-            {
-                throw new StandardRpcException('Failed to resolve peer signature', StandardError::INTERNAL_SERVER_ERROR, $e);
-            }
+            return $rpcRequest->produceResponse(Socialbox::resolvePeerSignature($peerAddress, $uuid->toRfc4122()));
         }
     }
