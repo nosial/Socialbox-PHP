@@ -3,6 +3,7 @@
     namespace Socialbox\Exceptions;
 
     use Exception;
+    use Socialbox\Enums\StandardError;
     use Throwable;
 
     class RequestException extends Exception
@@ -17,5 +18,15 @@
         public function __construct(string $message = "", int $code = 0, ?Throwable $previous = null)
         {
             parent::__construct($message, $code, $previous);
+        }
+
+        /**
+         * Gets the standard error associated with the exception code.
+         *
+         * @return StandardError The standard error associated with the exception code.
+         */
+        public function getStandardError(): StandardError
+        {
+            return StandardError::tryFrom($this->getCode()) ?? StandardError::UNKNOWN;
         }
     }
