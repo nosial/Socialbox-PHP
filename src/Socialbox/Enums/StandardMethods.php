@@ -4,15 +4,20 @@
 
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookAddContact;
+    use Socialbox\Classes\StandardMethods\AddressBook\AddressBookContactExists;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookDeleteContact;
+    use Socialbox\Classes\StandardMethods\AddressBook\AddressBookGetContact;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookGetContacts;
+    use Socialbox\Classes\StandardMethods\AddressBook\AddressBookRevokeSignature;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookTrustSignature;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookUpdateRelationship;
     use Socialbox\Classes\StandardMethods\Core\GetAllowedMethods;
+    use Socialbox\Classes\StandardMethods\Core\GetSelf;
     use Socialbox\Classes\StandardMethods\Core\GetSessionState;
     use Socialbox\Classes\StandardMethods\Core\Ping;
     use Socialbox\Classes\StandardMethods\Core\ResolvePeer;
     use Socialbox\Classes\StandardMethods\Core\ResolvePeerSignature;
+    use Socialbox\Classes\StandardMethods\Core\VerifyPeerSignature;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptTermsOfService;
@@ -29,12 +34,14 @@
     use Socialbox\Classes\StandardMethods\Settings\SettingsGetInformationFields;
     use Socialbox\Classes\StandardMethods\Settings\SettingsGetSigningKey;
     use Socialbox\Classes\StandardMethods\Settings\SettingsGetSigningKeys;
+    use Socialbox\Classes\StandardMethods\Settings\SettingsInformationFieldExists;
     use Socialbox\Classes\StandardMethods\Settings\SettingsSetOtp;
     use Socialbox\Classes\StandardMethods\Settings\SettingsSetPassword;
+    use Socialbox\Classes\StandardMethods\Settings\SettingsSignatureExists;
     use Socialbox\Classes\StandardMethods\Settings\SettingsUpdateInformationField;
     use Socialbox\Classes\StandardMethods\Settings\SettingsUpdateInformationPrivacy;
     use Socialbox\Classes\StandardMethods\Settings\SettingsUpdatePassword;
-    use Socialbox\Classes\StandardMethods\Verification\Authenticate;
+    use Socialbox\Classes\StandardMethods\Verification\VerificationAuthenticate;
     use Socialbox\Classes\StandardMethods\Verification\VerificationAnswerImageCaptcha;
     use Socialbox\Classes\StandardMethods\Verification\VerificationGetImageCaptcha;
     use Socialbox\Classes\StandardMethods\Verification\VerificationOtpAuthentication;
@@ -51,56 +58,73 @@
 
     enum StandardMethods : string
     {
-        case PING = 'ping';
-        case GET_SESSION_STATE = 'getSessionState';
+        // AddressBook Methods
+        case ADDRESS_BOOK_ADD_CONTACT = 'addressBookAddContact';
+        case ADDRESS_BOOK_CONTACT_EXISTS = 'addressBookContactExists';
+        case ADDRESS_BOOK_DELETE_CONTACT = 'addressBookDeleteContact';
+        case ADDRESS_BOOK_GET_CONTACT = 'addressBookGetContact';
+        case ADDRESS_BOOK_GET_CONTACTS = 'addressBookGetContacts';
+        case ADDRESS_BOOK_TRUST_SIGNATURE = 'addressBookTrustSignature';
+        case ADDRESS_BOOK_REVOKE_SIGNATURE = 'addressBookRevokeSignature';
+        case ADDRESS_BOOK_UPDATE_RELATIONSHIP = 'addressBookUpdateRelationship';
+
+        // Core Methods
         case GET_ALLOWED_METHODS = 'getAllowedMethods';
-        
-        case GET_PRIVACY_POLICY = 'getPrivacyPolicy';
+        case GET_SELF = 'getSelf';
+        case GET_SESSION_STATE = 'getSessionState';
+        case PING = 'ping';
+        case RESOLVE_PEER = 'resolvePeer';
+        case RESOLVE_PEER_SIGNATURE = 'resolvePeerSignature';
+        case VERIFY_PEER_SIGNATURE = 'verifyPeerSignature';
+
+        // ServerDocument Methods
+        case ACCEPT_COMMUNITY_GUIDELINES = 'acceptCommunityGuidelines';
         case ACCEPT_PRIVACY_POLICY = 'acceptPrivacyPolicy';
-        case GET_TERMS_OF_SERVICE = 'getTermsOfService';
         case ACCEPT_TERMS_OF_SERVICE = 'acceptTermsOfService';
         case GET_COMMUNITY_GUIDELINES = 'getCommunityGuidelines';
-        case ACCEPT_COMMUNITY_GUIDELINES = 'acceptCommunityGuidelines';
+        case GET_PRIVACY_POLICY = 'getPrivacyPolicy';
+        case GET_TERMS_OF_SERVICE = 'getTermsOfService';
 
+        // Settings Methods
+        case SETTINGS_ADD_INFORMATION_FIELD = 'settingsAddInformationField';
+        case SETTINGS_ADD_SIGNATURE = 'settingsAddSigningKey';
+        case SETTINGS_DELETE_INFORMATION_FIELD = 'settingsDeleteInformationField';
+        case SETTINGS_DELETE_OTP = 'settingsDeleteOtp';
+        case SETTINGS_DELETE_PASSWORD = 'settingsDeletePassword';
+        case SETTINGS_DELETE_SIGNATURE = 'settingsDeleteSigningKey';
+        case SETTINGS_GET_INFORMATION_FIELD = 'settingsGetInformationField';
+        case SETTINGS_GET_INFORMATION_FIELDS = 'settingsGetInformationFields';
+        case SETTINGS_GET_SIGNATURE = 'settingsGetSigningKey';
+        case SETTINGS_GET_SIGNATURES = 'settingsGetSigningKeys';
+        case SETTINGS_INFORMATION_FIELD_EXISTS = 'settingsInformationFieldExists';
+        case SETTINGS_SET_OTP = 'settingsSetOtp';
+        case SETTINGS_SET_PASSWORD = 'settingsSetPassword';
+        case SETTINGS_SIGNATURE_EXISTS = 'settingsSignatureExists';
+        case SETTINGS_UPDATE_INFORMATION_FIELD = 'settingsUpdateInformationField';
+        case SETTINGS_UPDATE_INFORMATION_PRIVACY = 'settingsUpdateInformationPrivacy';
+        case SETTINGS_UPDATE_PASSWORD = 'settingsUpdatePassword';
+
+        // Verification Methods
+        case VERIFICATION_ANSWER_IMAGE_CAPTCHA = 'verificationAnswerImageCaptcha';
         case VERIFICATION_AUTHENTICATE = 'authenticate';
+        case VERIFICATION_GET_IMAGE_CAPTCHA = 'verificationGetImageCaptcha';
+        case VERIFICATION_OTP_AUTHENTICATION = 'verificationOtpAuthentication';
+        case VERIFICATION_PASSWORD_AUTHENTICATION = 'verificationPasswordAuthentication';
+        // NOT IMPLEMENTED VERIFICATION METHODS
         case VERIFICATION_EMAIL = 'verificationEmail'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_EMAIL = 'verificationAnswerEmail'; // NOT IMPLEMENTED
         case VERIFICATION_SMS = 'verificationSms'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_SMS = 'verificationAnswerSms'; // NOT IMPLEMENTED
         case VERIFICATION_PHONE_CALL = 'verificationPhoneCall'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_PHONE_CALL = 'verificationAnswerPhoneCall'; // NOT IMPLEMENTED
-        case VERIFICATION_GET_IMAGE_CAPTCHA = 'verificationGetImageCaptcha';
-        case VERIFICATION_ANSWER_IMAGE_CAPTCHA = 'verificationAnswerImageCaptcha';
         case VERIFICATION_GET_TEXT_CAPTCHA = 'verificationGetTextCaptcha'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_TEXT_CAPTCHA = 'verificationAnswerTextCaptcha'; // NOT IMPLEMENTED
         case VERIFICATION_GET_EXTERNAL_URL = 'verificationGetExternalUrl'; // NOT IMPLEMENTED
         case VERIFICATION_ANSWER_EXTERNAL_URL = 'verificationAnswerExternalUrl'; // NOT IMPLEMENTED
-        case VERIFICATION_PASSWORD_AUTHENTICATION = 'verificationPasswordAuthentication';
-        case VERIFICATION_OTP_AUTHENTICATION = 'verificationOtpAuthentication';
 
-        case SETTINGS_SET_PASSWORD = 'settingsSetPassword';
-        case SETTINGS_UPDATE_PASSWORD = 'settingsUpdatePassword';
-        case SETTINGS_DELETE_PASSWORD = 'settingsDeletePassword';
-        case SETTINGS_SET_OTP = 'settingsSetOtp';
-        case SETTINGS_DELETE_OTP = 'settingsDeleteOtp';
-        case SETTINGS_ADD_INFORMATION_FIELD = 'settingsAddInformationField';
-        case SETTINGS_GET_INFORMATION_FIELDS = 'settingsGetInformationFields';
-        case SETTINGS_GET_INFORMATION_FIELD = 'settingsGetInformationField';
-        case SETTINGS_UPDATE_INFORMATION_FIELD = 'settingsUpdateInformationField';
-        case SETTINGS_DELETE_INFORMATION_FIELD = 'settingsDeleteInformationField';
-        case SETTINGS_UPDATE_INFORMATION_PRIVACY = 'settingsUpdateInformationPrivacy';
 
-        case SETTINGS_ADD_SIGNATURE = 'settingsAddSigningKey';
-        case SETTINGS_DELETE_SIGNATURE = 'settingsDeleteSigningKey';
-        case SETTINGS_GET_SIGNATURES = 'settingsGetSigningKeys';
-        case SETTINGS_GET_SIGNATURE = 'settingsGetSigningKey';
-
-        case ADDRESS_BOOK_ADD_CONTACT = 'addressBookAddContact';
-        case ADDRESS_BOOK_DELETE_CONTACT = 'addressBookDeleteContact';
-        case ADDRESS_BOOK_GET_CONTACTS = 'addressBookGetContacts';
-        case ADDRESS_BOOK_UPDATE_RELATIONSHIP = 'addressBookUpdateRelationship';
-        case ADDRESS_BOOK_TRUST_SIGNATURE = 'addressBookTrustSignature';
-
+        // TODO: COMPLETE THE REST
+        // MISC
         case GET_STATE = 'getState';
 
         // End-to-End channels for communication purposes
@@ -137,9 +161,6 @@
         case MESSAGES_SET_MESSAGE_BODY = 'messagesSetMessageBody';
         case MESSAGES_SEND_MESSAGE = 'messagesSendMessage';
 
-        case RESOLVE_PEER = 'resolvePeer';
-        case RESOLVE_PEER_SIGNATURE = 'resolvePeerSignature';
-
         /**
          * Executes the appropriate operation based on the current context and requests provided.
          *
@@ -152,51 +173,60 @@
         {
             return match ($this)
             {
-                self::PING => Ping::execute($request, $rpcRequest),
-                self::GET_SESSION_STATE => GetSessionState::execute($request, $rpcRequest),
-                self::GET_ALLOWED_METHODS => GetAllowedMethods::execute($request, $rpcRequest),
-                
-                self::GET_PRIVACY_POLICY => GetPrivacyPolicy::execute($request, $rpcRequest),
-                self::ACCEPT_PRIVACY_POLICY => AcceptPrivacyPolicy::execute($request, $rpcRequest),
-                self::GET_TERMS_OF_SERVICE => GetTermsOfService::execute($request, $rpcRequest),
-                self::ACCEPT_TERMS_OF_SERVICE => AcceptTermsOfService::execute($request, $rpcRequest),
-                self::GET_COMMUNITY_GUIDELINES => GetCommunityGuidelines::execute($request, $rpcRequest),
-                self::ACCEPT_COMMUNITY_GUIDELINES => AcceptCommunityGuidelines::execute($request, $rpcRequest),
-
-                self::VERIFICATION_GET_IMAGE_CAPTCHA => VerificationGetImageCaptcha::execute($request, $rpcRequest),
-                self::VERIFICATION_ANSWER_IMAGE_CAPTCHA => VerificationAnswerImageCaptcha::execute($request, $rpcRequest),
-                
-                self::VERIFICATION_PASSWORD_AUTHENTICATION => VerificationPasswordAuthentication::execute($request, $rpcRequest),
-                self::VERIFICATION_OTP_AUTHENTICATION => VerificationOtpAuthentication::execute($request, $rpcRequest),
-
-                self::SETTINGS_SET_PASSWORD => SettingsSetPassword::execute($request, $rpcRequest),
-                self::SETTINGS_UPDATE_PASSWORD => SettingsUpdatePassword::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_PASSWORD => SettingsDeletePassword::execute($request, $rpcRequest),
-                self::SETTINGS_SET_OTP => SettingsSetOtp::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_OTP => SettingsDeleteOtp::execute($request, $rpcRequest),
-
-                self::SETTINGS_ADD_INFORMATION_FIELD => SettingsAddInformationField::execute($request, $rpcRequest),
-                self::SETTINGS_GET_INFORMATION_FIELDS => SettingsGetInformationFields::execute($request, $rpcRequest),
-                self::SETTINGS_GET_INFORMATION_FIELD => SettingsGetInformationField::execute($request, $rpcRequest),
-                self::SETTINGS_UPDATE_INFORMATION_FIELD => SettingsUpdateInformationField::execute($request, $rpcRequest),
-                self::SETTINGS_UPDATE_INFORMATION_PRIVACY => SettingsUpdateInformationPrivacy::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_INFORMATION_FIELD => SettingsDeleteInformationField::execute($request, $rpcRequest),
-
-                self::SETTINGS_ADD_SIGNATURE => SettingsAddSignature::execute($request, $rpcRequest),
-                self::SETTINGS_DELETE_SIGNATURE => SettingsDeleteSignature::execute($request, $rpcRequest),
-                self::SETTINGS_GET_SIGNATURES => SettingsGetSigningKeys::execute($request, $rpcRequest),
-                self::SETTINGS_GET_SIGNATURE => SettingsGetSigningKey::execute($request, $rpcRequest),
-
+                // AddressBook Methods
                 self::ADDRESS_BOOK_ADD_CONTACT => AddressBookAddContact::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_CONTACT_EXISTS => AddressBookContactExists::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_DELETE_CONTACT => AddressBookDeleteContact::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_GET_CONTACT => AddressBookGetContact::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_GET_CONTACTS => AddressBookGetContacts::execute($request, $rpcRequest),
-                self::ADDRESS_BOOK_UPDATE_RELATIONSHIP => AddressBookUpdateRelationship::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_TRUST_SIGNATURE => AddressBookTrustSignature::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_REVOKE_SIGNATURE => AddressBookRevokeSignature::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_UPDATE_RELATIONSHIP => AddressBookUpdateRelationship::execute($request, $rpcRequest),
 
-                self::VERIFICATION_AUTHENTICATE => Authenticate::execute($request, $rpcRequest),
+                // Core Methods
+                self::GET_ALLOWED_METHODS => GetAllowedMethods::execute($request, $rpcRequest),
+                self::GET_SELF => GetSelf::execute($request, $rpcRequest),
+                self::GET_SESSION_STATE => GetSessionState::execute($request, $rpcRequest),
+                self::PING => Ping::execute($request, $rpcRequest),
                 self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
                 self::RESOLVE_PEER_SIGNATURE => ResolvePeerSignature::execute($request, $rpcRequest),
+                self::VERIFY_PEER_SIGNATURE => VerifyPeerSignature::execute($request, $rpcRequest),
 
+                // Server Document Methods
+                self::ACCEPT_PRIVACY_POLICY => AcceptPrivacyPolicy::execute($request, $rpcRequest),
+                self::ACCEPT_COMMUNITY_GUIDELINES => AcceptCommunityGuidelines::execute($request, $rpcRequest),
+                self::ACCEPT_TERMS_OF_SERVICE => AcceptTermsOfService::execute($request, $rpcRequest),
+                self::GET_COMMUNITY_GUIDELINES => GetCommunityGuidelines::execute($request, $rpcRequest),
+                self::GET_PRIVACY_POLICY => GetPrivacyPolicy::execute($request, $rpcRequest),
+                self::GET_TERMS_OF_SERVICE => GetTermsOfService::execute($request, $rpcRequest),
+
+                // Settings Methods
+                self::SETTINGS_ADD_INFORMATION_FIELD => SettingsAddInformationField::execute($request, $rpcRequest),
+                self::SETTINGS_ADD_SIGNATURE => SettingsAddSignature::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_INFORMATION_FIELD => SettingsDeleteInformationField::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_OTP => SettingsDeleteOtp::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_PASSWORD => SettingsDeletePassword::execute($request, $rpcRequest),
+                self::SETTINGS_DELETE_SIGNATURE => SettingsDeleteSignature::execute($request, $rpcRequest),
+                self::SETTINGS_GET_INFORMATION_FIELD => SettingsGetInformationField::execute($request, $rpcRequest),
+                self::SETTINGS_GET_INFORMATION_FIELDS => SettingsGetInformationFields::execute($request, $rpcRequest),
+                self::SETTINGS_GET_SIGNATURE => SettingsGetSigningKey::execute($request, $rpcRequest),
+                self::SETTINGS_GET_SIGNATURES => SettingsGetSigningKeys::execute($request, $rpcRequest),
+                self::SETTINGS_INFORMATION_FIELD_EXISTS => SettingsInformationFieldExists::execute($request, $rpcRequest),
+                self::SETTINGS_SET_OTP => SettingsSetOtp::execute($request, $rpcRequest),
+                self::SETTINGS_SET_PASSWORD => SettingsSetPassword::execute($request, $rpcRequest),
+                self::SETTINGS_SIGNATURE_EXISTS => SettingsSignatureExists::execute($request, $rpcRequest),
+                self::SETTINGS_UPDATE_INFORMATION_FIELD => SettingsUpdateInformationField::execute($request, $rpcRequest),
+                self::SETTINGS_UPDATE_INFORMATION_PRIVACY => SettingsUpdateInformationPrivacy::execute($request, $rpcRequest),
+                self::SETTINGS_UPDATE_PASSWORD => SettingsUpdatePassword::execute($request, $rpcRequest),
+
+                // Verification Methods
+                self::VERIFICATION_ANSWER_IMAGE_CAPTCHA => VerificationAnswerImageCaptcha::execute($request, $rpcRequest),
+                self::VERIFICATION_AUTHENTICATE => VerificationAuthenticate::execute($request, $rpcRequest),
+                self::VERIFICATION_GET_IMAGE_CAPTCHA => VerificationGetImageCaptcha::execute($request, $rpcRequest),
+                self::VERIFICATION_OTP_AUTHENTICATION => VerificationOtpAuthentication::execute($request, $rpcRequest),
+                self::VERIFICATION_PASSWORD_AUTHENTICATION => VerificationPasswordAuthentication::execute($request, $rpcRequest),
+
+                // Default Unknown/Not Implemented
                 default => $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, sprintf("The method %s is not supported by the server", $rpcRequest->getMethod()))
             };
         }
@@ -230,16 +260,7 @@
         public static function getAllowedMethods(ClientRequest $clientRequest): array
         {
             // These methods should always accessible
-            $methods = [
-                // Important methods
-                self::PING, // Always allow the ping method
-                self::GET_SESSION_STATE, // The session state should always be accessible
-                self::GET_ALLOWED_METHODS, // Client should always be able to get the allowed methods
-                self::GET_PRIVACY_POLICY, // The user should always be able to get the privacy policy
-                self::GET_TERMS_OF_SERVICE, // The user should always be able to get the terms of service
-                self::GET_COMMUNITY_GUIDELINES, // The user should always be able to get the community guidelines
-            ];
-
+            $methods = self::getCoreMethods();
             $session = $clientRequest->getSession();
 
             if($session === null)
@@ -265,7 +286,7 @@
             // If the session is authenticated, then allow additional method calls
             elseif($session->isAuthenticated())
             {
-                $methods = array_merge($methods, self::getAuthenticatedMethods());
+                $methods = array_merge($methods, self::getAuthenticatedMethods($session));
             }
             // If the session isn't authenticated, check if it's a registering user
             elseif($session->flagExists(SessionFlags::REGISTRATION_REQUIRED))
@@ -311,36 +332,14 @@
          *
          * @return array An array of methods that are available to
          */
-        private static function getAuthenticatedMethods(): array
+        private static function getAuthenticatedMethods(?SessionRecord $session=null): array
         {
-
-            // These methods are always allowed for authenticated users
-            $methods = [
-                self::SETTINGS_ADD_SIGNATURE,
-                self::SETTINGS_GET_SIGNATURES,
-                self::SETTINGS_GET_SIGNATURE,
-
-                self::SETTINGS_ADD_INFORMATION_FIELD,
-                self::SETTINGS_GET_INFORMATION_FIELDS,
-                self::SETTINGS_GET_INFORMATION_FIELD,
-                self::SETTINGS_UPDATE_INFORMATION_FIELD,
-                self::SETTINGS_UPDATE_INFORMATION_PRIVACY,
-                self::SETTINGS_DELETE_INFORMATION_FIELD,
-
-                self::SETTINGS_SET_PASSWORD,
-                self::SETTINGS_DELETE_PASSWORD,
-                self::SETTINGS_UPDATE_PASSWORD,
-                self::SETTINGS_SET_OTP,
-                self::SETTINGS_DELETE_OTP,
-                self::RESOLVE_PEER,
-                self::RESOLVE_PEER_SIGNATURE,
-
-                self::ADDRESS_BOOK_ADD_CONTACT,
-                self::ADDRESS_BOOK_DELETE_CONTACT,
-                self::ADDRESS_BOOK_GET_CONTACTS,
-            ];
-
-            return $methods;
+            return array_merge(
+                self::getAddressBookMethods(),
+                self::getServerDocumentMethods($session),
+                self::getSettingsMethods(),
+                self::getVerificationMethods($session)
+            );
         }
 
         /**
@@ -357,14 +356,7 @@
                 return [];
             }
 
-            $methods = [
-                self::SETTINGS_ADD_INFORMATION_FIELD,
-                self::SETTINGS_GET_INFORMATION_FIELDS,
-                self::SETTINGS_GET_INFORMATION_FIELD,
-                self::SETTINGS_UPDATE_INFORMATION_FIELD,
-                self::SETTINGS_UPDATE_INFORMATION_PRIVACY,
-                self::SETTINGS_DELETE_INFORMATION_FIELD
-            ];
+            $methods = self::getSettingsMethods();
 
             // If the flag `VER_PRIVACY_POLICY` is set, then the user can accept the privacy policy
             if($session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
@@ -391,21 +383,8 @@
                 $methods[] = self::VERIFICATION_ANSWER_IMAGE_CAPTCHA;
             }
 
-            // If the flag `SET_PASSWORD` is set, then the user has to set a password
-            if($session->flagExists(SessionFlags::SET_PASSWORD))
-            {
-                $methods[] = self::SETTINGS_SET_PASSWORD;
-            }
-
-            // If the flag `SET_OTP` is set, then the user has to set an OTP
-            if($session->flagExists(SessionFLags::SET_OTP))
-            {
-                $methods[] = self::SETTINGS_SET_OTP;
-            }
-
             return $methods;
         }
-
 
         /**
          * Retrieves the list of authentication methods available for the given client request.
@@ -444,5 +423,170 @@
             }
 
             return $methods;
+        }
+
+        /**
+         * Returns an array of methods for managing the peer's AddressBook
+         *
+         * @param bool $readOnly If True, only methods related to reading will be returned.
+         * @return StandardMethods[] The array of AddressBook methods to return
+         */
+        public static function getAddressBookMethods(bool $readOnly=false): array
+        {
+            if($readOnly)
+            {
+                return [
+                    self::ADDRESS_BOOK_CONTACT_EXISTS,
+                    self::ADDRESS_BOOK_GET_CONTACT,
+                    self::ADDRESS_BOOK_GET_CONTACTS,
+                ];
+            }
+
+            return [
+                self::ADDRESS_BOOK_ADD_CONTACT,
+                self::ADDRESS_BOOK_CONTACT_EXISTS,
+                self::ADDRESS_BOOK_DELETE_CONTACT,
+                self::ADDRESS_BOOK_GET_CONTACT,
+                self::ADDRESS_BOOK_GET_CONTACTS,
+                self::ADDRESS_BOOK_REVOKE_SIGNATURE,
+                self::ADDRESS_BOOK_TRUST_SIGNATURE,
+                self::ADDRESS_BOOK_UPDATE_RELATIONSHIP
+            ];
+        }
+
+        /**
+         * Returns an array of methods for the core methods of the Socialbox RPC protocol
+         *
+         * @return StandardMethods[] An array of Core methods
+         */
+        public static function getCoreMethods(): array
+        {
+            return [
+                self::GET_ALLOWED_METHODS,
+                self::GET_SELF,
+                self::GET_SESSION_STATE,
+                self::PING,
+                self::RESOLVE_PEER,
+                self::RESOLVE_PEER_SIGNATURE,
+                self::VERIFY_PEER_SIGNATURE
+            ];
+        }
+
+        /**
+         * Returns na array of ServerDocument methods made available for the peer, if $session is false then all
+         * methods would be returned, otherwise the allowed methods would be returned.
+         *
+         * @param SessionRecord|null $session Optional. If null, all session will return otherwise only allowed methods would be returned
+         * @return StandardMethods[] An array of standard methods that are related to Server documentation
+         */
+        public static function getServerDocumentMethods(?SessionRecord $session=null): array
+        {
+            if($session === null)
+            {
+                return [
+                    self::ACCEPT_COMMUNITY_GUIDELINES,
+                    self::ACCEPT_PRIVACY_POLICY,
+                    self::ACCEPT_TERMS_OF_SERVICE,
+                    self::GET_COMMUNITY_GUIDELINES,
+                    self::GET_PRIVACY_POLICY,
+                    self::GET_TERMS_OF_SERVICE
+                ];
+            }
+
+            $results = [
+                self::GET_COMMUNITY_GUIDELINES,
+                self::GET_PRIVACY_POLICY,
+                self::GET_TERMS_OF_SERVICE
+            ];
+
+            if($session->flagExists(SessionFLags::VER_COMMUNITY_GUIDELINES))
+            {
+                $results[] = self::ACCEPT_COMMUNITY_GUIDELINES;
+            }
+
+            if($session->flagExists(SessionFlags::VER_PRIVACY_POLICY))
+            {
+                $results[] = self::ACCEPT_PRIVACY_POLICY;
+            }
+
+            if($session->flagExists(SessionFlags::VER_TERMS_OF_SERVICE))
+            {
+                $results[] = self::ACCEPT_TERMS_OF_SERVICE;
+            }
+
+            return $results;
+        }
+
+        /**
+         * Returns an array of setting methods that are accessible.
+         *
+         * @return StandardMethods[]
+         */
+        public static function getSettingsMethods(): array
+        {
+            return [
+                self::SETTINGS_ADD_INFORMATION_FIELD,
+                self::SETTINGS_ADD_SIGNATURE,
+                self::SETTINGS_DELETE_INFORMATION_FIELD,
+                self::SETTINGS_DELETE_OTP,
+                self::SETTINGS_DELETE_PASSWORD,
+                self::SETTINGS_DELETE_SIGNATURE,
+                self::SETTINGS_GET_INFORMATION_FIELD,
+                self::SETTINGS_GET_INFORMATION_FIELDS,
+                self::SETTINGS_GET_SIGNATURE,
+                self::SETTINGS_GET_SIGNATURES,
+                self::SETTINGS_INFORMATION_FIELD_EXISTS,
+                self::SETTINGS_SET_OTP,
+                self::SETTINGS_SET_PASSWORD,
+                self::SETTINGS_SIGNATURE_EXISTS,
+                self::SETTINGS_UPDATE_INFORMATION_FIELD,
+                self::SETTINGS_UPDATE_INFORMATION_PRIVACY,
+                self::SETTINGS_UPDATE_PASSWORD
+            ];
+        }
+
+        /**
+         * Returns an array of verification methods that are accessible, if $session is null, all methods are returned,
+         * otherwise only accessible methods are returned.
+         *
+         * @return StandardMethods[]
+         */
+        public static function getVerificationMethods(?SessionRecord $session=null): array
+        {
+            if($session === null)
+            {
+                return [
+                    self::VERIFICATION_ANSWER_IMAGE_CAPTCHA,
+                    self::VERIFICATION_AUTHENTICATE,
+                    self::VERIFICATION_GET_IMAGE_CAPTCHA,
+                    self::VERIFICATION_OTP_AUTHENTICATION,
+                    self::VERIFICATION_PASSWORD_AUTHENTICATION
+                ];
+            }
+
+            $results = [];
+
+            if($session->flagExists(SessionFlags::VER_IMAGE_CAPTCHA))
+            {
+                $results[] = self::VERIFICATION_GET_IMAGE_CAPTCHA;
+                $results[] = self::VERIFICATION_ANSWER_IMAGE_CAPTCHA;
+            }
+
+            if($session->flagExists(SessionFlags::VER_AUTHENTICATION))
+            {
+                $results[] = self::VERIFICATION_AUTHENTICATE;
+            }
+
+            if($session->flagExists(SessionFlags::VER_OTP))
+            {
+                $results[] = self::VERIFICATION_OTP_AUTHENTICATION;
+            }
+
+            if($session->flagExists(SessionFlags::VER_PASSWORD))
+            {
+                $results[] = self::VERIFICATION_PASSWORD_AUTHENTICATION;
+            }
+
+            return $results;
         }
     }
