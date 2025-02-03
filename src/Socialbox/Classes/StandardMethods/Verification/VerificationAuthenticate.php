@@ -12,7 +12,7 @@
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
 
-    class Authenticate extends Method
+    class VerificationAuthenticate extends Method
     {
         /**
          * @inheritDoc
