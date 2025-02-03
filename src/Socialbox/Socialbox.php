@@ -18,6 +18,7 @@
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\StandardMethods;
+    use Socialbox\Enums\Status\SignatureVerificationStatus;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Enums\Types\RequestType;
@@ -746,6 +747,56 @@
             catch (Exception $e)
             {
                 throw new ResolutionException(sprintf('Failed to retrieve server information from %s: %s', $domain, $e->getMessage()), $e->getCode(), $e);
+            }
+        }
+
+        /**
+         * @param PeerAddress|string $signingPeer The peer address or string identifier of the signing peer
+         * @param string $signatureUuid The UUID of the signature key to be resolved
+         * @param string $signatureKey The public key of the signature that was used to sign the message
+         * @param string $signature  The signature to be verified
+         * @param string $messageHash The SHA-512 hash of the message that was signed
+         * @param int $signatureTime The time at which the message was signed
+         * @return SignatureVerificationStatus The status of the signature verification
+         */
+        public static function verifyPeerSignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signatureKey, string $signature, string $messageHash, int $signatureTime): SignatureVerificationStatus
+        {
+            $messageHash = sprintf('%s:%d', $messageHash, $signatureTime);
+
+            // First verify the signature with the provided parameters
+            try
+            {
+                if (!Cryptography::verifyMessage($messageHash, $signature, $signatureKey, false))
+                {
+                    return SignatureVerificationStatus::INVALID;
+                }
+            }
+            catch (CryptographyException)
+            {
+                return SignatureVerificationStatus::INVALID;
+            }
+
+            // Resolve the peer signature key
+            try
+            {
+                $signingKey = self::resolvePeerSignature($peerAddress, $signatureUuid);
+            }
+            catch(StandardRpcException)
+            {
+                return SignatureVerificationStatus::UNVERIFIED;
+            }
+
+            // Verify the signature with the resolved key
+            try
+            {
+                if (!Cryptography::verifyMessage($messageHash, $signature, $signingKey->getPublicKey(), false))
+                {
+                    return SignatureVerificationStatus::INVALID;
+                }
+            }
+            catch (CryptographyException)
+            {
+                return SignatureVerificationStatus::INVALID;
             }
         }
 

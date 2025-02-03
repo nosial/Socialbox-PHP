@@ -348,6 +348,43 @@
         }
 
         /**
+         * Signs a message using the provided private key and a timestamp.
+         *
+         * @param string $message The message to be signed.
+         * @param string $privateKey The base64-encoded private key used for signing.
+         * @param int $timestamp The timestamp to be included in the signed message.
+         * @param bool $hash True to hash the message before signing, false to use the message directly.
+         * @return string The base64-encoded digital signature.
+         * @throws CryptographyException If the message or private key is invalid, or if signing fails.
+         */
+        public static function signTimedMessage(string $message, string $privateKey, int $timestamp, bool $hash=true): string
+        {
+            if (empty($message))
+            {
+                throw new CryptographyException("Empty message provided");
+            }
+
+            if($timestamp <= 0)
+            {
+                throw new CryptographyException("Invalid timestamp provided");
+            }
+
+            if($hash)
+            {
+                $message = hash('sha512', $message);
+            }
+            else
+            {
+                if(!self::validateSha512($message))
+                {
+                    throw new CryptographyException("Invalid SHA-512 hash provided");
+                }
+            }
+
+            return self::signMessage(sprintf("digest:%s;timestamp:%d", $message, $timestamp), $privateKey);
+        }
+
+        /**
          * Verifies the validity of a given signature for a message using the provided public key.
          *
          * @param string $message The original message that was signed.
@@ -403,6 +440,44 @@
 
                 throw new CryptographyException("Failed to verify signature: " . $e->getMessage());
             }
+        }
+
+        /**
+         * Verifies the validity of a given signature for a message using the provided public key and timestamp.
+         *
+         * @param string $message The original message that was signed.
+         * @param string $signature The base64-encoded signature to be verified.
+         * @param string $publicKey The base64-encoded public key used to verify the signature.
+         * @param int $timestamp The timestamp to be included in the signed message.
+         * @param bool $hash True to hash the message before verification, false to use the message directly.
+         * @return bool True if the signature is valid; false otherwise.
+         * @throws CryptographyException If any parameter is empty, if the public key or signature is invalid, or if the verification process fails.
+         */
+        public static function verifyTimedMessage(string $message, string $signature, string $publicKey, int $timestamp, bool $hash=true): bool
+        {
+            if (empty($message) || empty($signature) || empty($publicKey))
+            {
+                throw new CryptographyException("Empty parameter(s) provided");
+            }
+
+            if($timestamp <= 0)
+            {
+                throw new CryptographyException("Invalid timestamp provided");
+            }
+
+            if($hash)
+            {
+                $message = hash('sha512', $message);
+            }
+            else
+            {
+                if(!self::validateSha512($message))
+                {
+                    throw new CryptographyException("Invalid SHA-512 hash provided");
+                }
+            }
+
+            return self::verifyMessage(sprintf("digest:%s;timestamp:%d", $message, $timestamp), $signature, $publicKey);
         }
 
         /**
