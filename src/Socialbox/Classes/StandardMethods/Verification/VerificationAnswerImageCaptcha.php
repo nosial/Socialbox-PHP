@@ -6,6 +6,7 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\CaptchaManager;
@@ -23,7 +24,7 @@
         {
             if(!$rpcRequest->containsParameter('answer'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, 'The answer parameter is required');
+                throw new MissingRpcArgumentException('answer');
             }
 
             $session = $request->getSession();
@@ -32,7 +33,7 @@
             {
                 if(CaptchaManager::getCaptcha($session->getPeerUuid())?->isExpired())
                 {
-                    return $rpcRequest->produceError(StandardError::CAPTCHA_EXPIRED, 'The captcha has expired');
+                    return $rpcRequest->produceError(StandardError::EXPIRED, 'The captcha has expired');
                 }
             }
             catch(DatabaseOperationException $e)
