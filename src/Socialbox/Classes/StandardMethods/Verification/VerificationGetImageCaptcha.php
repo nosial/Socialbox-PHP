@@ -21,17 +21,24 @@
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-            $session = $request->getSession();
+            try
+            {
+                $session = $request->getSession();
+            }
+            catch (DatabaseOperationException $e)
+            {
+                throw new StandardRpcException('An error occurred while trying to get the session', StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
+
             // Check for session conditions
             if(!$session->flagExists(SessionFlags::VER_IMAGE_CAPTCHA))
             {
                 return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'Solving an image captcha is not required at this time');
             }
 
-            $peer = $request->getPeer();
-
             try
             {
+                $peer = $request->getPeer();
                 if(CaptchaManager::captchaExists($peer))
                 {
                     $captchaRecord = CaptchaManager::getCaptcha($peer);

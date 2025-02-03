@@ -8,6 +8,8 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\PasswordManager;
@@ -25,22 +27,22 @@
         {
             if(!$rpcRequest->containsParameter('password'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'password' parameter");
+                throw new MissingRpcArgumentException('password');
             }
 
             if(!Cryptography::validateSha512($rpcRequest->getParameter('password')))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'password' parameter, must be a valid SHA-512 hash");
-            }
-
-            $session = $request->getSession();
-            if(!$session->flagExists(SessionFlags::VER_PASSWORD))
-            {
-                return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Password verification is not required at this time');
+                throw new InvalidRpcArgumentException('password', 'Invalid SHA-512 hash');
             }
 
             try
             {
+                $session = $request->getSession();
+                if(!$session->flagExists(SessionFlags::VER_PASSWORD))
+                {
+                    return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'Password verification is not required at this time');
+                }
+
                 $result = PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('password'));
 
                 if($result)

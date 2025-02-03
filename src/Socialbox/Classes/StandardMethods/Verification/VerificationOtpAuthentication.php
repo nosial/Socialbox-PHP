@@ -8,6 +8,8 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\OneTimePasswordManager;
@@ -25,18 +27,18 @@
         {
             if(!$rpcRequest->containsParameter('code'))
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Missing 'code' parameter");
+                throw new MissingRpcArgumentException('code');
             }
 
             if(strlen($rpcRequest->getParameter('code')) !== Configuration::getSecurityConfiguration()->getOtpDigits())
             {
-                return $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, "Invalid 'code' parameter length");
+                throw new InvalidRpcArgumentException('code', 'Invalid OTP code length');
             }
 
             $session = $request->getSession();
             if(!$session->flagExists(SessionFlags::VER_OTP))
             {
-                return $rpcRequest->produceError(StandardError::FORBIDDEN, 'One Time Password verification is not required at this time');
+                return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'One Time Password verification is not required at this time');
             }
 
             try
