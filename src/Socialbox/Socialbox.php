@@ -873,10 +873,6 @@
                         return null;
                     }
                 }
-                catch(StandardRpcException $e)
-                {
-                    throw $e;
-                }
                 catch(Exception $e)
                 {
                     throw new StandardRpcException('There was an error while trying to resolve the signature key for the peer locally', StandardError::INTERNAL_SERVER_ERROR, $e);
