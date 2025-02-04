@@ -15,7 +15,6 @@
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\SessionState;
-    use Socialbox\Enums\SigningKeyState;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardHeaders;
     use Socialbox\Enums\StandardMethods;
