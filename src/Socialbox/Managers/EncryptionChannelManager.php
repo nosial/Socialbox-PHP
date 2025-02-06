@@ -14,6 +14,7 @@
     use Socialbox\Objects\Database\ChannelMessageRecord;
     use Socialbox\Objects\Database\EncryptionChannelRecord;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\EncryptionChannelMessage;
 
     class EncryptionChannelManager
     {
@@ -502,6 +503,7 @@
          * @param string $messageUuid The UUID of the message to retrieve.
          * @return ChannelMessageRecord|null The message with the specified UUID. Null if the message does not exist.
          * @throws DatabaseOperationException If an error occurs while retrieving the message.
+         * @throws \DateMalformedStringException If the created date is not a valid date string.
          */
         public static function getData(string $channelUuid, string $messageUuid): ?ChannelMessageRecord
         {
@@ -523,6 +525,34 @@
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to retrieve the message', $e);
+            }
+        }
+
+        /**
+         * Imports the specified message data into the database.
+         *
+         * @param EncryptionChannelMessage|ChannelMessageRecord $message The message data to import.
+         * @throws DatabaseOperationException If an error occurs while importing the message.
+         */
+        public static function importData(EncryptionChannelMessage|ChannelMessageRecord $message): void
+        {
+            $data = $message->toArray();
+
+            try
+            {
+                $stmt = Database::getConnection()->prepare('INSERT INTO channel_com (uuid, channel_uuid, recipient, message, signature, received, timestamp) VALUES (:uuid, :channel_uuid, :recipient, :message, :signature, :received, :timestamp)');
+                $stmt->bindParam(':uuid', $data['uuid']);
+                $stmt->bindParam(':channel_uuid', $data['channel_uuid']);
+                $stmt->bindParam(':recipient', $data['recipient']);
+                $stmt->bindParam(':message', $data['message']);
+                $stmt->bindParam(':signature', $data['signature']);
+                $stmt->bindParam(':received', $data['received']);
+                $stmt->bindParam(':timestamp', $data['timestamp']);
+                $stmt->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to import the message', $e);
             }
         }
 
