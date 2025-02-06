@@ -7,6 +7,7 @@
     use Socialbox\Enums\Status\EncryptionChannelState;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\EncryptionChannel;
 
     class EncryptionChannelRecord implements SerializableInterface
     {
@@ -255,5 +256,15 @@
                 'state' => $this->state->value,
                 'created' => $this->created->format('Y-m-d H:i:s')
             ];
+        }
+
+        /**
+         * Converts the Encryption Channel Record to a Standard Encryption Channel
+         *
+         * @return EncryptionChannel
+         */
+        public function toStandard(): EncryptionChannel
+        {
+            return new EncryptionChannel($this->toArray());
         }
     }

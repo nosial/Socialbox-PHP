@@ -1,15 +1,13 @@
 <?php
 
-    namespace Socialbox\Objects\Database;
+    namespace Socialbox\Objects\Standard;
 
-    use DateMalformedStringException;
     use DateTime;
     use InvalidArgumentException;
     use Socialbox\Enums\Types\CommunicationRecipientType;
     use Socialbox\Interfaces\SerializableInterface;
-    use Socialbox\Objects\Standard\EncryptionChannelMessage;
 
-    class ChannelMessageRecord implements SerializableInterface
+    class EncryptionChannelMessage implements SerializableInterface
     {
         private string $uuid;
         private string $channelUuid;
@@ -17,20 +15,12 @@
         private string $message;
         private string $signature;
         private bool $received;
-        private DateTime $timestamp;
+        private int $timestamp;
 
         /**
-         * Constructs a new instance of this class and initializes its properties with the provided data.
+         * EncryptionChannelMessage constructor.
          *
-         * @param array $data An associative array containing initialization data. Expected keys:
-         *                    - 'uuid' (string): The unique identifier.
-         *                    - 'channel_uuid' (string): The channel UUID.
-         *                    - 'recipient' (string): The recipient type, which will be cast to a CommunicationRecipientType instance.
-         *                    - 'message' (string): The message.
-         *                    - 'signature' (string): The signature.
-         *                    - 'received' (bool): Whether the message has been received.
-         *                    - 'timestamp' (int|string|\DateTime): The timestamp of the message.
-         * @throws DateMalformedStringException If the timestamp is a string that cannot be parsed.
+         * @param array $data
          */
         public function __construct(array $data)
         {
@@ -43,26 +33,26 @@
 
             if($data['timestamp'] instanceof DateTime)
             {
-                $this->timestamp = $data['timestamp'];
+                $this->timestamp = $data['timestamp']->getTimestamp();
             }
             elseif(is_int($data['timestamp']))
             {
-                $this->timestamp = (new DateTime())->setTimestamp($data['timestamp']);
+                $this->timestamp = $data['timestamp'];
             }
             elseif(is_string($data['timestamp']))
             {
-                $this->timestamp = new DateTime($data['timestamp']);
+                $this->timestamp = strtotime($data['timestamp']) ?: throw new InvalidArgumentException('Invalid date format');
             }
             else
             {
-                throw new InvalidArgumentException('Invalid timestamp type, got ' . gettype($data['timestamp']));
+                throw new InvalidArgumentException('Invalid date format, got type: ' . gettype($data['timestamp']));
             }
         }
 
         /**
-         * Returns the unique identifier for the message.
+         * The Unique Universal Identifier of the message.
          *
-         * @return string
+         * @return string The UUID of the message.
          */
         public function getUuid(): string
         {
@@ -70,9 +60,9 @@
         }
 
         /**
-         * Returns the UUID of the channel that the message belongs to.
+         * The Unique Universal Identifier of the channel.
          *
-         * @return string
+         * @return string The UUID of the channel.
          */
         public function getChannelUuid(): string
         {
@@ -80,9 +70,9 @@
         }
 
         /**
-         * Returns the recipient type of the message.
+         * The recipient of the message.
          *
-         * @return CommunicationRecipientType
+         * @return CommunicationRecipientType The recipient of the message.
          */
         public function getRecipient(): CommunicationRecipientType
         {
@@ -90,9 +80,9 @@
         }
 
         /**
-         * Returns the message content.
+         * The encrypted message.
          *
-         * @return string
+         * @return string The message.
          */
         public function getMessage(): string
         {
@@ -100,9 +90,9 @@
         }
 
         /**
-         * Returns the signature of the message.
+         * The signature of the decrypted message.
          *
-         * @return string
+         * @return string The signature of the message.
          */
         public function getSignature(): string
         {
@@ -110,9 +100,9 @@
         }
 
         /**
-         * Returns whether the message has been received.
+         * Whether the message has been received.
          *
-         * @return bool
+         * @return bool Whether the message has been received.
          */
         public function isReceived(): bool
         {
@@ -120,11 +110,11 @@
         }
 
         /**
-         * Returns the timestamp of the message.
+         * The timestamp of the message.
          *
-         * @return DateTime
+         * @return int The timestamp of the message.
          */
-        public function getTimestamp(): DateTime
+        public function getTimestamp(): int
         {
             return $this->timestamp;
         }
@@ -132,7 +122,7 @@
         /**
          * @inheritDoc
          */
-        public static function fromArray(array $data): ChannelMessageRecord
+        public static function fromArray(array $data): EncryptionChannelMessage
         {
             return new self($data);
         }
@@ -149,13 +139,7 @@
                 'message' => $this->message,
                 'signature' => $this->signature,
                 'received' => $this->received,
-                'timestamp' => $this->timestamp->format('Y-m-d H:i:s')
+                'timestamp' => $this->timestamp
             ];
-        }
-
-
-        public function toStandard(): EncryptionChannelMessage
-        {
-            return new EncryptionChannelMessage($this->toArray());
         }
     }
