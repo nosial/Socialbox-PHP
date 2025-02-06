@@ -18,6 +18,7 @@
         case CONFLICT = -107;
         case EXPIRED = -108;
         case CRYPTOGRAPHIC_ERROR = -109;
+        case UUID_CONFLICT = -110;
 
         // RPC Errors
         case RPC_METHOD_NOT_FOUND = -1000;
