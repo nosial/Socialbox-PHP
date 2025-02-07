@@ -11,7 +11,7 @@
     use Socialbox\Objects\Database\ContactDatabaseRecord;
     use Socialbox\Objects\Database\ContactKnownKeyRecord;
     use Socialbox\Objects\PeerAddress;
-    use Socialbox\Objects\Standard\ContactRecord;
+    use Socialbox\Objects\Standard\Contact;
     use Socialbox\Objects\Standard\SigningKey;
 
     class ContactManager
@@ -288,7 +288,7 @@
          * @param string $peerUuid The unique identifier for the peer whose contacts are to be retrieved.
          * @param int $limit The maximum number of contacts to retrieve per page. Defaults to 100.
          * @param int $page The page number to retrieve. Defaults to 1.
-         * @return ContactRecord[] An array of ContactRecord instances representing the contacts for the given peer.
+         * @return Contact[] An array of ContactRecord instances representing the contacts for the given peer.
          * @throws DatabaseOperationException If the database query fails.
          */
         public static function getStandardContacts(string $peerUuid, int $limit=100, int $page=1): array
@@ -551,10 +551,10 @@
          *
          * @param string $peerUuid The unique identifier of the peer.
          * @param string|PeerAddress $contactAddress The contact's address, either as a string or a PeerAddress instance.
-         * @return ContactRecord|null The standard contact record if found, or null if no matching contact exists.
+         * @return Contact|null The standard contact record if found, or null if no matching contact exists.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getStandardContact(string $peerUuid, string|PeerAddress $contactAddress): ?ContactRecord
+        public static function getStandardContact(string $peerUuid, string|PeerAddress $contactAddress): ?Contact
         {
             $contact = self::getContact($peerUuid, $contactAddress);
             if($contact === null)
@@ -562,7 +562,7 @@
                 return null;
             }
 
-            return new ContactRecord([
+            return new Contact([
                 'address' => $contact->getContactPeerAddress(),
                 'relationship' => $contact->getRelationship(),
                 'known_keys' => self::contactGetSigningKeys($contact),

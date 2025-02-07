@@ -7,7 +7,7 @@
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\PeerAddress;
 
-    class ContactRecord implements SerializableInterface
+    class Contact implements SerializableInterface
     {
         private PeerAddress $address;
         private ContactRelationshipType $relationship;
@@ -102,7 +102,7 @@
         /**
          * @inheritDoc
          */
-        public static function fromArray(array $data): ContactRecord
+        public static function fromArray(array $data): Contact
         {
             return new self($data);
         }

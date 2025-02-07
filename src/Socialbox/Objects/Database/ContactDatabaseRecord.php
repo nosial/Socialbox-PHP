@@ -7,7 +7,7 @@
     use InvalidArgumentException;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Interfaces\SerializableInterface;
-    use Socialbox\Objects\Standard\ContactRecord;
+    use Socialbox\Objects\Standard\Contact;
 
     class ContactDatabaseRecord implements SerializableInterface
     {
@@ -126,11 +126,11 @@
         /**
          * Converts the object to a standard contact record.
          *
-         * @return ContactRecord The standard contact record.
+         * @return Contact The standard contact record.
          */
-        public function toStandard(): ContactRecord
+        public function toStandard(): Contact
         {
-            return new ContactRecord([
+            return new Contact([
                 'address' => $this->contactPeerAddress,
                 'relationship' => $this->relationship,
                 'added_timestamp' => $this->created->getTimestamp()
