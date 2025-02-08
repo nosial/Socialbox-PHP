@@ -65,7 +65,6 @@
                 }
 
                 $contact = ContactManager::getContact($peer, $address);
-
                 if(ContactManager::contactGetSigningKeysCount($contact) > Configuration::getPoliciesConfiguration()->getMaxContactSigningKeys())
                 {
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The contact has exceeded the maximum amount of trusted signatures');

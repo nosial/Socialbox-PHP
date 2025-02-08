@@ -34,7 +34,7 @@
             }
             catch(InvalidArgumentException $e)
             {
-                throw new InvalidRpcArgumentException('peer');
+                throw new InvalidRpcArgumentException('peer', $e);
             }
 
             if(!$rpcRequest->containsParameter('relationship'))
