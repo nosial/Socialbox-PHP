@@ -20,6 +20,7 @@
     {
         /**
          * @inheritDoc
+         * @noinspection DuplicatedCode
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
