@@ -37,7 +37,7 @@
                 throw new InvalidRpcArgumentException('peer', $e);
             }
 
-            if(!$rpcRequest->containsParameter('signature_uuid', false))
+            if(!$rpcRequest->containsParameter('signature_uuid'))
             {
                 throw new MissingRpcArgumentException('signature_uuid');
             }
