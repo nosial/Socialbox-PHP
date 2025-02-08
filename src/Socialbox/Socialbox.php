@@ -764,7 +764,7 @@
          * @param int $signatureTime The time at which the message was signed
          * @return SignatureVerificationStatus The status of the signature verification
          */
-        public static function verifyPeerSignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signatureKey, string $signature, string $messageHash, int $signatureTime): SignatureVerificationStatus
+        public static function verifyTimedSignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signatureKey, string $signature, string $messageHash, int $signatureTime): SignatureVerificationStatus
         {
             try
             {
@@ -823,6 +823,80 @@
 
             return SignatureVerificationStatus::VERIFIED;
         }
+
+        /**
+         * Verifies the signature of a message using the public key of the signing peer both locally and externally.
+         * If the peer is registered locally, the signature is verified using the local public key.
+         * If the peer is external, the signature is verified by resolving the peer's public key from the external server.
+         * The signature is verified against the resolved public key, and the status of the verification is returned.
+         *
+         * @param PeerAddress|string $signingPeer The peer address or string identifier of the signing peer
+         * @param string $signatureUuid The UUID of the signature key to be resolved
+         * @param string $signatureKey The public key of the signature that was used to sign the message
+         * @param string $signature  The signature to be verified
+         * @param string $messageHash The SHA-512 hash of the message that was signed
+         * @return SignatureVerificationStatus The status of the signature verification
+         */
+        public static function verifySignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signatureKey, string $signature, string $messageHash): SignatureVerificationStatus
+        {
+            try
+            {
+                if (!Cryptography::verifyMessage($messageHash, $signature, $signatureKey, false))
+                {
+                    return SignatureVerificationStatus::INVALID;
+                }
+            }
+            catch (CryptographyException)
+            {
+                return SignatureVerificationStatus::INVALID;
+            }
+
+            // Resolve the peer signature key
+            try
+            {
+                $signingKey = self::resolvePeerSignature($signingPeer, $signatureUuid);
+            }
+            catch(StandardRpcException)
+            {
+                return SignatureVerificationStatus::UNVERIFIED;
+            }
+
+            if($signingKey === null)
+            {
+                return SignatureVerificationStatus::UNVERIFIED;
+            }
+
+            if($signingKey->getPublicKey() !== $signatureKey)
+            {
+                return SignatureVerificationStatus::PUBLIC_KEY_MISMATCH;
+            }
+
+            if($signingKey->getUuid() !== $signatureUuid)
+            {
+                return SignatureVerificationStatus::UUID_MISMATCH;
+            }
+
+            if(time() > $signingKey->getExpires())
+            {
+                return SignatureVerificationStatus::EXPIRED;
+            }
+
+            // Verify the signature with the resolved key
+            try
+            {
+                if (!Cryptography::verifyTimedMessage($messageHash, $signature, $signingKey->getPublicKey(), false))
+                {
+                    return SignatureVerificationStatus::INVALID;
+                }
+            }
+            catch (CryptographyException)
+            {
+                return SignatureVerificationStatus::INVALID;
+            }
+
+            return SignatureVerificationStatus::VERIFIED;
+        }
+
 
         /**
          * Resolves a peer signature key based on the given peer address or string identifier.
