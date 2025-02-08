@@ -71,7 +71,7 @@
          * @param bool $nullAllowed True if the parameter value can be null, False otherwise.
          * @return bool True if the parameter exists, False otherwise.
          */
-        public function containsParameter(string $parameter, bool $nullAllowed=true): bool
+        public function containsParameter(string $parameter, bool $nullAllowed=false): bool
         {
             if(!$nullAllowed)
             {
