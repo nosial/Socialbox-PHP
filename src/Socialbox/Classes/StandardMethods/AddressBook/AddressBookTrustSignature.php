@@ -39,21 +39,21 @@
                 throw new InvalidRpcArgumentException('peer', $e);
             }
 
-            if(!$rpcRequest->containsParameter('uuid'))
+            if(!$rpcRequest->containsParameter('signature_uuid'))
             {
-                throw new MissingRpcArgumentException('uuid');
+                throw new MissingRpcArgumentException('signature_uuid');
             }
 
             try
             {
-                $uuid = Uuid::fromString($rpcRequest->getParameter('uuid'));
+                $signatureUuid = Uuid::fromString($rpcRequest->getParameter('signature_uuid'));
             }
             catch(InvalidArgumentException $e)
             {
-                throw new InvalidRpcArgumentException('uuid', $e);
+                throw new InvalidRpcArgumentException('signature_uuid', $e);
             }
 
-            $signingKey = Socialbox::resolvePeerSignature($address, $uuid);
+            $signingKey = Socialbox::resolvePeerSignature($address, $signatureUuid);
 
             try
             {
