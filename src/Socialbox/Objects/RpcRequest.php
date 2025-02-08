@@ -68,10 +68,16 @@
          * Checks if the parameter exists within the RPC request
          *
          * @param string $parameter The parameter to check
+         * @param bool $nullAllowed True if the parameter value can be null, False otherwise.
          * @return bool True if the parameter exists, False otherwise.
          */
-        public function containsParameter(string $parameter): bool
+        public function containsParameter(string $parameter, bool $nullAllowed=true): bool
         {
+            if(!$nullAllowed)
+            {
+                return isset($this->parameters[$parameter]) && $this->parameters[$parameter] !== null;
+            }
+
             return isset($this->parameters[$parameter]);
         }
 
