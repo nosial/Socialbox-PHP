@@ -37,18 +37,18 @@
                 throw new InvalidRpcArgumentException('peer', $e);
             }
 
-            if(!$rpcRequest->containsParameter('uuid'))
+            if(!$rpcRequest->containsParameter('signature_uuid', false))
             {
-                throw new MissingRpcArgumentException('uuid');
+                throw new MissingRpcArgumentException('signature_uuid');
             }
 
             try
             {
-                $uuid = Uuid::fromString($rpcRequest->getParameter('uuid'));
+                $signatureUuid = Uuid::fromString($rpcRequest->getParameter('signature_uuid'));
             }
             catch(InvalidArgumentException $e)
             {
-                throw new InvalidRpcArgumentException('uuid', $e);
+                throw new InvalidRpcArgumentException('signature_uuid', $e);
             }
 
             try
@@ -69,12 +69,12 @@
 
             try
             {
-                if(!ContactManager::contactSigningKeyUuidExists($contact, $uuid))
+                if(!ContactManager::contactSigningKeyUuidExists($contact, $signatureUuid))
                 {
                     return $rpcRequest->produceResponse(false);
                 }
 
-                ContactManager::removeContactSigningKey($contact, $uuid);
+                ContactManager::removeContactSigningKey($contact, $signatureUuid);
             }
             catch (DatabaseOperationException $e)
             {
