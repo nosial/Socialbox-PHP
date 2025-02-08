@@ -23,7 +23,7 @@
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
             $limit = Configuration::getPoliciesConfiguration()->getGetContactsLimit();
-            if($rpcRequest->containsParameter('limit', false))
+            if($rpcRequest->containsParameter('limit', true))
             {
                 $limit = (int)$rpcRequest->getParameter('limit');
                 if($limit <= 0)
@@ -35,7 +35,7 @@
             }
 
             $page = 0;
-            if($rpcRequest->containsParameter('page', false))
+            if($rpcRequest->containsParameter('page', true))
             {
                 $page = (int)$rpcRequest->getParameter('page');
                 if($page < 0)
