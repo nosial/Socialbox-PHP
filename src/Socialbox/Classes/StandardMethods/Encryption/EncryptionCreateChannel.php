@@ -20,7 +20,7 @@
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
-    use Socialbox\Objects\Standard\SigningKey;
+    use Socialbox\Objects\Standard\Signature;
     use Socialbox\Socialbox;
 
     class EncryptionCreateChannel extends Method
@@ -150,12 +150,12 @@
          *
          * @param PeerAddress $callingPeer The calling peer
          * @param RpcRequest $rpcRequest The focused RPC request
-         * @return SigningKey The resolved signing key
+         * @return Signature The resolved signing key
          * @throws InvalidRpcArgumentException If one or more RPC parameters are invalid
          * @throws MissingRpcArgumentException If one or more RPC parameters are missing
          * @throws StandardRpcException If the calling signature cannot be resolved
          */
-        private static function getCallingSignature(PeerAddress $callingPeer, RpcRequest $rpcRequest): SigningKey
+        private static function getCallingSignature(PeerAddress $callingPeer, RpcRequest $rpcRequest): Signature
         {
             // Caller signature verification
             if(!$rpcRequest->containsParameter('calling_signature_uuid'))
@@ -238,12 +238,12 @@
         /**
          * @param PeerAddress $receivingPeer
          * @param RpcRequest $rpcRequest
-         * @return SigningKey
+         * @return Signature
          * @throws InvalidRpcArgumentException
          * @throws MissingRpcArgumentException
          * @throws StandardRpcException
          */
-        private static function getReceivingSignature(PeerAddress $receivingPeer, RpcRequest $rpcRequest): SigningKey
+        private static function getReceivingSignature(PeerAddress $receivingPeer, RpcRequest $rpcRequest): Signature
         {
             // Receiving signature verification
             if(!$rpcRequest->containsParameter('receiving_signature_uuid'))

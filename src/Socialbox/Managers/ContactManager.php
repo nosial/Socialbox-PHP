@@ -12,7 +12,7 @@
     use Socialbox\Objects\Database\ContactKnownKeyRecord;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\Standard\Contact;
-    use Socialbox\Objects\Standard\SigningKey;
+    use Socialbox\Objects\Standard\Signature;
 
     class ContactManager
     {
@@ -334,11 +334,11 @@
          * Adds a signing key to a contact in the database.
          *
          * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to add the signing key to.
-         * @param SigningKey $signingKey The signing key to add to the contact.
+         * @param Signature $signingKey The signing key to add to the contact.
          * @return void
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function addContactSigningKey(string|ContactDatabaseRecord $contactUuid, SigningKey $signingKey): void
+        public static function addContactSigningKey(string|ContactDatabaseRecord $contactUuid, Signature $signingKey): void
         {
             if($contactUuid instanceof ContactDatabaseRecord)
             {

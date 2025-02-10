@@ -8,7 +8,7 @@
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\Database\SigningKeyRecord;
 
-    class SigningKey implements SerializableInterface
+    class Signature implements SerializableInterface
     {
         private string $uuid;
         private string $name;
@@ -135,9 +135,9 @@
          * Creates a new SigningKey instance from a SigningKeyRecord.
          *
          * @param SigningKeyRecord $record The record containing the signing key data.
-         * @return SigningKey An instance of SigningKey populated with data from the provided record.
+         * @return Signature An instance of SigningKey populated with data from the provided record.
          */
-        public static function fromSigningKeyRecord(SigningKeyRecord $record): SigningKey
+        public static function fromSigningKeyRecord(SigningKeyRecord $record): Signature
         {
             return new self([
                 'uuid' => $record->getUuid(),
@@ -152,7 +152,7 @@
         /**
          * @inheritDoc
          */
-        public static function fromArray(array $data): SigningKey
+        public static function fromArray(array $data): Signature
         {
             return new self($data);
         }

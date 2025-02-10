@@ -6,7 +6,7 @@
     use InvalidArgumentException;
     use Socialbox\Enums\SigningKeyState;
     use Socialbox\Interfaces\SerializableInterface;
-    use Socialbox\Objects\Standard\SigningKey;
+    use Socialbox\Objects\Standard\Signature;
 
     class SigningKeyRecord implements SerializableInterface
     {
@@ -188,10 +188,10 @@
         /**
          * Converts the current signing key record to its standard format.
          *
-         * @return SigningKey The signing key in its standard format.
+         * @return Signature The signing key in its standard format.
          */
-        public function toStandard(): SigningKey
+        public function toStandard(): Signature
         {
-            return SigningKey::fromSigningKeyRecord($this);
+            return Signature::fromSigningKeyRecord($this);
         }
     }

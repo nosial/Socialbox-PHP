@@ -39,7 +39,7 @@
     use Socialbox\Objects\Standard\InformationField;
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerInformation;
-    use Socialbox\Objects\Standard\SigningKey;
+    use Socialbox\Objects\Standard\Signature;
     use Throwable;
 
     class Socialbox
@@ -903,10 +903,10 @@
          *
          * @param PeerAddress|string $peerAddress The peer address or string identifier to be resolved.
          * @param string $signatureUuid The UUID of the signature key to be resolved.
-         * @return SigningKey|null The resolved signing key for the peer. Null if not found
+         * @return Signature|null The resolved signing key for the peer. Null if not found
          * @throws StandardRpcException If there was an error while resolving the peer signature key.
          */
-        public static function resolvePeerSignature(PeerAddress|string $peerAddress, string $signatureUuid): ?SigningKey
+        public static function resolvePeerSignature(PeerAddress|string $peerAddress, string $signatureUuid): ?Signature
         {
             // Convert string peer address to object PeerAddress
             if(is_string($peerAddress))
