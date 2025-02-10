@@ -29,7 +29,7 @@
             }
 
             $expires = null;
-            if($rpcRequest->containsParameter('expires') && $rpcRequest->getParameter('expires') !== null)
+            if($rpcRequest->containsParameter('expires'))
             {
                 $expires = (int)$rpcRequest->getParameter('expires');
             }
@@ -39,7 +39,7 @@
             }
 
             $name = null;
-            if($rpcRequest->containsParameter('name') && $rpcRequest->getParameter('name') !== null)
+            if($rpcRequest->containsParameter('name'))
             {
                 $name = $rpcRequest->getParameter('name');
             }
