@@ -32,7 +32,7 @@
     use Socialbox\Classes\StandardMethods\Settings\SettingsDeleteSignature;
     use Socialbox\Classes\StandardMethods\Settings\SettingsGetInformationField;
     use Socialbox\Classes\StandardMethods\Settings\SettingsGetInformationFields;
-    use Socialbox\Classes\StandardMethods\Settings\SettingsGetSigningKey;
+    use Socialbox\Classes\StandardMethods\Settings\SettingsGetSignature;
     use Socialbox\Classes\StandardMethods\Settings\SettingsGetSigningKeys;
     use Socialbox\Classes\StandardMethods\Settings\SettingsInformationFieldExists;
     use Socialbox\Classes\StandardMethods\Settings\SettingsSetOtp;
@@ -209,7 +209,7 @@
                 self::SETTINGS_DELETE_SIGNATURE => SettingsDeleteSignature::execute($request, $rpcRequest),
                 self::SETTINGS_GET_INFORMATION_FIELD => SettingsGetInformationField::execute($request, $rpcRequest),
                 self::SETTINGS_GET_INFORMATION_FIELDS => SettingsGetInformationFields::execute($request, $rpcRequest),
-                self::SETTINGS_GET_SIGNATURE => SettingsGetSigningKey::execute($request, $rpcRequest),
+                self::SETTINGS_GET_SIGNATURE => SettingsGetSignature::execute($request, $rpcRequest),
                 self::SETTINGS_GET_SIGNATURES => SettingsGetSigningKeys::execute($request, $rpcRequest),
                 self::SETTINGS_INFORMATION_FIELD_EXISTS => SettingsInformationFieldExists::execute($request, $rpcRequest),
                 self::SETTINGS_SET_OTP => SettingsSetOtp::execute($request, $rpcRequest),

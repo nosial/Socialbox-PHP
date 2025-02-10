@@ -12,7 +12,7 @@
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
 
-    class SettingsGetSigningKey extends Method
+    class SettingsGetSignature extends Method
     {
         /**
          * @inheritDoc
