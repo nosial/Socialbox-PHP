@@ -2,18 +2,14 @@
 
     namespace Socialbox\Classes\StandardMethods\Core;
 
-    use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Managers\PeerInformationManager;
     use Socialbox\Objects\ClientRequest;
-    use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
-    use Socialbox\Socialbox;
 
     class GetSelf extends Method
     {
@@ -23,6 +19,14 @@
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-
+            try
+            {
+                $selfPeer = $request->getPeer();
+                return $rpcRequest->produceResponse($selfPeer->toStandardPeer(PeerInformationManager::getFields($selfPeer)));
+            }
+            catch (DatabaseOperationException $e)
+            {
+                throw new StandardRpcException('Unable to resolve self peer', StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
         }
     }

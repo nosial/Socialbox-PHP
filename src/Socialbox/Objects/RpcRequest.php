@@ -4,6 +4,7 @@
 
     use InvalidArgumentException;
     use Socialbox\Classes\Logger;
+    use Socialbox\Classes\Utilities;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Exceptions\Standard\StandardRpcException;
@@ -19,14 +20,19 @@
          * Constructs the object from an array of data.
          *
          * @param string|StandardMethods $method The method of the request.
-         * @param string|null $id The ID of the request.
+         * @param string|null $id The ID of the request. If 'RANDOM' a random crc32 hash will be used.
          * @param array|null $parameters The parameters of the request.
          */
-        public function __construct(string|StandardMethods $method, ?string $id, ?array $parameters=null)
+        public function __construct(string|StandardMethods $method, ?string $id='RANDOM', ?array $parameters=null)
         {
             if($method instanceof StandardMethods)
             {
                 $method = $method->value;
+            }
+
+            if($id === 'RANDOM')
+            {
+                $id = Utilities::randomCrc32();;
             }
 
             $this->method = $method;
