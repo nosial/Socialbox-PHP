@@ -16,6 +16,7 @@
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
     use Socialbox\Objects\Client\ExportedSession;
+    use Socialbox\Objects\Client\SignatureKeyPair;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
     use Socialbox\Objects\Standard\Contact;
@@ -42,6 +43,35 @@
         public function __construct(PeerAddress|string $identifiedAs, ?string $server=null, ?ExportedSession $exportedSession=null)
         {
             parent::__construct($identifiedAs, $server, $exportedSession);
+        }
+
+        /**
+         * Create a new signing keypair, sends it to the server and saves it locally with the session so that the client
+         * can use the SigningKey pair for signing and verifying signatures in the future.
+         *
+         * This is not a server-side operation, the server only stores the public key and associates it with the peer's
+         * profile. The private key is stored locally and is never sent to the server.
+         *
+         * @param string|null $name Optional. The name of the signature
+         * @param int|null $expires Optional. The Unix timestamp of the expiration time
+         * @return string The UUID of the signature
+         * @throws CryptographyException Thrown if there was an error while generating the signing key pair
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function createSignature(?string $name=null, ?int $expires=null): string
+        {
+            $signature = Cryptography::generateSigningKeyPair();
+            $uuid = $this->settingsAddSignature($signature->getPublicKey(), $name, $expires);
+
+            $this->addSigningKey(new SignatureKeyPair([
+                'uuid' => $uuid,
+                'name' => $name,
+                'public_key' => $signature->getPublicKey(),
+                'private_key' => $signature->getPrivateKey(),
+                'expires' => $expires
+            ]));
+
+            return $uuid;
         }
 
         /**
