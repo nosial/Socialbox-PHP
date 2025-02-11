@@ -10,17 +10,17 @@
         case INVALID = 'INVALID';
 
         /**
-         * The provided signature was valid but the public key used to verify the signature was not the expected public key.
+         * The provided signature was valid, but the public key used to verify the signature was not the expected public key.
          */
         case PUBLIC_KEY_MISMATCH = 'PUBLIC_KEY_MISMATCH';
 
         /**
-         * The provided signature was valid but the UUID used to verify the signature was not the expected UUID.
+         * The provided signature was valid, but the UUID used to verify the signature was not the expected UUID.
          */
         case UUID_MISMATCH = 'UUID_MISMATCH';
 
         /**
-         * The provided signature was valid but the signing key has expired.
+         * The provided signature was valid, but the signing key has expired.
          */
         case EXPIRED = 'EXPIRED';
 
