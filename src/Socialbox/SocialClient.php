@@ -6,26 +6,25 @@
 
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\RpcClient;
-    use Socialbox\Classes\Utilities;
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\StandardMethods;
+    use Socialbox\Enums\Status\SignatureVerificationStatus;
+    use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
     use Socialbox\Objects\Client\ExportedSession;
-    use Socialbox\Objects\Client\SignatureKeyPair;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
-    use Socialbox\Objects\Standard\ExternalUrlVerification;
+    use Socialbox\Objects\Standard\Contact;
     use Socialbox\Objects\Standard\ImageCaptchaVerification;
-    use Socialbox\Objects\Standard\InformationField;
+    use Socialbox\Objects\Standard\InformationFieldState;
     use Socialbox\Objects\Standard\Peer;
     use Socialbox\Objects\Standard\ServerDocument;
     use Socialbox\Objects\Standard\SessionState;
-    use Socialbox\Objects\Standard\SigningKey;
-    use Socialbox\Objects\Standard\TextCaptchaVerification;
+    use Socialbox\Objects\Standard\Signature;
 
     class SocialClient extends RpcClient
     {
@@ -40,567 +39,468 @@
          * @throws ResolutionException If the domain cannot be resolved.
          * @throws RpcException If the RPC request fails.
          */
-        public function __construct(string|PeerAddress $identifiedAs, ?string $server=null, ?ExportedSession $exportedSession=null)
+        public function __construct(PeerAddress|string $identifiedAs, ?string $server=null, ?ExportedSession $exportedSession=null)
         {
             parent::__construct($identifiedAs, $server, $exportedSession);
         }
 
         /**
-         * Sends a ping request to the server and checks the response.
+         * Adds a new peer to the AddressBook, returns True upon success or False if the contact already exists in
+         * the address book.
          *
-         * @return true Returns true if the ping request succeeds.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param PeerAddress|string $peer The address of the peer to add as a contact
+         * @param string|ContactRelationshipType|null $relationship Optional. The relationship for the peer
+         * @return bool Returns True if the contact was created, False if it already exists
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function ping(): true
+        public function addressBookAddContact(PeerAddress|string $peer, null|string|ContactRelationshipType $relationship=ContactRelationshipType::MUTUAL): bool
         {
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            if($relationship instanceof ContactRelationshipType)
+            {
+                $relationship = $relationship->value;
+            }
+
             return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::PING, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::ADDRESS_BOOK_ADD_CONTACT, parameters: [
+                    'peer' => $peer,
+                    'relationship' => $relationship?->value
+                ])
             )->getResponse()->getResult();
         }
 
         /**
-         * Retrieves the current state of the session from the server.
+         * Checks if the given Peer Address exists as a contact in the address book, returns True if it exists or
+         * False otherwise.
          *
-         * @return SessionState Returns an instance of SessionState representing the session's current state.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param PeerAddress|string $peer The address of the peer to check
+         * @return bool Returns True if the contact exists, False otherwise
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function getSessionState(): SessionState
+        public function addressBookContactExists(PeerAddress|string $peer): bool
         {
-            return SessionState::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::GET_SESSION_STATE, Utilities::randomCrc32())
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::ADDRESS_BOOK_CONTACT_EXISTS, parameters: [
+                    'peer' => $peer
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Deletes a contact from the address book, returns True if the contact was deleted or False if the contact
+         * does not exist.
+         *
+         * @param PeerAddress|string $peer The address of the peer to delete
+         * @return bool Returns True if the contact was deleted, False if the contact does not exist
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function addressBookDeleteContact(PeerAddress|string $peer): bool
+        {
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            return (bool)$this->sendRequest(
+                new RpcRequest(StandardMethods::ADDRESS_BOOK_DELETE_CONTACT, parameters: [
+                    'peer' => $peer
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Retrieves a contact from the address book, returns the contact as a Contact object.
+         *
+         * @param PeerAddress|string $peer The address of the peer to retrieve
+         * @return Contact The contact as a Contact object
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function addressBookGetContact(PeerAddress|string $peer): Contact
+        {
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            return new Contact($this->sendRequest(
+                new RpcRequest(StandardMethods::ADDRESS_BOOK_GET_CONTACT, parameters: [
+                    'peer' => $peer
+                ])
             )->getResponse()->getResult());
         }
 
         /**
-         * Retrieves the list of allowed methods, these are the methods that can be called by the client.
+         * Retrieves a list of contacts from the address book, returns an array of Contact objects.
          *
-         * @return array The allowed methods returned from the RPC request.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param int $page Optional. The page number to retrieve
+         * @param int|null $limit Optional. The number of contacts to retrieve
+         * @return Contact[] An array of Contact objects
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function addressBookGetContacts(int $page=0, ?int $limit=null): array
+        {
+            $request = new RpcRequest(StandardMethods::ADDRESS_BOOK_GET_CONTACTS, parameters: [
+                'page' => $page,
+                'limit' => $limit
+            ]);
+
+            return array_map(fn($contact) => new Contact($contact), $this->sendRequest($request)->getResponse()->getResult());
+        }
+
+        /**
+         * Revokes a known signature associated with a peer in the address book, returns True if the signature was
+         * revoked or False if the signature does not exist.
+         *
+         * @param PeerAddress|string $peer The address of the peer to revoke the signature from
+         * @param string $signatureUuid The UUID of the signature to revoke
+         * @return bool Returns True if the signature was revoked, False if the signature does not exist
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function addressBookRevokeSignature(PeerAddress|string $peer, string $signatureUuid): bool
+        {
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ADDRESS_BOOK_REVOKE_SIGNATURE, parameters: [
+                    'peer' => $peer,
+                    'signature_uuid' => $signatureUuid
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Trusts a known signature associated with a peer in the address book, returns True if the signature was trusted
+         * or False if the signature does not exist.
+         *
+         * @param PeerAddress|string $peer The address of the peer to trust the signature from
+         * @param string $signatureUuid The UUID of the signature to trust
+         * @return bool Returns True if the signature was trusted, False if the signature does not exist
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function addressBookTrustSignature(PeerAddress|string $peer, string $signatureUuid): bool
+        {
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ADDRESS_BOOK_TRUST_SIGNATURE, parameters: [
+                    'peer' => $peer,
+                    'signature_uuid' => $signatureUuid
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Updates the relationship of a peer in the address book, returns True if the relationship was updated or False
+         * if the relationship does not exist.
+         *
+         * @param PeerAddress|string $peer The address of the peer to update the relationship for
+         * @param ContactRelationshipType|string $relationship The relationship to update to
+         * @return bool Returns True if the relationship was updated, False if the relationship does not exist
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function addressBookUpdateRelationship(PeerAddress|string $peer, ContactRelationshipType|string $relationship): bool
+        {
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            if($relationship instanceof ContactRelationshipType)
+            {
+                $relationship = $relationship->value;
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ADDRESS_BOOK_UPDATE_RELATIONSHIP, parameters: [
+                    'peer' => $peer,
+                    'relationship' => $relationship
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Retrieves a list of all available methods that can be called on the server, returns an array of method names.
+         *
+         * @return string[] An array of method names
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function getAllowedMethods(): array
         {
             return $this->sendRequest(
-                new RpcRequest(StandardMethods::GET_ALLOWED_METHODS, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::GET_ALLOWED_METHODS)
             )->getResponse()->getResult();
         }
 
         /**
-         * Fetches the privacy policy document by sending a remote procedure call request.
+         * Retrieves the authenticated peer associated with the session, returns the peer as a Peer object.
          *
-         * @return ServerDocument The privacy policy document retrieved from the server.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return Peer The peer as a Peer object
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function getPrivacyPolicy(): ServerDocument
+        public function getSelf(): Peer
         {
-            return ServerDocument::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::GET_PRIVACY_POLICY, Utilities::randomCrc32())
-            )->getResponse()->getResult());
-        }
-
-        /**
-         * Accepts the privacy policy by sending a request to the server.
-         *
-         * @return true Returns true if the privacy policy is successfully accepted.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function acceptPrivacyPolicy(): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::ACCEPT_PRIVACY_POLICY, Utilities::randomCrc32())
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::GET_SELF)
             )->getResponse()->getResult();
         }
 
         /**
-         * Retrieves the terms of service document by sending a remote procedure call request.
+         * Retrieves the session state from the server, returns the session state as a SessionState object.
          *
-         * @return ServerDocument The terms of service document retrieved from the server.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return SessionState The session state as a SessionState object
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function getTermsOfService(): ServerDocument
+        public function getSessionState(): SessionState
         {
-            return ServerDocument::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::GET_TERMS_OF_SERVICE, Utilities::randomCrc32())
+            return new SessionState($this->sendRequest(
+                new RpcRequest(StandardMethods::GET_SESSION_STATE)
             )->getResponse()->getResult());
         }
 
         /**
-         * Sends a request to accept the terms of service and verifies the response.
+         * Pings the server to check if it is online, returns True if the server is online.
          *
-         * @return true Returns true if the terms of service are successfully accepted.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return true Returns True if the server is online
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function acceptTermsOfService(): true
+        public function ping(): true
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::ACCEPT_TERMS_OF_SERVICE, Utilities::randomCrc32())
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::PING)
             )->getResponse()->getResult();
         }
 
         /**
-         * Fetches the community guidelines document from the server by sending a remote procedure call request.
+         * Resolves a peer address to a Peer object, returns the peer as a Peer object. This is a decentralized
+         * method, meaning that the peer address can be resolved from any address even if the address doesn't
+         * belong to the server the request is being sent to.
          *
-         * @return ServerDocument The community guidelines document retrieved from the server.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param PeerAddress|string $peer The address of the peer to resolve
+         * @param PeerAddress|string|null $identifiedAs Optional. The address of the peer to identify as
+         * @return Peer The peer as a Peer object
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function getCommunityGuidelines(): ServerDocument
+        public function resolvePeer(PeerAddress|string $peer, null|PeerAddress|string $identifiedAs=null): Peer
         {
-            return ServerDocument::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::GET_COMMUNITY_GUIDELINES, Utilities::randomCrc32())
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return new Peer($this->sendRequest(
+                new RpcRequest(StandardMethods::RESOLVE_PEER, parameters: [
+                    'peer' => $peer
+                ]), true, $identifiedAs
             )->getResponse()->getResult());
         }
 
         /**
-         * Sends a request to accept the community guidelines via a remote procedure call.
+         * Resolves a peer signature to a Signature object, returns the signature as a Signature object. This is
+         * a decentralized method, meaning that the signature can be resolved from any address even if the address
+         * doesn't belong to the server the request is being sent to.
          *
-         * @return true Indicates that the community guidelines have been successfully accepted.
-         * @throws RpcException Thrown if the RPC request encounters an error.
+         * @param PeerAddress|string $peer The address of the peer to resolve the signature from
+         * @param string $signatureUuid The UUID of the signature to resolve
+         * @return Signature|null The signature as a Signature object, or null if the signature does not exist
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function resolvePeerSignature(PeerAddress|string $peer, string $signatureUuid): ?Signature
+        {
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            $result = $this->sendRequest(
+                new RpcRequest(StandardMethods::RESOLVE_PEER_SIGNATURE, parameters: [
+                    'peer' => $peer,
+                    'signature_uuid' => $signatureUuid
+                ])
+            )->getResponse()->getResult();
+
+            if($result === null)
+            {
+                return null;
+            }
+
+            return new Signature($result);
+        }
+
+        /**
+         * Verifies signature authenticity by resolving the signature UUID and comparing the given parameters with the
+         * signature data, returns True if the signature is verified. This is a decentralized method, meaning that any
+         * signature UUID can be verified for as longas the $peer parameter is the address of the peer that created the
+         * signature.
+         *
+         * @param PeerAddress|string $peer The address of the peer to verify the signature for
+         * @param string $signatureUuid The UUID of the signature to verify
+         * @param string $signaturePublicKey The public key that was used to create the signature
+         * @param string $signature The signature to verify
+         * @param string $sha512 The SHA512 hash of the data that was signed
+         * @param int|null $signatureTime Optional. The timestamp of the signature creation time
+         * @return SignatureVerificationStatus the status of the verification
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function verifyPeerSignature(PeerAddress|string $peer, string $signatureUuid, string $signaturePublicKey, string $signature, string $sha512, ?int $signatureTime=null): SignatureVerificationStatus
+        {
+            if($peer instanceof PeerAddress)
+            {
+                $peer = $peer->getAddress();
+            }
+
+            return SignatureVerificationStatus::tryFrom($this->sendRequest(
+                new RpcRequest(StandardMethods::VERIFY_PEER_SIGNATURE, parameters: [
+                    'peer' => $peer,
+                    'signature_uuid' => $signatureUuid,
+                    'signature_public_key' => $signaturePublicKey,
+                    'signature' => $signature,
+                    'sha512' => $sha512,
+                    'signature_time' => $signatureTime
+                ])
+            )->getResponse()->getResult()) ?? SignatureVerificationStatus::INVALID;
+        }
+
+        /**
+         * Accepts the community guidelines, returns True if the guidelines were accepted.
+         *
+         * @return true Returns True if the guidelines were accepted
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function acceptCommunityGuidelines(): true
         {
             return $this->sendRequest(
-                new RpcRequest(StandardMethods::ACCEPT_COMMUNITY_GUIDELINES, Utilities::randomCrc32())
+                new RpcRequest(StandardMethods::ACCEPT_COMMUNITY_GUIDELINES)
             )->getResponse()->getResult();
         }
 
         /**
-         * Sends a verification email to the specified email address by making a remote procedure call request.
+         * Accepts the privacy policy, returns True if the privacy policy was accepted.
          *
-         * @return true Indicates the successful initiation of the verification process.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return true Returns True if the privacy policy was accepted
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function verificationEmail(): true
+        public function acceptPrivacyPolicy(): bool
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_EMAIL, Utilities::randomCrc32())
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ACCEPT_PRIVACY_POLICY)
             )->getResponse()->getResult();
         }
 
         /**
-         * Confirms a verification process using an email verification code by sending a remote procedure call request.
+         * Accepts the terms of service, returns True if the terms of service were accepted.
          *
-         * @param string $verificationCode The verification code to validate the email.
-         * @return true The result indicating the successful processing of the verification.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return true Returns True if the terms of service were accepted
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function verificationAnswerEmail(string $verificationCode): true
+        public function acceptTermsOfService(): bool
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_EMAIL, Utilities::randomCrc32(), [
-                    'verification_code' => $verificationCode
-                ])
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ACCEPT_TERMS_OF_SERVICE)
             )->getResponse()->getResult();
         }
 
         /**
-         * Sends a verification SMS to the specified phone number by initiating a remote procedure call.
+         * Retrieves the community guidelines, returns the guidelines as a ServerDocument object.
          *
-         * @return true True if the SMS was sent successfully.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return ServerDocument The guidelines as a ServerDocument object
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function verificationSms(): true
+        public function getCommunityGuidelines(): ServerDocument
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_SMS, Utilities::randomCrc32())
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Sends a verification SMS answer by providing the verification code through a remote procedure call request.
-         *
-         * @param string $verificationCode The verification code to be sent for completing the SMS verification process.
-         * @return true Returns true if the verification is successfully processed.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function verificationAnswerSms(string $verificationCode): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_SMS, Utilities::randomCrc32(), [
-                    'verification_code' => $verificationCode
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Initiates a phone verification process by sending a remote procedure call request.
-         *
-         * @return bool True if the phone verification request was successful.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function verificationPhone(): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_PHONE_CALL, Utilities::randomCrc32())
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Answers a verification phone call by sending a remote procedure call request with the provided verification code.
-         *
-         * @param string $verificationCode The verification code to authenticate the phone call.
-         * @return true Returns true if the verification phone call was successfully answered.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function verificationAnswerPhone(string $verificationCode): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_PHONE_CALL, Utilities::randomCrc32(), [
-                    'verification_code' => $verificationCode
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Retrieves the image captcha for verification purposes by sending a remote procedure call request.
-         *
-         * @return ImageCaptchaVerification The result of the image captcha request.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function verificationGetImageCaptcha(): ImageCaptchaVerification
-        {
-            return ImageCaptchaVerification::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_GET_IMAGE_CAPTCHA, Utilities::randomCrc32())
+            return new ServerDocument($this->sendRequest(
+                new RpcRequest(StandardMethods::GET_COMMUNITY_GUIDELINES)
             )->getResponse()->getResult());
         }
 
         /**
-         * Submits the answer for an image captcha verification by sending a remote procedure call request.
+         * Retrieves the privacy policy, returns the policy as a ServerDocument object.
          *
-         * @param string $verificationCode The code provided as the answer to the image captcha.
-         * @return true Returns true if the captcha answer is successfully verified.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return ServerDocument The policy as a ServerDocument object
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function verificationAnswerImageCaptcha(string $verificationCode): true
+        public function getPrivacyPolicy(): ServerDocument
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_IMAGE_CAPTCHA, Utilities::randomCrc32(), [
-                    'verification_code' => $verificationCode
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Retrieves the text captcha verification response.
-         *
-         * @return TextCaptchaVerification The result of the text captcha verification request.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function verificationGetTextCaptcha(): TextCaptchaVerification
-        {
-            return TextCaptchaVerification::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_GET_TEXT_CAPTCHA, Utilities::randomCrc32())
+            return new ServerDocument($this->sendRequest(
+                new RpcRequest(StandardMethods::GET_PRIVACY_POLICY)
             )->getResponse()->getResult());
         }
 
         /**
-         * Sends a request to answer a text-based captcha for verification purposes.
+         * Retrieves the terms of service, returns the terms as a ServerDocument object.
          *
-         * @param string $verificationCode The code provided to answer the captcha.
-         * @return true Returns true if the captcha answer was successfully processed.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return ServerDocument The terms as a ServerDocument object
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function verificationAnswerTextCaptcha(string $verificationCode): true
+        public function getTermsOfService(): ServerDocument
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_TEXT_CAPTCHA, Utilities::randomCrc32(), [
-                    'verification_code' => $verificationCode
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Retrieves the external URL for verification purposes by sending a remote procedure call request.
-         *
-         * @return ExternalUrlVerification The result of the verification URL request.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function verificationGetExternalUrl(): ExternalUrlVerification
-        {
-            return ExternalUrlVerification::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_GET_EXTERNAL_URL, Utilities::randomCrc32())
+            return new ServerDocument($this->sendRequest(
+                new RpcRequest(StandardMethods::GET_TERMS_OF_SERVICE)
             )->getResponse()->getResult());
         }
 
         /**
-         * Sends a verification code to answer an external URL for verification purposes.
+         * Adds a new information field to the peer's profile, returns True if the field was added.
          *
-         * @param string $verificationCode The verification code to be sent.
-         * @return true The result of the verification operation.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param InformationFieldName|string $field The name of the field to add
+         * @param string $value The value of the field
+         * @param PrivacyState|string|null $privacy Optional. The privacy state of the field
+         * @return bool Returns True if the field was added
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function verificationAnswerExternalUrl(string $verificationCode): true
+        public function settingsAddInformationField(InformationFieldName|string $field, string $value, null|PrivacyState|string $privacy): bool
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_EXTERNAL_URL, Utilities::randomCrc32(), [
-                    'verification_code' => $verificationCode
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Authenticates a password by sending a remote procedure call request with an optional hashing operation.
-         *
-         * @param string $password The password to authenticate.
-         * @param bool $hash Indicates whether the password should be hashed using SHA-512 before authentication.
-         * @return bool The result of the password authentication request.
-         * @throws CryptographyException Thrown if the password hash is invalid.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function verificationPasswordAuthentication(string $password, bool $hash=true): bool
-        {
-            if($hash)
+            if($field instanceof InformationFieldName)
             {
-                $password = hash('sha512', $password);
-            }
-            elseif(!Cryptography::validateSha512($password))
-            {
-                throw new CryptographyException('Invalid SHA-512 hash provided');
+                $field = $field->value;
             }
 
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_PASSWORD_AUTHENTICATION, Utilities::randomCrc32(), [
-                    'password' => $password
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Authenticates an OTP code for verification purposes
-         *
-         * @param string $code The OTP code to be authenticated.
-         * @return bool True if the OTP authentication is successful, otherwise false.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function verificationOtpAuthentication(string $code): bool
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_OTP_AUTHENTICATION, Utilities::randomCrc32(), [
-                    'code' => $code
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Sets a new password for settings with optional hashing.
-         *
-         * @param string $password The password to be set. If hashing is enabled, the password will be hashed before being sent.
-         * @param bool $hash Optional. Determines whether the password should be hashed. Default is true. If false, the input is expected to be hashed using sha512.
-         * @return true Returns true if the password is successfully set.
-         * @throws CryptographyException Thrown if the password hash is invalid.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsSetPassword(string $password, bool $hash=true): true
-        {
-            if($hash)
+            if($privacy instanceof PrivacyState)
             {
-                $password = Cryptography::hashPassword($password);
-            }
-            elseif(!Cryptography::validatePasswordHash($password))
-            {
-                throw new CryptographyException('Invalid password hash provided');
+                $privacy = $privacy->value;
             }
 
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_PASSWORD, Utilities::randomCrc32(), [
-                    'password' => $password
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Deletes the user's password settings by sending a remote procedure call request.
-         *
-         * @param string $password The password to be deleted.
-         * @param bool $hash Indicates whether to hash the password before sending the request. Defaults to true.
-         * @return true Indicates successful deletion of the password.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsDeletePassword(string $password, bool $hash=true): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_PASSWORD, Utilities::randomCrc32(), [
-                    'password' => $hash ? hash('sha512', $password) : $password
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Updates the user's password by sending a remote procedure call request.
-         *
-         * @param string $password The new password to be set.
-         * @param string $existingPassword The current password for authentication.
-         * @param bool $hash
-         * @return bool True if the password was successfully updated, false otherwise.
-         * @throws CryptographyException
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsUpdatePassword(string $password, string $existingPassword, bool $hash=true): bool
-        {
-            if($hash)
-            {
-                $password = Cryptography::hashPassword($password);
-                $existingPassword = hash('sha512', $existingPassword);
-            }
-            elseif(!Cryptography::validatePasswordHash($password))
-            {
-                throw new CryptographyException('Invalid password hash provided');
-            }
-
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_UPDATE_PASSWORD, Utilities::randomCrc32(), [
-                    'password' => $password,
-                    'existing_password' => $existingPassword
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Updates the OTP setting by sending a remote procedure call request with the provided OTP.
-         *
-         * @return string The result of the OTP URI request.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsSetOtp(?string $password=null, bool $hash=true): string
-        {
-            if($hash && $password !== null)
-            {
-                $password = hash('sha512', $password);
-            }
-
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_SET_OTP, Utilities::randomCrc32(), [
-                    'password' => $password
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Deletes the one-time password (OTP) settings by sending a remote procedure call request.
-         *
-         * @param string|null $password The password to authenticate the request. If provided, it will be hashed using SHA-512 if $hash is true.
-         * @param bool $hash Indicates whether to hash the password before sending the request. Defaults to true.
-         * @return bool True if the OTP settings were successfully deleted, false otherwise.
-         * @throws CryptographyException Thrown if the password hash is invalid.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsDeleteOtp(?string $password=null, bool $hash=true): bool
-        {
-            if($hash && $password !== null)
-            {
-                $password = hash('sha512', $password);
-            }
-            elseif($password !== null && !Cryptography::validateSha512($password))
-            {
-                throw new CryptographyException('Invalid SHA-512 hash provided');
-            }
-
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_OTP, Utilities::randomCrc32(), [
-                    'password' => $password
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Updates the user's OTP settings by sending a remote procedure call request.
-         *
-         * @param InformationFieldName $field The field to be updated.
-         * @param string $value The value to be set.
-         * @param PrivacyState|null $privacy The privacy state to be set. Default is null.
-         * @return bool True if the OTP was successfully updated, false otherwise.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsAddInformationField(InformationFieldName $field, string $value, ?PrivacyState $privacy=null): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_ADD_INFORMATION_FIELD, Utilities::randomCrc32(), [
-                    'field' => $field->value,
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_ADD_INFORMATION_FIELD, parameters: [
+                    'field' => $field,
                     'value' => $value,
-                    'privacy' => $privacy?->value
-                ]),
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Retrieves an information field by sending a remote procedure call request.
-         *
-         * @param InformationFieldName $field The field to be retrieved.
-         * @return InformationField The information field retrieved from the server.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsGetInformationField(InformationFieldName $field): InformationField
-        {
-            return InformationField::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_GET_INFORMATION_FIELD, Utilities::randomCrc32(), [
-                    'field' => $field->value
-                ])
-            )->getResponse()->getResult());
-        }
-
-        /**
-         * Deletes an information field by sending a remote procedure call request.
-         *
-         * @param InformationFieldName $field The field to be deleted.
-         * @return bool True if the field was successfully deleted, false otherwise.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsDeleteInformationField(InformationFieldName $field): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_INFORMATION_FIELD, Utilities::randomCrc32(), [
-                    'field' => $field->value
+                    'privacy' => $privacy
                 ])
             )->getResponse()->getResult();
         }
 
         /**
-         * Updates an information field by sending a remote procedure call request.
+         * Adds a new public signature to the peer's profile, returns the UUID of the signature.
          *
-         * @param InformationFieldName $field The field to be updated.
-         * @param string $value The value to be set.
-         * @return bool True if the field was successfully updated, false otherwise.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsUpdateInformationField(InformationFieldName $field, string $value): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_UPDATE_INFORMATION_FIELD, Utilities::randomCrc32(), [
-                    'field' => $field->value,
-                    'value' => $value
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Updates the privacy of an information field by sending a remote procedure call request.
-         *
-         * @param InformationFieldName $field The field to be updated.
-         * @param PrivacyState $privacy The privacy state to be set.
-         * @return bool True if the privacy was successfully updated, false otherwise.
-         * @throws RpcException Thrown if the RPC request fails.
-         */
-        public function settingsUpdateInformationPrivacy(InformationFieldName $field, PrivacyState $privacy): true
-        {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_UPDATE_INFORMATION_PRIVACY, Utilities::randomCrc32(), [
-                    'field' => $field->value,
-                    'privacy' => $privacy->value
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Adds a signing key to the server associated with the peer by sending a remote procedure call request.
-         *
-         * @param string $publicKey The public key to be added.
-         * @param string|null $name The name of the signing key.
-         * @param int|null $expires The expiration date of the signing key.
-         * @return string The UUID of the signing key.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param string $publicKey The public key of the signature
+         * @param string|null $name Optional. The name of the signature
+         * @param int|null $expires Optional. The expiration time of the signature
+         * @return string The UUID of the signature
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function settingsAddSignature(string $publicKey, ?string $name=null, ?int $expires=null): string
         {
             return $this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_ADD_SIGNATURE, Utilities::randomCrc32(), [
+                new RpcRequest(StandardMethods::SETTINGS_ADD_SIGNATURE, parameters: [
                     'public_key' => $publicKey,
                     'name' => $name,
                     'expires' => $expires
@@ -609,144 +509,379 @@
         }
 
         /**
-         * Creates a signing key pair by generating a new key pair and sending a remote procedure call request to add it.
-         * The generated key pair is returned, this is similar to settingsAddSignature but generates the key pair.
+         * Deletes an information field from the peer's profile, returns True if the field was deleted.
          *
-         * @param string|null $name The name of the signing key.
-         * @param int|null $expires The expiration date of the signing key.
-         * @return string The UUID of the signing key.
-         * @throws CryptographyException Thrown if the key generation fails.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param InformationFieldName|string $field The name of the field to delete
+         * @return bool Returns True if the field was deleted
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function settingsCreateSignature(?string $name=null, ?int $expires=null): string
+        public function settingsDeleteInformationField(InformationFieldName|string $field): bool
         {
-            $signingKeypair = Cryptography::generateSigningKeyPair();
-            $uuid = $this->settingsAddSignature($signingKeypair->getPublicKey(), $name, $expires);
-            $signatureKeypair = new SignatureKeyPair([
-                'uuid' => $uuid,
-                'name' => $name,
-                'public_key' => $signingKeypair->getPublicKey(),
-                'private_key' => $signingKeypair->getPrivateKey(),
-                'expires' => $expires
-            ]);
+            if($field instanceof InformationFieldName)
+            {
+                $field = $field->value;
+            }
 
-            $this->addSigningKey($signatureKeypair);
-            return $uuid;
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_INFORMATION_FIELD, parameters: [
+                    'field' => $field
+                ])
+            )->getResponse()->getResult();
         }
 
         /**
-         * Retrieves a signing key by sending a remote procedure call request.
+         * Deletes the OTP from the peer's profile, returns True if the OTP was deleted.
          *
-         * @param string $uuid The UUID of the signing key to be retrieved.
-         * @return SigningKey The signing key retrieved from the server.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param string|null $password Optional. Required if a password is set, this is used to verify the operation
+         * @param bool $hash Optional. Whether to hash the password
+         * @return bool Returns True if the OTP was deleted
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function settingsGetSigningKey(string $uuid): SigningKey
+        public function settingsDeleteOtp(?string $password=null, bool $hash=true): bool
         {
-            return SigningKey::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_GET_SIGNATURE, Utilities::randomCrc32(), [
+            if($hash && $password != null)
+            {
+                $password = hash('sha512', $password);
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_OTP, parameters: [
+                    'password' => $password
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Deletes the password from the peer's profile, returns True if the password was deleted.
+         *
+         * @return bool Returns True if the password was deleted
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsDeletePassword(): bool
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_PASSWORD)
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Deletes a signature from the peer's profile, returns True if the signature was deleted.
+         *
+         * @param string $uuid The UUID of the signature to delete
+         * @return bool Returns True if the signature was deleted
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsDeleteSignature(string $uuid): bool
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_DELETE_SIGNATURE, parameters: [
+                    'uuid' => $uuid
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Retrieves the value of an information field from the peer's profile, returns the value of the field as an
+         * InformationFieldState object.
+         *
+         * @param InformationFieldName|string $field The name of the field to retrieve
+         * @return InformationFieldState The value of the field as an InformationFieldState object
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsGetInformationField(InformationFieldName|string $field): InformationFieldState
+        {
+            if($field instanceof InformationFieldName)
+            {
+                $field = $field->value;
+            }
+
+            return new InformationFieldState($this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_GET_INFORMATION_FIELD, parameters: [
+                    'field' => $field
+                ])
+            )->getResponse()->getResult());
+        }
+
+        /**
+         * Retrieves a list of information fields from the peer's profile, returns an array of InformationFieldState objects.
+         *
+         * @return InformationFieldState[] An array of InformationFieldState objects
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsGetInformationFields(): array
+        {
+            return array_map(fn($informationFieldState) => new InformationFieldState($informationFieldState), $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_GET_INFORMATION_FIELDS)
+            )->getResponse()->getResult());
+        }
+
+        /**
+         * Returns the existing Signature of a signature UUID associated with the peer's profile
+         *
+         * @param string $uuid The UUID of the signature to retrieve
+         * @return Signature The Signature object
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsGetSignature(string $uuid): Signature
+        {
+            return new Signature($this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_GET_SIGNATURE, parameters: [
                     'uuid' => $uuid
                 ])
             )->getResponse()->getResult());
         }
 
         /**
-         * Retrieves the list of signing keys associated with the peer by sending a remote procedure call request.
+         * Retrieves a list of public signatures from the peer's profile, returns an array of Signature objects.
          *
-         * @return SigningKey[] The list of signing keys retrieved from the server.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @return Signature[] An array of Signature objects
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function settingsGetSigningKeys(): array
+        public function settingsGetSignatures(): array
         {
-            return array_map(fn($key) => SigningKey::fromArray($key), $this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_GET_SIGNATURES, Utilities::randomCrc32())
+            return array_map(fn($signatures) => new Signature($signatures), $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_GET_INFORMATION_FIELDS)
             )->getResponse()->getResult());
         }
 
         /**
-         * Deletes a signing key by sending a remote procedure call request.
+         * Checks if an information field exists in the peer's profile, returns True if the field exists.
          *
-         * @param string $uuid The UUID of the signing key to be deleted.
-         * @return bool True if the signing key was successfully deleted, false otherwise.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param InformationFieldName|string $field The name of the field to check
+         * @return bool Returns True if the field exists
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function settingsDeleteSigningKey(string $uuid): true
+        public function settingsInformationFieldExists(InformationFieldName|string $field): bool
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_DELETE_SIGNATURE, Utilities::randomCrc32(), [
+            if($field instanceof InformationFieldName)
+            {
+                $field = $field->value;
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_INFORMATION_FIELD_EXISTS, parameters: [
+                    'field' => $field
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Sets the OTP for the peer's profile, returns True if the OTP was set.
+         *
+         * @param string|null $password Optional. If a password is set to the account, this is used to verify the operation
+         * @param bool $hash Optional. Whether to hash the password
+         * @return string Returns True if the OTP was set
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsSetOtp(?string $password=null, bool $hash=true): string
+        {
+            if($hash && $password != null)
+            {
+                $password = hash('sha512', $password);
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_SET_OTP, parameters: [
+                    'password' => $password
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Sets the password for the peer's profile, returns True if the password was set.
+         *
+         * @param string $password The password to set
+         * @param bool $hash Optional. Whether to hash the password
+         * @return bool Returns True if the password was set
+         * @throws CryptographyException Thrown if there was an error while hashing the password
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsSetPassword(string $password, bool $hash=true): bool
+        {
+            if($hash)
+            {
+                $password = Cryptography::hashPassword($password);
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_SET_PASSWORD, parameters: [
+                    'password' => $password
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Checks if a signature exists in the peer's profile, returns True if the signature exists.
+         *
+         * @param string $uuid The UUID of the signature to check for it's existence
+         * @return bool Returns True if the signature exists, False otherwise
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsSignatureExists(string $uuid): bool
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_SIGNATURE_EXISTS, parameters: [
                     'uuid' => $uuid
                 ])
             )->getResponse()->getResult();
         }
 
         /**
-         * Authenticates the user by sending a remote procedure call request.
-         * Only applicable for server to server communication, this is the first method to call
-         * after connecting to the server.
+         * Updates the value of an information field in the peer's profile, returns True if the field was updated.
          *
-         * @return true Returns true if the authentication is successful.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param InformationFieldName|string $field The name of the field to update
+         * @param string $value The value to update the field to
+         * @return bool Returns True if the field was updated
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function authenticate(): true
+        public function settingsUpdateInformationField(InformationFieldName|string $field, string $value): bool
         {
-            return (bool)$this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFICATION_AUTHENTICATE, Utilities::randomCrc32())
+            if($field instanceof InformationFieldName)
+            {
+                $field = $field->value;
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_UPDATE_INFORMATION_FIELD, parameters: [
+                    'field' => $field,
+                    'value' => $value,
+                ])
             )->getResponse()->getResult();
         }
 
         /**
-         * Resolves a peer by its address or a PeerAddress and returns information about the peer. Note that this is a
-         * decentralized method call, so passing on a peer that does not belong to the host server will result in the
-         * host server resolving the peer externally on its end.
+         * Updates the privacy of an information field in the peer's profile, returns True if the field was updated.
          *
-         * @param string|PeerAddress $peerAddress The peer address as a string or an instance of PeerAddress.
-         * @return Peer The resolved peer object.
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param InformationFieldName|string $field The name of the field to update
+         * @param PrivacyState|string $privacy The privacy state to update the field to
+         * @return bool Returns True if the field was updated
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function resolvePeer(string|PeerAddress $peerAddress, null|string|PeerAddress $identifiedAs=null): Peer
+        public function settingsUpdateInformationPrivacy(InformationFieldName|string $field, PrivacyState|string $privacy): bool
         {
-            if($peerAddress instanceof PeerAddress)
+            if($field instanceof InformationFieldName)
             {
-                $peerAddress = $peerAddress->getAddress();
+                $field = $field->value;
             }
 
-            if($identifiedAs instanceof PeerAddress)
+            if($privacy instanceof PrivacyState)
             {
-                $identifiedAs = $identifiedAs->getAddress();
+                $privacy = $privacy->value;
             }
 
-            return Peer::fromArray($this->sendRequest(
-                new RpcRequest(StandardMethods::RESOLVE_PEER, Utilities::randomCrc32(), [
-                    'peer' => $peerAddress
-                ]), true, $identifiedAs
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_UPDATE_INFORMATION_PRIVACY, parameters: [
+                    'field' => $field,
+                    'privacy' => $privacy
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Updates the existing password configuration on the account, requires the existing password to verify
+         * the operation. Returns True upon success
+         *
+         * @param string $password The new password to set
+         * @param string $existingPassword The existing password already tied to the account
+         * @param bool $hash If True, the password inputs will be hashed, false will be sent as is.
+         * @return bool Returns True if the password was updated successfully
+         * @throws CryptographyException Thrown if there was an error while hashing the passwords
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function settingsUpdatePassword(string $password, string $existingPassword, bool $hash=true): bool
+        {
+            if($hash)
+            {
+                $existingPassword = hash('sha512', $password);
+                $password = Cryptography::hashPassword($password);
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::SETTINGS_UPDATE_PASSWORD, parameters: [
+                    'password' => $password,
+                    'existing_password' => $existingPassword
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Submits an answer for an image captcha problem, returns True if the answer is correct, False otherwise
+         *
+         * @param string $answer The answer for the captcha
+         * @return bool Returns True if the answer is correct, False otherwise.
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function verificationAnswerImageCaptcha(string $answer): bool
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::VERIFICATION_ANSWER_IMAGE_CAPTCHA, parameters: [
+                    'answer' => $answer
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Authenticates the verification process, returns True if the authentication is successful.
+         * This method is usually used for server-to-server communication.
+         *
+         * @return bool Returns True if the authentication is successful
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function verificationAuthenticate(): bool
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::VERIFICATION_AUTHENTICATE)
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Retrieves an image captcha problem, returns the problem as an ImageCaptchaVerification object.
+         *
+         * @return ImageCaptchaVerification The problem as an ImageCaptchaVerification object
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function verificationGetImageCaptcha(): ImageCaptchaVerification
+        {
+            return new ImageCaptchaVerification($this->sendRequest(
+                new RpcRequest(StandardMethods::VERIFICATION_GET_IMAGE_CAPTCHA)
             )->getResponse()->getResult());
         }
 
         /**
-         * Resolves the signing key of a peer. Note that this is a decentralized method call, so passing on a peer
-         * that does not belong to the host server will result in the host server resolving the key externally on
-         * its end.
+         * Verifies a one-time password (OTP) authentication code, returns True if the code is correct, False otherwise.
          *
-         * @param string|PeerAddress $peerAddress The peer address as a string or an instance of PeerAddress.
-         * @param string $signatureUuid The UUID of the signature to resolve.
-         * @return SigningKey|null The resolved signing key. Null if the resolved key was not found
-         * @throws RpcException Thrown if the RPC request fails.
+         * @param int $code The OTP code to verify
+         * @return bool Returns True if the code is correct, False otherwise
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function resolvePeerSignature(string|PeerAddress $peerAddress, string $signatureUuid): ?SigningKey
+        public function verificationOtpAuthentication(int $code): bool
         {
-            if($peerAddress instanceof PeerAddress)
-            {
-                $peerAddress = $peerAddress->getAddress();
-            }
-
-            $result = $this->sendRequest(
-                new RpcRequest(StandardMethods::RESOLVE_PEER_SIGNATURE, Utilities::randomCrc32(), [
-                    'peer' => $peerAddress,
-                    'uuid' => $signatureUuid
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::VERIFICATION_OTP_AUTHENTICATION, parameters: [
+                    'code' => $code
                 ])
             )->getResponse()->getResult();
+        }
 
-            // Conditional null-return
-            return $result ? SigningKey::fromArray($result) : null;
+        /**
+         * Verifies a password authentication, returns True if the password is correct, False otherwise.
+         *
+         * @param string $password The password to verify
+         * @param bool $hash Optional. Whether to hash the password
+         * @return bool Returns True if the password is correct, False otherwise
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function verificationPasswordAuthentication(string $password, bool $hash=true): bool
+        {
+            if($hash)
+            {
+                $password = hash('sha512', $password);
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::VERIFICATION_PASSWORD_AUTHENTICATION, parameters: [
+                    'password' => $password
+                ])
+            )->getResponse()->getResult();
         }
     }
