@@ -27,10 +27,9 @@
                 throw new MissingRpcArgumentException('answer');
             }
 
-            $session = $request->getSession();
-
             try
             {
+                $session = $request->getSession();
                 if(CaptchaManager::getCaptcha($session->getPeerUuid())?->isExpired())
                 {
                     return $rpcRequest->produceError(StandardError::EXPIRED, 'The captcha has expired');
