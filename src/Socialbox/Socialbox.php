@@ -720,7 +720,7 @@
             try
             {
                 $client = new SocialClient(self::getServerAddress(), $domain);
-                $client->authenticate();
+                $client->verificationAuthenticate();
             }
             catch (Exception $e)
             {
@@ -758,49 +758,25 @@
          *
          * @param PeerAddress|string $signingPeer The peer address or string identifier of the signing peer
          * @param string $signatureUuid The UUID of the signature key to be resolved
-         * @param string $signatureKey The public key of the signature that was used to sign the message
          * @param string $signature  The signature to be verified
          * @param string $messageHash The SHA-512 hash of the message that was signed
          * @param int $signatureTime The time at which the message was signed
          * @return SignatureVerificationStatus The status of the signature verification
          */
-        public static function verifyTimedSignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signatureKey, string $signature, string $messageHash, int $signatureTime): SignatureVerificationStatus
+        public static function verifyTimedSignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signature, string $messageHash, int $signatureTime): SignatureVerificationStatus
         {
-            try
-            {
-                if (!Cryptography::verifyTimedMessage($messageHash, $signature, $signatureKey, $signatureTime, false))
-                {
-                    return SignatureVerificationStatus::INVALID;
-                }
-            }
-            catch (CryptographyException)
-            {
-                return SignatureVerificationStatus::INVALID;
-            }
-
             // Resolve the peer signature key
             try
             {
                 $signingKey = self::resolvePeerSignature($signingPeer, $signatureUuid);
+                if($signingKey === null)
+                {
+                    return SignatureVerificationStatus::NOT_FOUND;
+                }
             }
             catch(StandardRpcException)
             {
-                return SignatureVerificationStatus::UNVERIFIED;
-            }
-
-            if($signingKey === null)
-            {
-                return SignatureVerificationStatus::UNVERIFIED;
-            }
-
-            if($signingKey->getPublicKey() !== $signatureKey)
-            {
-                return SignatureVerificationStatus::PUBLIC_KEY_MISMATCH;
-            }
-
-            if($signingKey->getUuid() !== $signatureUuid)
-            {
-                return SignatureVerificationStatus::UUID_MISMATCH;
+                return SignatureVerificationStatus::RESOLUTION_ERROR;
             }
 
             if(time() > $signingKey->getExpires())
@@ -818,7 +794,7 @@
             }
             catch (CryptographyException)
             {
-                return SignatureVerificationStatus::INVALID;
+                return SignatureVerificationStatus::ERROR;
             }
 
             return SignatureVerificationStatus::VERIFIED;
@@ -832,66 +808,36 @@
          *
          * @param PeerAddress|string $signingPeer The peer address or string identifier of the signing peer
          * @param string $signatureUuid The UUID of the signature key to be resolved
-         * @param string $signatureKey The public key of the signature that was used to sign the message
-         * @param string $signature  The signature to be verified
+         * @param string $signature The signature to be verified
          * @param string $messageHash The SHA-512 hash of the message that was signed
          * @return SignatureVerificationStatus The status of the signature verification
          */
-        public static function verifySignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signatureKey, string $signature, string $messageHash): SignatureVerificationStatus
+        public static function verifySignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signature, string $messageHash): SignatureVerificationStatus
         {
             try
             {
-                if (!Cryptography::verifyMessage($messageHash, $signature, $signatureKey, false))
-                {
-                    return SignatureVerificationStatus::INVALID;
-                }
-            }
-            catch (CryptographyException)
-            {
-                return SignatureVerificationStatus::INVALID;
-            }
-
-            // Resolve the peer signature key
-            try
-            {
                 $signingKey = self::resolvePeerSignature($signingPeer, $signatureUuid);
+                if($signingKey === null)
+                {
+                    return SignatureVerificationStatus::NOT_FOUND;
+                }
             }
             catch(StandardRpcException)
             {
-                return SignatureVerificationStatus::UNVERIFIED;
-            }
-
-            if($signingKey === null)
-            {
-                return SignatureVerificationStatus::UNVERIFIED;
-            }
-
-            if($signingKey->getPublicKey() !== $signatureKey)
-            {
-                return SignatureVerificationStatus::PUBLIC_KEY_MISMATCH;
-            }
-
-            if($signingKey->getUuid() !== $signatureUuid)
-            {
-                return SignatureVerificationStatus::UUID_MISMATCH;
-            }
-
-            if(time() > $signingKey->getExpires())
-            {
-                return SignatureVerificationStatus::EXPIRED;
+                return SignatureVerificationStatus::RESOLUTION_ERROR;
             }
 
             // Verify the signature with the resolved key
             try
             {
-                if (!Cryptography::verifyTimedMessage($messageHash, $signature, $signingKey->getPublicKey(), false))
+                if (!Cryptography::verifyMessage($messageHash, $signature, $signingKey->getPublicKey(), false))
                 {
                     return SignatureVerificationStatus::INVALID;
                 }
             }
             catch (CryptographyException)
             {
-                return SignatureVerificationStatus::INVALID;
+                return SignatureVerificationStatus::ERROR;
             }
 
             return SignatureVerificationStatus::VERIFIED;
@@ -1142,7 +1088,6 @@
             try
             {
                 $peer = RegisteredPeerManager::getPeerByAddress($peerAddress);
-
                 if($peer === null)
                 {
                     throw new StandardRpcException('The requested peer was not found', StandardError::PEER_NOT_FOUND);
@@ -1160,7 +1105,7 @@
             }
             catch (DatabaseOperationException $e)
             {
-                throw new StandardRpcException('Failed to resolve peer information: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('Failed to resolve local peer information', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             // If there's an identifier, we can resolve more information fields if the target peer has added the caller
@@ -1194,7 +1139,7 @@
                     }
                     catch (DatabaseOperationException $e)
                     {
-                        throw new StandardRpcException('Failed to resolve peer information: ' . $e->getMessage(), StandardError::INTERNAL_SERVER_ERROR, $e);
+                        throw new StandardRpcException('Failed to resolve local peer information', StandardError::INTERNAL_SERVER_ERROR, $e);
                     }
                 }
             }
