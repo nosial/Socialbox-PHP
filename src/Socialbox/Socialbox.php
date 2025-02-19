@@ -676,6 +676,11 @@
          */
         private static function returnError(int $responseCode, StandardError $standardError, ?string $message=null, ?Throwable $e=null): void
         {
+            if($e !== null)
+            {
+                Logger::getLogger()->error($message, $e);
+            }
+
             if($message === null)
             {
                 $message = $standardError->getMessage();
@@ -689,11 +694,6 @@
             if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions() && $e !== null)
             {
                 print(PHP_EOL . PHP_EOL . Utilities::throwableToString($e));
-            }
-
-            if($e !== null)
-            {
-                Logger::getLogger()->error($message, $e);
             }
         }
 
