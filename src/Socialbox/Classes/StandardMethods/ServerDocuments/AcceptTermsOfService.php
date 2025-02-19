@@ -32,7 +32,7 @@
 
             if(!$session->flagExists(SessionFlags::VER_TERMS_OF_SERVICE))
             {
-                return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Terms of service has already been accepted');
+                return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'Terms of service has already been accepted');
             }
 
             try

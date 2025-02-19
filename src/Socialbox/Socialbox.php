@@ -523,13 +523,24 @@
             // If the client has provided an identification header, further validation and resolution is required
             if($clientRequest->getIdentifyAs() !== null)
             {
+                try
+                {
+                    $peer = $clientRequest->getPeer();
+                }
+                catch (DatabaseOperationException $e)
+                {
+                    self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to resolve host peer', $e);
+                }
+
                 // First check if the client is identifying as the host
-                if($clientRequest->getPeer()->getAddress() !== ReservedUsernames::HOST->value)
+                if($peer->getAddress() !== ReservedUsernames::HOST->value)
                 {
                     // TODO: Maybe allow user client to change identification but within an RPC method rather than the headers
                     self::returnError(403, StandardError::FORBIDDEN, 'Unauthorized: Not allowed to identify as a different peer');
                     return;
                 }
+
+                if($clientRequest->getIdentifyAs()->getDomain() != $)
 
                 // Synchronize the peer
                 try

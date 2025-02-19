@@ -179,11 +179,10 @@
          * Retrieves a session record by its unique identifier.
          *
          * @param string $uuid The unique identifier of the session.
-         * @return SessionRecord The session record corresponding to the given UUID.
+         * @return SessionRecord|null The session record corresponding to the given UUID.
          * @throws DatabaseOperationException If the session record cannot be found or if there is an error during retrieval.
-         * @throws StandardRpcException
          */
-        public static function getSession(string $uuid): SessionRecord
+        public static function getSession(string $uuid): ?SessionRecord
         {
             Logger::getLogger()->verbose(sprintf("Retrieving session %s from the database", $uuid));
 
@@ -196,7 +195,7 @@
 
                 if ($data === false)
                 {
-                    throw new StandardRpcException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
+                    return null;
                 }
 
                 // Convert the timestamp fields to DateTime objects
@@ -308,7 +307,6 @@
          *
          * @param string $uuid The UUID of the session to retrieve flags for.
          * @return SessionFlags[] An array of flags associated with the specified session.
-         * @throws StandardRpcException If the specified session does not exist.
          * @throws DatabaseOperationException If there
          */
         private static function getFlags(string $uuid): array
@@ -324,7 +322,7 @@
 
                 if ($data === false)
                 {
-                    throw new StandardRpcException(sprintf("The requested session '%s' does not exist", $uuid), StandardError::SESSION_NOT_FOUND);
+                    throw new DatabaseOperationException(sprintf("The session '%s' does not exist", $uuid));
                 }
 
                 return SessionFlags::fromString($data['flags']);
@@ -372,7 +370,7 @@
          * @param string $uuid The UUID of the session from which the flags will be removed.
          * @param SessionFlags[] $flags An array of flags to be removed from the session.
          * @return void
-         * @throws DatabaseOperationException|StandardRpcException If there is an error while updating the session in the database.
+         * @throws DatabaseOperationException If there is an error while updating the session in the database.
          */
         public static function removeFlags(string $uuid, array $flags): void
         {
@@ -429,7 +427,6 @@
          * @param array $flagsToRemove An array of flags to remove from the session if it is marked as complete.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the session in the database.
-         * @throws StandardRpcException If the session record cannot be found or if there is an error during retrieval.
          */
         public static function updateFlow(SessionRecord $session, array $flagsToRemove=[]): void
         {
@@ -447,13 +444,19 @@
 
             // Remove & update the session flags
             self::removeFlags($session->getUuid(), $flagsToRemove);
-            $session = self::getSession($session->getUuid());
+            $sessionUuid = $session->getUuid();
+            $session = self::getSession($sessionUuid);
+
+            if($session === null)
+            {
+                throw new DatabaseOperationException(sprintf('The session %s was not found', $sessionUuid));
+            }
 
             // Check if all registration/authentication requirements are met
             if(SessionFlags::isComplete($session->getFlags()))
             {
-                SessionManager::removeFlags($session->getUuid(), [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]); // Remove the registration/authentication flags
-                SessionManager::setAuthenticated($session->getUuid(), true); // Mark the session as authenticated
+                SessionManager::removeFlags($sessionUuid, [SessionFlags::REGISTRATION_REQUIRED, SessionFlags::AUTHENTICATION_REQUIRED]); // Remove the registration/authentication flags
+                SessionManager::setAuthenticated($sessionUuid, true); // Mark the session as authenticated
                 RegisteredPeerManager::enablePeer($session->getPeerUuid()); // Enable the peer
             }
         }
