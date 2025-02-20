@@ -14,7 +14,7 @@
     use Socialbox\Objects\RpcRequest;
     use Socialbox\Socialbox;
 
-    class VerifyPeerSignature extends Method
+    class VerifySignature extends Method
     {
 
         /**
@@ -35,11 +35,6 @@
             elseif(!Validator::validateUuid($rpcRequest->getParameter('signature_uuid')))
             {
                 throw new InvalidRpcArgumentException('signature_uuid', 'Invalid UUID V4');
-            }
-
-            if(!$rpcRequest->containsParameter('signature_public_key'))
-            {
-                throw new MissingRpcArgumentException('signature_public_key');
             }
 
             if(!$rpcRequest->containsParameter('signature'))
@@ -66,27 +61,25 @@
                 throw new InvalidRpcArgumentException('peer', $e);
             }
 
-            if($rpcRequest->containsParameter('signature_time'))
+            if($rpcRequest->containsParameter('time'))
             {
-                if(!is_numeric($rpcRequest->getParameter('signature_time')))
+                if(!is_numeric($rpcRequest->getParameter('time')))
                 {
-                    throw new InvalidRpcArgumentException('signature_time', 'Invalid timestamp, must be a Unix Timestamp');
+                    throw new InvalidRpcArgumentException('time', 'Invalid timestamp, must be a Unix Timestamp');
                 }
 
                 return $rpcRequest->produceResponse(Socialbox::verifyTimedSignature(
                     signingPeer: $peerAddress,
                     signatureUuid: $rpcRequest->getParameter('signature_uuid'),
-                    signatureKey: $rpcRequest->getParameter('signature_public_key'),
                     signature: $rpcRequest->getParameter('signature'),
                     messageHash: $rpcRequest->getParameter('sha512'),
-                    signatureTime: (int)$rpcRequest->getParameter('signature_time')
+                    signatureTime: (int)$rpcRequest->getParameter('time')
                 )->value);
             }
 
             return $rpcRequest->produceResponse(Socialbox::verifySignature(
                 signingPeer: $peerAddress,
                 signatureUuid: $rpcRequest->getParameter('signature_uuid'),
-                signatureKey: $rpcRequest->getParameter('signature_public_key'),
                 signature: $rpcRequest->getParameter('signature'),
                 messageHash: $rpcRequest->getParameter('sha512'),
             )->value);

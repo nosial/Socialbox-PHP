@@ -30,7 +30,6 @@
          *                    - 'signature' (string): The signature.
          *                    - 'received' (bool): Whether the message has been received.
          *                    - 'timestamp' (int|string|\DateTime): The timestamp of the message.
-         * @throws DateMalformedStringException If the timestamp is a string that cannot be parsed.
          */
         public function __construct(array $data)
         {

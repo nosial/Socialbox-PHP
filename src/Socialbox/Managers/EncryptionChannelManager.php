@@ -1,5 +1,6 @@
 <?php
 
+
     namespace Socialbox\Managers;
 
     use InvalidArgumentException;
@@ -14,7 +15,6 @@
     use Socialbox\Objects\Database\ChannelMessageRecord;
     use Socialbox\Objects\Database\EncryptionChannelRecord;
     use Socialbox\Objects\PeerAddress;
-    use Socialbox\Objects\Standard\EncryptionChannelMessage;
 
     class EncryptionChannelManager
     {
@@ -24,14 +24,13 @@
          * @param PeerAddress|string $callingPeer The peer that is creating the channel.
          * @param PeerAddress|string $receivingPeer The peer that is receiving the channel.
          * @param string $signatureUuid The UUID of the signature used to create the channel.
-         * @param string $signingPublicKey The public key used for signing.
          * @param string $encryptionPublicKey The public key used for encryption.
          * @param string $transportEncryptionAlgorithm The algorithm used for transport encryption.
          * @return string The UUID of the created channel.
          * @throws DatabaseOperationException If an error occurs while creating the channel.
          */
         public static function createChannel(PeerAddress|string $callingPeer, PeerAddress|string $receivingPeer,
-            string $signatureUuid, string $signingPublicKey, string $encryptionPublicKey, string $transportEncryptionAlgorithm,
+            string $signatureUuid, string $encryptionPublicKey, string $transportEncryptionAlgorithm,
             ?string $uuid=null
         ): string
         {
@@ -45,10 +44,6 @@
                 $receivingPeer = PeerAddress::fromAddress($receivingPeer);
             }
 
-            if(!Cryptography::validatePublicSigningKey($signingPublicKey))
-            {
-                throw new InvalidArgumentException('Invalid signing public key provided');
-            }
 
             if(!Cryptography::validatePublicEncryptionKey($encryptionPublicKey))
             {
@@ -68,12 +63,11 @@
 
             try
             {
-                $stmt = Database::getConnection()->prepare('INSERT INTO encryption_channels (uuid, calling_peer, calling_signature_uuid, calling_signature_public_key, calling_encryption_public_key, receiving_peer, transport_encryption_algorithm) VALUES (:uuid, :calling_peer, :calling_signature_uuid, :calling_signature_public_key, :calling_encryption_public_key, :receiving_peer, :transport_encryption_algorithm)');
+                $stmt = Database::getConnection()->prepare('INSERT INTO encryption_channels (uuid, calling_peer, calling_signature_uuid, calling_encryption_public_key, receiving_peer, transport_encryption_algorithm) VALUES (:uuid, :calling_peer, :calling_signature_uuid, :calling_encryption_public_key, :receiving_peer, :transport_encryption_algorithm)');
                 $stmt->bindParam(':uuid', $uuid);
                 $callingPeerAddress = $callingPeer->getAddress();
                 $stmt->bindParam(':calling_peer', $callingPeerAddress);
                 $stmt->bindParam(':calling_signature_uuid', $signatureUuid);
-                $stmt->bindParam(':calling_signature_public_key', $signingPublicKey);
                 $stmt->bindParam(':calling_encryption_public_key', $encryptionPublicKey);
                 $receivingPeerAddress = $receivingPeer->getAddress();
                 $stmt->bindParam(':receiving_peer', $receivingPeerAddress);
@@ -96,7 +90,6 @@
          * @param int $page The page of channels to retrieve.
          * @return EncryptionChannelRecord[] The incoming channels for the peer.
          * @throws DatabaseOperationException If an error occurs while retrieving the channels.
-         * @throws \DateMalformedStringException If the created date is not a valid date string.
          */
         public static function getChannels(string|PeerAddress $peerAddress, int $limit=100, int $page=0): array
         {
@@ -137,7 +130,6 @@
          * @param int $page The page of channels to retrieve.
          * @return EncryptionChannelRecord[] The incoming channels for the peer.
          * @throws DatabaseOperationException If an error occurs while retrieving the channels.
-         * @throws \DateMalformedStringException If the created date is not a valid date string.
          */
         public static function getRequests(string|PeerAddress $peerAddress, int $limit=100, int $page=0): array
         {
@@ -180,7 +172,6 @@
          * @param int $page The page of channels to retrieve.
          * @return EncryptionChannelRecord[] The incoming channels for the peer.
          * @throws DatabaseOperationException If an error occurs while retrieving the channels.
-         * @throws \DateMalformedStringException If the created date is not a valid date string.
          */
         public static function getIncomingChannels(string|PeerAddress $peerAddress, int $limit=100, int $page=0): array
         {
@@ -221,7 +212,6 @@
          * @param int $page The page of channels to retrieve.
          * @return EncryptionChannelRecord[] The outgoing channels for the specified peer.
          * @throws DatabaseOperationException If an error occurs while retrieving the channels.
-         * @throws \DateMalformedStringException If the created date is not a valid date string.
          */
         public static function getOutgoingChannels(string|PeerAddress $peerAddress, int $limit=100, int $page=0): array
         {
@@ -281,23 +271,19 @@
          *
          * @param string $channelUuid The UUID of the channel to accept.
          * @param string $signatureUuid The UUID of the signature used to create the channel.
-         * @param string $signaturePublicKey The public key used for signing.
          * @param string $encryptionPublicKey The public key used for encryption.
-         * @param string $transportEncryptionAlgorithm The algorithm used for transport encryption.
          * @param string $encryptedTransportEncryptionKey The encrypted transport encryption key.
          * @throws DatabaseOperationException If an error occurs while accepting the channel.
          */
-        public static function acceptChannel(string $channelUuid, string $signatureUuid, string $signaturePublicKey, string $encryptionPublicKey, string $transportEncryptionAlgorithm, string $encryptedTransportEncryptionKey): void
+        public static function acceptChannel(string $channelUuid, string $signatureUuid, string $encryptionPublicKey, string $encryptedTransportEncryptionKey): void
         {
             try
             {
-                $stmt = Database::getConnection()->prepare('UPDATE encryption_channels SET state=:state, receiving_signature_uuid=:receiving_signature_uuid, receiving_signature_public_key=:receiving_signature_public_key, receiving_encryption_public_key=:receiving_encryption_public_key, transport_encryption_algorithm=:transport_encryption_algorithm, transport_encryption_key=:transport_encryption_key WHERE uuid=:uuid');
+                $stmt = Database::getConnection()->prepare('UPDATE encryption_channels SET state=:state, receiving_signature_uuid=:receiving_signature_uuid, receiving_encryption_public_key=:receiving_encryption_public_key, transport_encryption_algorithm=:transport_encryption_algorithm, transport_encryption_key=:transport_encryption_key WHERE uuid=:uuid');
                 $state = EncryptionChannelState::OPENED->value;
                 $stmt->bindParam(':state', $state);
                 $stmt->bindParam(':receiving_signature_uuid', $signatureUuid);
-                $stmt->bindParam(':receiving_signature_public_key', $signaturePublicKey);
                 $stmt->bindParam(':receiving_encryption_public_key', $encryptionPublicKey);
-                $stmt->bindParam(':transport_encryption_algorithm', $transportEncryptionAlgorithm);
                 $stmt->bindParam(':transport_encryption_key', $encryptedTransportEncryptionKey);
                 $stmt->bindParam(':uuid', $channelUuid);
                 $stmt->execute();
@@ -314,7 +300,6 @@
          * @param string $channelUuid The UUID of the channel to retrieve.
          * @return EncryptionChannelRecord|null The record of the encryption channel. Null if the channel does not exist.
          * @throws DatabaseOperationException If an error occurs while retrieving the channel.
-         * @throws \DateMalformedStringException If the created date is not a valid date string.
          */
         public static function getChannel(string $channelUuid): ?EncryptionChannelRecord
         {
@@ -343,7 +328,7 @@
          *
          * @param string $channelUuid The UUID of the channel to delete.
          * @return void
-         *@throws DatabaseOperationException If an error occurs while deleting the channel.
+         * @throws DatabaseOperationException If an error occurs while deleting the channel.
          */
         public static function deleteChannel(string $channelUuid): void
         {
@@ -503,7 +488,6 @@
          * @param string $messageUuid The UUID of the message to retrieve.
          * @return ChannelMessageRecord|null The message with the specified UUID. Null if the message does not exist.
          * @throws DatabaseOperationException If an error occurs while retrieving the message.
-         * @throws \DateMalformedStringException If the created date is not a valid date string.
          */
         public static function getData(string $channelUuid, string $messageUuid): ?ChannelMessageRecord
         {
@@ -531,23 +515,29 @@
         /**
          * Imports the specified message data into the database.
          *
-         * @param EncryptionChannelMessage|ChannelMessageRecord $message The message data to import.
+         * @param ChannelMessageRecord $message The message data to import.
          * @throws DatabaseOperationException If an error occurs while importing the message.
          */
-        public static function importData(EncryptionChannelMessage|ChannelMessageRecord $message): void
+        public static function importData(ChannelMessageRecord $message): void
         {
-            $data = $message->toArray();
 
             try
             {
                 $stmt = Database::getConnection()->prepare('INSERT INTO channel_com (uuid, channel_uuid, recipient, message, signature, received, timestamp) VALUES (:uuid, :channel_uuid, :recipient, :message, :signature, :received, :timestamp)');
-                $stmt->bindParam(':uuid', $data['uuid']);
-                $stmt->bindParam(':channel_uuid', $data['channel_uuid']);
-                $stmt->bindParam(':recipient', $data['recipient']);
-                $stmt->bindParam(':message', $data['message']);
-                $stmt->bindParam(':signature', $data['signature']);
-                $stmt->bindParam(':received', $data['received']);
-                $stmt->bindParam(':timestamp', $data['timestamp']);
+                $uuid = $message->getUuid();
+                $stmt->bindParam(':uuid', $uuid);
+                $channelUuid = $message->getChannelUuid();
+                $stmt->bindParam(':channel_uuid', $channelUuid);
+                $recipient = $message->getRecipient()->value;
+                $stmt->bindParam(':recipient', $recipient);
+                $messageData = $message->getMessage();
+                $stmt->bindParam(':message', $messageData);
+                $signature = $message->getSignature();
+                $stmt->bindParam(':signature', $signature);
+                $received = $message->isReceived() ? 1 : 0;
+                $stmt->bindParam(':received', $received);
+                $timestamp = $message->getTimestamp();
+                $stmt->bindParam(':timestamp', $timestamp);
                 $stmt->execute();
             }
             catch(PDOException $e)

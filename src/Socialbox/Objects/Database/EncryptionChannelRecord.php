@@ -17,7 +17,6 @@
         private string $callingEncryptionPublicKey;
         private PeerAddress $receivingPeer;
         private ?string $receivingSignatureUuid;
-        private ?string $receivingSignaturePublicKey;
         private ?string $receivingEncryptionPublicKey;
         private string $transportEncryptionAlgorithm;
         private ?string $transportEncryptionKey;
@@ -28,7 +27,6 @@
          * Public Constructor for the encryption channel record
          *
          * @param array $data
-         * @throws \DateMalformedStringException
          */
         public function __construct(array $data)
         {
@@ -78,7 +76,6 @@
             }
 
             $this->receivingSignatureUuid = $data['receiving_signature_uuid'] ?? null;
-            $this->receivingSignaturePublicKey = $data['receiving_signature_public_key'] ?? null;
             $this->receivingEncryptionPublicKey = $data['receiving_encryption_public_key'] ?? null;
             $this->transportEncryptionAlgorithm = $data['transport_encryption_algorithm'];
             $this->transportEncryptionKey = $data['transport_encryption_key'] ?? null;
@@ -170,16 +167,6 @@
         }
 
         /**
-         * Returns the public key of the signing keypair that the receiver is using
-         *
-         * @return string|null
-         */
-        public function getReceivingSignaturePublicKey(): ?string
-        {
-            return $this->receivingSignaturePublicKey;
-        }
-
-        /**
          * Returns the public key of the encryption keypair that the receiver is using
          *
          * @return string|null
@@ -249,7 +236,6 @@
                 'calling_encryption_public_key' => $this->callingEncryptionPublicKey,
                 'receiving_peer' => $this->receivingPeer->getAddress(),
                 'receiving_signature_uuid' => $this->receivingSignatureUuid,
-                'receiving_signature_public_key' => $this->receivingSignaturePublicKey,
                 'receiving_encryption_public_key' => $this->receivingEncryptionPublicKey,
                 'transport_encryption_algorithm' => $this->transportEncryptionAlgorithm,
                 'transport_encryption_key' => $this->transportEncryptionKey,

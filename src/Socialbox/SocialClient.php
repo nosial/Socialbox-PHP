@@ -77,53 +77,6 @@
         }
 
         /**
-         * Creates a new encryption channel with the given peer, using the signature UUID to identify the calling peer.
-         * This method is a wrapper around the encryptionCreateChannel method, and is used to simplify the process of
-         * creating a new encryption channel. The signature UUID is used to identify the calling peer, and the public key
-         * of the signature is used as the encryption key.
-         *
-         * @param PeerAddress|string $receivingPeer
-         * @param string $signatureUuid
-         * @param string $transportEncryptionAlgorithm
-         * @return string
-         * @throws CryptographyException
-         * @throws RpcException
-         */
-        public function newEncryptionChannel(PeerAddress|string $receivingPeer, string $signatureUuid, string $transportEncryptionAlgorithm): string
-        {
-            if(!$this->signingKeyExists($signatureUuid))
-            {
-                throw new InvalidArgumentException('The signature UUID does not exist in the client');
-            }
-
-            $signature = $this->getSigningKey($signatureUuid);
-            if($signature === null)
-            {
-                throw new InvalidArgumentException('The signature UUID does not exist in the client');
-            }
-
-            $encryptionKeypair = Cryptography::generateEncryptionKeyPair();
-            $channelUuid = $this->encryptionCreateChannel(
-                receivingPeer: $receivingPeer,
-                signatureUUid: $signature->getUuid(),
-                encryptionPublicKey: $encryptionKeypair->getPublicKey(),
-                transportEncryptionAlgorithm: $transportEncryptionAlgorithm
-            );
-
-            $this->addEncryptionChannelSecret(new EncryptionChannelSecret([
-                'uuid' => $channelUuid,
-                'receiver' => $receivingPeer->getAddress(),
-                'signature_uuid' => $signature->getUuid(),
-                'public_encryption_key' => $encryptionKeypair->getPublicKey(),
-                'private_encryption_key' => $encryptionKeypair->getPrivateKey(),
-                'transport_encryption_algorithm' => $transportEncryptionAlgorithm,
-                'transport_encryption_key' => null
-            ]));
-
-            return $channelUuid;
-        }
-
-        /**
          * Adds a new peer to the AddressBook, returns True upon success or False if the contact already exists in
          * the address book.
          *
@@ -457,74 +410,6 @@
                     'signature_time' => $signatureTime
                 ])
             )->getResponse()->getResult()) ?? SignatureVerificationStatus::INVALID;
-        }
-
-        public function encryptionAcceptChannel(string $channelUuid, string $signatureUuid, string $encryptionPublicKey, string $encryptedTransportEncryptionKey, null|PeerAddress|string $identifiedAs=null): true
-        {
-            if($identifiedAs instanceof PeerAddress)
-            {
-                $identifiedAs = $identifiedAs->getAddress();
-            }
-
-            return $this->sendRequest(
-                new RpcRequest(StandardMethods::ENCRYPTION_ACCEPT_CHANNEL, parameters: [
-                    'channel_uuid' => $channelUuid,
-                    'signature_uuid' => $signatureUuid,
-                    'encryption_public_key' => $encryptionPublicKey,
-                    'encrypted_transport_encryption_key' => $encryptedTransportEncryptionKey
-                ]),
-                identifiedAs: $identifiedAs
-            )->getResponse()->getResult();
-        }
-
-        public function encryptionCloseChannel(string $channelUuid, null|PeerAddress|string $identifiedAs=null): true
-        {
-            if($identifiedAs instanceof PeerAddress)
-            {
-                $identifiedAs = $identifiedAs->getAddress();
-            }
-
-            return $this->sendRequest(
-                new RpcRequest(StandardMethods::ENCRYPTION_CLOSE_CHANNEL, parameters: [
-                    'channel_uuid' => $channelUuid,
-                ]),
-                identifiedAs: $identifiedAs
-            )->getResponse()->getResult();
-        }
-
-        /**
-         * Accepts an encryption channel request, returns True if the channel was accepted.
-         *
-         * @param PeerAddress|string $receivingPeer The address of the receiving peer that the channel is being requested to
-         * @param string $signatureUUid  The UUID of the calling signature
-         * @param string $encryptionPublicKey The public key of the calling encryption key
-         * @param string $transportEncryptionAlgorithm The transport encryption algorithm to use
-         * @param string|null $identifyAs Optional. The address of the peer to identify as
-         * @param string|null $channelUuid Optional. If calling to an external server, the server must provide the other server the UUID to use
-         * @return string Returns True if the channel was accepted
-         * @throws RpcException Thrown if there was an error with the RPC request
-         */
-        public function encryptionCreateChannel(
-            PeerAddress|string $receivingPeer, string $signatureUUid,
-            string             $encryptionPublicKey, string $transportEncryptionAlgorithm='xchacha20',
-            ?string            $identifyAs=null, ?string $channelUuid=null
-        ): string
-        {
-            if($receivingPeer instanceof PeerAddress)
-            {
-                $receivingPeer = $receivingPeer->getAddress();
-            }
-
-            return $this->sendRequest(
-                new RpcRequest(StandardMethods::ENCRYPTION_CREATE_CHANNEL, parameters: [
-                    'receiving_peer' => $receivingPeer,
-                    'signature_uuid' => $signatureUUid,
-                    'encryption_public_key' => $encryptionPublicKey,
-                    'transport_encryption_algorithm' => $transportEncryptionAlgorithm,
-                    'channel_uuid' => $channelUuid
-                ]),
-                identifiedAs: $identifyAs
-            )->getResponse()->getResult();
         }
 
         /**

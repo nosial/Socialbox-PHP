@@ -200,7 +200,7 @@
                 // Prevent the peer from identifying as the host unless it's coming from an external domain
                if($clientRequest->getIdentifyAs()->getUsername() === ReservedUsernames::HOST->value)
                {
-                   self::returnError(403, StandardError::FORBIDDEN, 'Unauthorized: Not allowed to identify as the host');
+                   self::returnError(403, StandardError::FORBIDDEN, 'Forbidden: Not allowed to identify as the host');
                    return;
                }
             }
@@ -225,7 +225,7 @@
                 }
                 catch (Exception $e)
                 {
-                    self::returnError(502, StandardError::RESOLUTION_FAILED, 'Conflict: Failed to resolve the host domain: ' . $e->getMessage(), $e);
+                    self::returnError(502, StandardError::RESOLUTION_FAILED, 'Conflict: Failed to resolve incoming host, ' . $e->getMessage(), $e);
                     return;
                 }
             }
@@ -257,14 +257,6 @@
                         $peerUuid = RegisteredPeerManager::createPeer(PeerAddress::fromAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)));
                         RegisteredPeerManager::enablePeer($peerUuid);
                         $registeredPeer = RegisteredPeerManager::getPeer($peerUuid);
-                    }
-                    else
-                    {
-                        // If the host is registered, but disabled, enable it
-                        if(!$registeredPeer->isEnabled())
-                        {
-                            RegisteredPeerManager::enablePeer($registeredPeer->getUuid());
-                        }
                     }
                 }
 
@@ -355,7 +347,16 @@
                 return;
             }
 
-            $session = $clientRequest->getSession();
+            try
+            {
+                $session = $clientRequest->getSession();
+            }
+            catch (DatabaseOperationException $e)
+            {
+                self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to retrieve session', $e);
+                return;
+            }
+
             if($session === null)
             {
                 self::returnError(404, StandardError::SESSION_NOT_FOUND, 'Session not found');
@@ -525,36 +526,41 @@
             {
                 try
                 {
-                    $peer = $clientRequest->getPeer();
+                    $hostPeer = $clientRequest->getPeer();
                 }
                 catch (DatabaseOperationException $e)
                 {
                     self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to resolve host peer', $e);
-                }
-
-                // First check if the client is identifying as the host
-                if($peer->getAddress() !== ReservedUsernames::HOST->value)
-                {
-                    // TODO: Maybe allow user client to change identification but within an RPC method rather than the headers
-                    self::returnError(403, StandardError::FORBIDDEN, 'Unauthorized: Not allowed to identify as a different peer');
                     return;
                 }
 
-                if($clientRequest->getIdentifyAs()->getDomain() != $)
+                // If for some reason the host peer was not found, this shouldn't happen.
+                if($hostPeer === null)
+                {
+                    self::returnError(404, StandardError::INTERNAL_SERVER_ERROR, 'The host peer was not found in the system');
+                    return;
+                }
+                // First check if the client is identifying as the host
+                elseif($hostPeer->getAddress() !== ReservedUsernames::HOST->value)
+                {
+                    self::returnError(403, StandardError::FORBIDDEN, 'Forbidden: External servers must identify as a host');
+                    return;
+                }
+                // Secondly, check if the peer's server belongs to another server than the server is identified as
+                elseif($hostPeer->getServer() !== $clientRequest->getIdentifyAs()->getDomain())
+                {
+                    self::returnError(403, StandardError::FORBIDDEN, 'Forbidden: Not allowed to identify as a peer outside from the host server');
+                    return;
+                }
 
                 // Synchronize the peer
                 try
                 {
                     self::resolvePeer($clientRequest->getIdentifyAs());
                 }
-                catch (DatabaseOperationException $e)
+                catch (StandardRpcException $e)
                 {
-                    self::returnError(500, StandardError::INTERNAL_SERVER_ERROR, 'Failed to synchronize external peer', $e);
-                    return;
-                }
-                catch (Exception $e)
-                {
-                    throw new ResolutionException(sprintf('Failed to synchronize external peer %s: %s', $clientRequest->getIdentifyAs()->getAddress(), $e->getMessage()), $e->getCode(), $e);
+                    throw new ResolutionException(sprintf('Failed to resolve peer %s: %s', $clientRequest->getIdentifyAs()->getAddress(), $e->getMessage()), $e->getCode(), $e);
                 }
             }
 
@@ -568,68 +574,76 @@
                 return;
             }
 
+            if(count($clientRequests) === 0)
+            {
+                Logger::getLogger()->warning(sprintf('Received no RPC requests from %s', $_SERVER['REMOTE_ADDR']));
+                http_response_code(204);
+                return;
+            }
+
             Logger::getLogger()->verbose(sprintf('Received %d RPC request(s) from %s', count($clientRequests), $_SERVER['REMOTE_ADDR']));
 
             $results = [];
             foreach($clientRequests as $rpcRequest)
             {
                 $method = StandardMethods::tryFrom($rpcRequest->getMethod());
-
-                try
-                {
-                    $method->checkAccess($clientRequest);
-                }
-                catch (StandardRpcException $e)
-                {
-                    $response = $e->produceError($rpcRequest);
-                    $results[] = $response->toArray();
-                    continue;
-                }
-
                 if($method === false)
                 {
                     Logger::getLogger()->warning('The requested method does not exist');
-                    $response = $rpcRequest->produceError(StandardError::RPC_METHOD_NOT_FOUND, 'The requested method does not exist');
-                }
-                else
-                {
-                    try
-                    {
-                        Logger::getLogger()->debug(sprintf('Processing RPC request for method %s', $rpcRequest->getMethod()));
-                        $response = $method->execute($clientRequest, $rpcRequest);
-                        Logger::getLogger()->debug(sprintf('%s method executed successfully', $rpcRequest->getMethod()));
-                    }
-                    catch(StandardRpcException $e)
-                    {
-                        Logger::getLogger()->error('An error occurred while processing the RPC request', $e);
-                        $response = $e->produceError($rpcRequest);
-                    }
-                    catch(Exception $e)
-                    {
-                        Logger::getLogger()->error('An internal error occurred while processing the RPC request', $e);
-                        if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions())
-                        {
-                            $response = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, Utilities::throwableToString($e));
-                        }
-                        else
-                        {
-                            $response = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR);
-                        }
-                    }
+                    $results[] = $rpcRequest->produceError(StandardError::RPC_METHOD_NOT_FOUND, 'The requested method does not exist');
+                    continue;
                 }
 
-                if($response !== null)
+                try
                 {
-                    Logger::getLogger()->debug(sprintf('Producing response for method %s', $rpcRequest->getMethod()));
-                    $results[] = $response->toArray();
+                    if (!$method->checkAccess($clientRequest))
+                    {
+                        $results[] = $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'Insufficient access requirements to invoke the session');
+                        continue;
+                    }
+                }
+                catch (DatabaseOperationException $e)
+                {
+                    Logger::getLogger()->error('Failed to check method access', $e);
+                    $results[] = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, 'Failed to check method access due to an internal server error');
+                    continue;
+                }
+                catch (StandardRpcException $e)
+                {
+                    $results[] = $e->produceError($rpcRequest);
+                    continue;
+                }
+
+                try
+                {
+                    Logger::getLogger()->debug(sprintf('Processing RPC request for method %s', $rpcRequest->getMethod()));
+                    $results[] = $method->execute($clientRequest, $rpcRequest);
+                    Logger::getLogger()->debug(sprintf('%s method executed successfully', $rpcRequest->getMethod()));
+                }
+                catch(StandardRpcException $e)
+                {
+                    Logger::getLogger()->error('An error occurred while processing the RPC request', $e);
+                    $results[] = $e->produceError($rpcRequest);
+                }
+                catch(Exception $e)
+                {
+                    Logger::getLogger()->error('An internal error occurred while processing the RPC request', $e);
+                    if(Configuration::getSecurityConfiguration()->isDisplayInternalExceptions())
+                    {
+                        $results[] = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, Utilities::throwableToString($e));
+                    }
+                    else
+                    {
+                        $results[] = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR);
+                    }
                 }
             }
 
-            $response = null;
-
+            $results = array_map(fn($result) => $result->toArray(), $results);
             if(count($results) == 0)
             {
-                $response = null;
+                http_response_code(204);
+                return;
             }
             elseif(count($results) == 1)
             {
@@ -638,12 +652,6 @@
             else
             {
                 $response = json_encode($results, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            }
-
-            if($response === null)
-            {
-                http_response_code(204);
-                return;
             }
 
             $session = $clientRequest->getSession();

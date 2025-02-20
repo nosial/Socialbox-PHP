@@ -12,6 +12,10 @@
         private int $imageCaptchaExpires;
         private int $peerSyncInterval;
         private int $getContactsLimit;
+        private int $getEncryptionChannelRequestsLimit;
+        private int $getEncryptionChannelsLimit;
+        private int $getEncryptionChannelIncomingLimit;
+        private int $getEncryptionChannelOutgoingLimit;
         private PrivacyState $defaultDisplayPicturePrivacy;
         private PrivacyState $defaultFirstNamePrivacy;
         private PrivacyState $defaultMiddleNamePrivacy;
@@ -43,6 +47,10 @@
             $this->imageCaptchaExpires = $data['image_captcha_expires'];
             $this->peerSyncInterval = $data['peer_sync_interval'];
             $this->getContactsLimit = $data['get_contacts_limit'];
+            $this->getEncryptionChannelRequestsLimit = $data['get_encryption_channel_requests_limit'];
+            $this->getEncryptionChannelsLimit = $data['get_encryption_channels_limit'];
+            $this->getEncryptionChannelIncomingLimit = $data['get_encryption_channel_incoming_limit'];
+            $this->getEncryptionChannelOutgoingLimit = $data['get_encryption_channel_outgoing_limit'];
             $this->defaultDisplayPicturePrivacy = PrivacyState::tryFrom($data['default_display_picture_privacy']) ?? PrivacyState::PRIVATE;
             $this->defaultFirstNamePrivacy = PrivacyState::tryFrom($data['default_first_name_privacy']) ?? PrivacyState::PRIVATE;
             $this->defaultMiddleNamePrivacy = PrivacyState::tryFrom($data['default_middle_name_privacy']) ?? PrivacyState::PRIVATE;
@@ -108,6 +116,46 @@
         public function getGetContactsLimit(): int
         {
             return $this->getContactsLimit;
+        }
+
+        /**
+         * Returns the maximum number of encryption channel requests that can be retrieved in a single request
+         *
+         * @return int
+         */
+        public function getEncryptionChannelRequestsLimit(): int
+        {
+            return $this->getEncryptionChannelRequestsLimit;
+        }
+
+        /**
+         * Returns the maximum number of encryption channels that can be retrieved in a single request
+         *
+         * @return int
+         */
+        public function getEncryptionChannelsLimit(): int
+        {
+            return $this->getEncryptionChannelsLimit;
+        }
+
+        /**
+         * Returns the maximum number of incoming encryption channels that can be retrieved in a single request
+         *
+         * @return int
+         */
+        public function getEncryptionChannelIncomingLimit(): int
+        {
+            return $this->getEncryptionChannelIncomingLimit;
+        }
+
+        /**
+         * Returns the maximum number of outgoing encryption channels that can be retrieved in a single request
+         *
+         * @return int
+         */
+        public function getEncryptionChannelOutgoingLimit(): int
+        {
+            return $this->getEncryptionChannelOutgoingLimit;
         }
 
         /**

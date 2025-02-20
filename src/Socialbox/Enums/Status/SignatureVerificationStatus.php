@@ -5,32 +5,32 @@
     enum SignatureVerificationStatus : string
     {
         /**
-         * The provided signature does not match the expected signature.
+         * Returned if the signature is invalid
          */
         case INVALID = 'INVALID';
 
         /**
-         * The provided signature was valid, but the public key used to verify the signature was not the expected public key.
+         * Returned if one or more of the parameters are invalid resulting in a failure to verify the signature
          */
-        case PUBLIC_KEY_MISMATCH = 'PUBLIC_KEY_MISMATCH';
+        case ERROR = 'ERROR';
 
         /**
-         * The provided signature was valid, but the UUID used to verify the signature was not the expected UUID.
+         * Returned if the signing key is not found
          */
-        case UUID_MISMATCH = 'UUID_MISMATCH';
+        case NOT_FOUND = 'NOT_FOUND';
 
         /**
-         * The provided signature was valid, but the signing key has expired.
+         * Returned if the signature has expired
          */
         case EXPIRED = 'EXPIRED';
 
         /**
-         * The provided signature was valid but unable to be verified against the peer's known public key.
+         * Returned if there was an error while trying to resolve the signature locally or externally
          */
-        case UNVERIFIED = 'UNVERIFIED';
+        case RESOLUTION_ERROR = 'RESOLUTION_ERROR';
 
         /**
-         * The provided signature was valid and verified locally and against the peer's known public key successfully.
+         * Returned if the signature has been successfully verified
          */
         case VERIFIED = 'VERIFIED';
     }

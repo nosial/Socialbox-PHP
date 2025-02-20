@@ -10,6 +10,7 @@
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
+    use Socialbox\Objects\Client\EncryptionChannelSecret;
     use Socialbox\Objects\Client\ExportedSession;
     use Socialbox\Objects\Client\SignatureKeyPair;
     use Socialbox\Objects\KeyPair;
@@ -39,6 +40,7 @@
         private string $sessionUuid;
         private ?string $defaultSigningKey;
         private array $signingKeys;
+        private array $encryptionChannelSecrets;
 
         /**
          * Constructs a new instance with the specified peer address.
@@ -78,6 +80,7 @@
                 $this->serverTransportEncryptionKey = $exportedSession->getServerTransportEncryptionKey();
                 $this->signingKeys = $exportedSession->getSigningKeys();
                 $this->defaultSigningKey = $exportedSession->getDefaultSigningKey();
+                $this->encryptionChannelSecrets = $exportedSession->getEncryptionChannelSecrets();
 
                 // Still solve the server information
                 $this->serverInformation = self::getServerInformation();
@@ -107,6 +110,7 @@
 
             // Set the initial properties
             $this->signingKeys = [];
+            $this->encryptionChannelSecrets = [];
             $this->defaultSigningKey = null;
             $this->identifiedAs = $identifiedAs;
             $this->remoteServer = $server ?? $identifiedAs->getDomain();
@@ -772,6 +776,17 @@
         }
 
         /**
+         * Deletes a signing key from the current instance.
+         *
+         * @param string $uuid The UUID of the signing key to be deleted.
+         * @return void
+         */
+        public function deleteSigningKey(string $uuid): void
+        {
+            unset($this->signingKeys[$uuid]);
+        }
+
+        /**
          * Retrieves the default signing key associated with the current instance.
          *
          * @return SignatureKeyPair|null The default signing key.
@@ -798,6 +813,71 @@
         }
 
         /**
+         * Retrieves the encryption channel keys associated with the current instance.
+         *
+         * @return EncryptionChannelSecret[] The encryption channel keys.
+         */
+        public function getEncryptionChannelSecrets(): array
+        {
+            return $this->encryptionChannelSecrets;
+        }
+
+        /**
+         * Adds a new encryption channel key to the current instance.
+         *
+         * @param EncryptionChannelSecret $key The encryption channel key to be added.
+         * @return void
+         */
+        public function addEncryptionChannelSecret(EncryptionChannelSecret $key): void
+        {
+            $this->encryptionChannelSecrets[$key->getChannelUuid()] = $key;
+        }
+
+        /**
+         * Removes an encryption channel key from the current instance.
+         *
+         * @param string $uuid The UUID of the encryption channel key to be removed.
+         * @return void
+         */
+        public function removeEncryptionChannelKey(string $uuid): void
+        {
+            unset($this->encryptionChannelSecrets[$uuid]);
+        }
+
+        /**
+         * Retrieves the encryption channel key associated with the specified UUID.
+         *
+         * @param string $uuid The UUID of the encryption channel key to be retrieved.
+         * @return EncryptionChannelSecret|null The encryption channel key associated with the UUID, or null if not found.
+         */
+        public function getEncryptionChannelKey(string $uuid): ?EncryptionChannelSecret
+        {
+            return $this->encryptionChannelSecrets[$uuid] ?? null;
+        }
+
+        /**
+         * Checks if an encryption channel key exists with the specified UUID.
+         *
+         * @param string $uuid The UUID of the encryption channel key to check.
+         * @return bool True if the encryption channel key exists, false otherwise.
+         */
+        public function encryptionChannelKeyExists(string $uuid): bool
+        {
+            return isset($this->encryptionChannelSecrets[$uuid]);
+        }
+
+        /**
+         * Deletes an encryption channel key from the current instance.
+         *
+         * @param string $uuid The UUID of the encryption channel key to be deleted.
+         * @return void
+         */
+        public function deleteEncryptionChannelKey(string $uuid): void
+        {
+            unset($this->encryptionChannelSecrets[$uuid]);
+        }
+
+        /**
          * Exports the current session details into an ExportedSession object.
          *
          * @return ExportedSession The exported session containing session-specific details.
@@ -821,7 +901,8 @@
                 'client_transport_encryption_key' => $this->clientTransportEncryptionKey,
                 'server_transport_encryption_key' => $this->serverTransportEncryptionKey,
                 'default_signing_key' => $this->defaultSigningKey,
-                'signing_keys' => array_map(fn(SignatureKeyPair $key) => $key->toArray(), $this->signingKeys)
+                'signing_keys' => array_map(fn(SignatureKeyPair $key) => $key->toArray(), $this->signingKeys),
+                'encryption_channel_secrets' => array_map(fn(EncryptionChannelSecret $key) => $key->toArray(), $this->encryptionChannelSecrets)
             ]);
         }
     }

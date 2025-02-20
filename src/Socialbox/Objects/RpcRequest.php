@@ -88,6 +88,26 @@
         }
 
         /**
+         * Checks if the parameters exist within the RPC request
+         *
+         * @param array $parameters The parameters to check
+         * @param bool $nullAllowed True if the parameter value can be null, False otherwise.
+         * @return bool True if the parameters exist, False otherwise.
+         */
+        public function containsParameters(array $parameters, bool $nullAllowed=false): bool
+        {
+            foreach($parameters as $parameter)
+            {
+                if(!$this->containsParameter($parameter, $nullAllowed))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /**
          * Returns the parameter value from the RPC request
          *
          * @param string $parameter The parameter name to get

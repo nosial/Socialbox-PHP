@@ -166,6 +166,10 @@
             // value that exceeds this limit, the server will use this limit instead.
             // recommendation: 100
             $config->setDefault('policies.get_contacts_limit', 100);
+            $config->setDefault('policies.get_encryption_channel_requests_limit', 100);
+            $config->setDefault('policies.get_encryption_channels_limit', 100);
+            $config->setDefault('policies.get_encryption_channel_incoming_limit', 100);
+            $config->setDefault('policies.get_encryption_channel_outgoing_limit', 100);
 
             // Default privacy states for information fields associated with the peer
             $config->setDefault('policies.default_display_picture_privacy', 'PUBLIC');

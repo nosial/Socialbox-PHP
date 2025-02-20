@@ -170,7 +170,6 @@
          *
          * @return SessionRecord|null Returns the associated SessionRecord if the session UUID exists, or null if no session UUID is set.
          * @throws DatabaseOperationException Thrown if an error occurs while retrieving the session.
-         * @throws StandardRpcException Thrown if the session UUID is invalid.
          */
         public function getSession(): ?SessionRecord
         {
@@ -187,7 +186,6 @@
          *
          * @return PeerDatabaseRecord|null Returns the associated RegisteredPeerRecord if available, or null if no session exists.
          * @throws DatabaseOperationException Thrown if an error occurs while retrieving the peer.
-         * @throws StandardRpcException Thrown if the session UUID is invalid.
          */
         public function getPeer(): ?PeerDatabaseRecord
         {
@@ -199,6 +197,36 @@
             }
 
             return RegisteredPeerManager::getPeer($session->getPeerUuid());
+        }
+
+        /**
+         * Returns the Peer Database Record of the identified peer of the request
+         *
+         * @return PeerDatabaseRecord|null The Peer Database Record of the identified peer or null if not set
+         * @throws DatabaseOperationException Thrown if an error occurs while retrieving the peer.
+         */
+        public function getIdentifiedAsPeer(): ?PeerDatabaseRecord
+        {
+            $identifiedAs = $this->getIdentifyAs();
+            if($identifiedAs === null)
+            {
+                return null;
+            }
+
+            return RegisteredPeerManager::getPeerByAddress($identifiedAs);
+        }
+
+        /**
+         * Returns whether the request is external or not. As in, if the request is coming from server rather than
+         * a client.
+         *
+         * @return bool True if the request is external, false otherwise.
+         * @throws DatabaseOperationException Thrown if an error occurs while retrieving the peer.
+         * @throws StandardRpcException Thrown if the session UUID is invalid.
+         */
+        public function isExternal(): bool
+        {
+            return $this->getPeer()->isExternal();
         }
 
         /**

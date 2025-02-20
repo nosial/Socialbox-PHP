@@ -34,8 +34,8 @@
 
             try
             {
-                $statement = Database::getConnection()->prepare('SELECT COUNT(*) FROM peers WHERE username=?');
-                $statement->bindParam(1, $username);
+                $statement = Database::getConnection()->prepare("SELECT COUNT(*) FROM peers WHERE username=:username AND server='host'");
+                $statement->bindParam(':username', $username);
                 $statement->execute();
 
                 $result = $statement->fetchColumn();
@@ -163,9 +163,9 @@
 
             try
             {
-                $statement = Database::getConnection()->prepare('SELECT * FROM peers WHERE username=? AND server=?');
+                $statement = Database::getConnection()->prepare('SELECT * FROM peers WHERE username=:username AND server=:server');
                 $username = $address->getUsername();
-                $statement->bindParam(1, $username);
+                $statement->bindParam(':username', $username);
                 $server = $address->getDomain();
 
                 // Convert to 'host' if the domain is the same as the server's host
@@ -174,7 +174,7 @@
                     $server = 'host';
                 }
 
-                $statement->bindParam(2, $server);
+                $statement->bindParam(':server', $server);
                 $statement->execute();
 
                 $result = $statement->fetch(PDO::FETCH_ASSOC);

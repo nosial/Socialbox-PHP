@@ -29,6 +29,10 @@
          * @var SignatureKeyPair[]
          */
         private array $signingKeys;
+        /**
+         * @var EncryptionChannelSecret[]
+         */
+        private array $encryptionChannelSecrets;
 
         /**
          * Constructor method to initialize class properties from the provided data array.
@@ -62,6 +66,7 @@
             $this->serverTransportEncryptionKey = $data['server_transport_encryption_key'];
             $this->defaultSigningKey = $data['default_signing_key'] ?? null;
             $this->signingKeys = array_map(fn($key) => SignatureKeyPair::fromArray($key), $data['signing_keys']);
+            $this->encryptionChannelSecrets = array_map(fn($key) => EncryptionChannelSecret::fromArray($key), $data['encryption_channel_secrets']);
         }
 
         /**
@@ -235,6 +240,60 @@
         }
 
         /**
+         * Retrieves the encrypted channel keys associated with the current instance.
+         *
+         * @return EncryptionChannelSecret[] The encrypted channel keys.
+         */
+        public function getEncryptionChannelSecrets(): array
+        {
+            return $this->encryptionChannelSecrets;
+        }
+
+        /**
+         * Retrieves the signing key associated with the provided UUID.
+         *
+         * @param string $uuid The UUID of the signing key.
+         * @return SignatureKeyPair|null The signing key.
+         */
+        public function getEncryptionChannelSecret(string $uuid): ?EncryptionChannelSecret
+        {
+            return $this->encryptionChannelSecrets[$uuid] ?? null;
+        }
+
+        /**
+         * Adds a new signing key to the current instance.
+         *
+         * @param EncryptionChannelSecret $key The signing key to add.
+         * @return void
+         */
+        public function addEncryptionChannelSecret(EncryptionChannelSecret $key): void
+        {
+            $this->encryptionChannelSecrets[$key->getChannelUuid()] = $key;
+        }
+
+        /**
+         * Removes the signing key associated with the provided UUID.
+         *
+         * @param string $uuid The UUID of the signing key to remove.
+         * @return void
+         */
+        public function removeEncryptionChannelSecret(string $uuid): void
+        {
+            unset($this->encryptionChannelSecrets[$uuid]);
+        }
+
+        /**
+         * Checks if a signing key exists for the provided UUID.
+         *
+         * @param string $uuid The UUID of the signing key.
+         * @return bool True if the signing key exists, false otherwise.
+         */
+        public function encryptionChannelSecretExists(string $uuid): bool
+        {
+            return isset($this->encryptionChannelSecrets[$uuid]);
+        }
+
+        /**
          * @inheritDoc
          */
         public function toArray(): array
@@ -256,7 +315,8 @@
                 'client_transport_encryption_key' => $this->clientTransportEncryptionKey,
                 'server_transport_encryption_key' => $this->serverTransportEncryptionKey,
                 'default_signing_key' => $this->defaultSigningKey,
-                'signing_keys' => array_map(fn($key) => $key->toArray(), $this->signingKeys)
+                'signing_keys' => array_map(fn($key) => $key->toArray(), $this->signingKeys),
+                'encryption_channel_secrets' => array_map(fn($key) => $key->toArray(), $this->encryptionChannelSecrets),
             ];
         }
 

@@ -16,8 +16,11 @@
     use Socialbox\Classes\StandardMethods\Core\GetSessionState;
     use Socialbox\Classes\StandardMethods\Core\Ping;
     use Socialbox\Classes\StandardMethods\Core\ResolvePeer;
-    use Socialbox\Classes\StandardMethods\Core\ResolvePeerSignature;
-    use Socialbox\Classes\StandardMethods\Core\VerifyPeerSignature;
+    use Socialbox\Classes\StandardMethods\Core\ResolveSignature;
+    use Socialbox\Classes\StandardMethods\Core\VerifySignature;
+    use Socialbox\Classes\StandardMethods\Encryption\EncryptionAcceptChannel;
+    use Socialbox\Classes\StandardMethods\Encryption\EncryptionCloseChannel;
+    use Socialbox\Classes\StandardMethods\Encryption\EncryptionCreateChannel;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptTermsOfService;
@@ -127,14 +130,6 @@
         // MISC
         case GET_STATE = 'getState';
 
-        // End-to-End channels for communication purposes
-        case END_TO_END_CREATE_REQUEST = 'e2eCreateRequest';
-        case END_TO_END_GET_REQUESTS = 'e2eGetRequests';
-        case END_TO_END_ACCEPT_REQUEST = 'e2eAcceptRequest';
-        case END_TO_END_REJECT_REQUEST = 'e2eRejectRequest';
-        case END_TO_END_GET_CHANNELS = 'e2eGetChannels';
-        case END_TO_END_CLOSE_CHANNEL = 'e2eCloseChannel';
-
         // Messaging methods
         case MESSAGES_GET_INBOX = 'messagesGetInbox';
         case MESSAGES_GET_UNTRUSTED = 'messagesGetUntrusted';
@@ -189,8 +184,8 @@
                 self::GET_SESSION_STATE => GetSessionState::execute($request, $rpcRequest),
                 self::PING => Ping::execute($request, $rpcRequest),
                 self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
-                self::RESOLVE_PEER_SIGNATURE => ResolvePeerSignature::execute($request, $rpcRequest),
-                self::VERIFY_PEER_SIGNATURE => VerifyPeerSignature::execute($request, $rpcRequest),
+                self::RESOLVE_PEER_SIGNATURE => ResolveSignature::execute($request, $rpcRequest),
+                self::VERIFY_PEER_SIGNATURE => VerifySignature::execute($request, $rpcRequest),
 
                 // Server Document Methods
                 self::ACCEPT_PRIVACY_POLICY => AcceptPrivacyPolicy::execute($request, $rpcRequest),
@@ -235,18 +230,13 @@
          * Checks if the access method is allowed for the given client request.
          *
          * @param ClientRequest $clientRequest The client request instance to check access against.
-         * @return void
          * @throws DatabaseOperationException If an error occurs while checking the database for session information.
          * @throws StandardRpcException If the method is not allowed for the given client request.
+         * @return bool
          */
-        public function checkAccess(ClientRequest $clientRequest): void
+        public function checkAccess(ClientRequest $clientRequest): bool
         {
-            if(in_array($this, self::getAllowedMethods($clientRequest)))
-            {
-                return;
-            }
-
-            throw new StandardRpcException(StandardError::METHOD_NOT_ALLOWED->getMessage(), StandardError::METHOD_NOT_ALLOWED);
+            return in_array($this, self::getAllowedMethods($clientRequest));
         }
 
         /**

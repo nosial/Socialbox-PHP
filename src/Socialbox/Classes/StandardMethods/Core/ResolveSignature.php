@@ -5,6 +5,7 @@
     use Exception;
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
+    use Socialbox\Classes\Validator;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
@@ -16,7 +17,7 @@
     use Socialbox\Socialbox;
     use Symfony\Component\Uid\Uuid;
 
-    class ResolvePeerSignature extends Method
+    class ResolveSignature extends Method
     {
 
         /**
@@ -30,30 +31,17 @@
                 throw new MissingRpcArgumentException('peer');
             }
 
-            if(!$rpcRequest->containsParameter('uuid'))
+            if(!$rpcRequest->containsParameter('signature_uuid'))
             {
-                throw new MissingRpcArgumentException('uuid');
+                throw new MissingRpcArgumentException('signature_uuid');
+            }
+            elseif(!Validator::validateUuid($rpcRequest->getParameter('signature_uuid')))
+            {
+                throw new InvalidRpcArgumentException('signature_uuid', 'Invalid UUID V4');
             }
 
-            try
-            {
-                $uuid = Uuid::fromString($rpcRequest->getParameter('uuid'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException('uuid', $e);
-            }
-
-            // Parse the peer address
-            try
-            {
-                $peerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException('peer', $e);
-            }
-
-            return $rpcRequest->produceResponse(Socialbox::resolvePeerSignature($peerAddress, $uuid->toRfc4122()));
+            return $rpcRequest->produceResponse(Socialbox::resolvePeerSignature(
+                $rpcRequest->getParameter('peer'), $rpcRequest->getParameter('signature_uuid')
+            ));
         }
     }

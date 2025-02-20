@@ -83,7 +83,7 @@
                 return false;
             }
 
-            return $this->username === ReservedUsernames::HOST->value;
+            return $this->domain !== Configuration::getInstanceConfiguration()->getDomain();
         }
 
         /**
