@@ -2,11 +2,12 @@
 
     namespace Socialbox\Enums\Status;
 
-    enum EncryptionChannelState : string
+    enum EncryptionChannelStatus : string
     {
         case AWAITING_RECEIVER = 'AWAITING_RECEIVER';
+        case SERVER_REJECTED = 'SERVER_REJECTED';
+        case PEER_REJECTED = 'PEER_REJECTED';
         case ERROR = 'ERROR';
-        case DECLINED = 'DECLINED';
         case OPENED = 'OPENED';
         case CLOSED = 'CLOSED';
     }
