@@ -373,37 +373,37 @@
          * @param EncryptionMessageRecipient $recipient The recipient of the message
          * @param string $checksum The SHA512 checksum of the decrypted data content
          * @param string $data The encrypted data of the message
-         * @param string|null $uuid Optional. The UUID of the message, used for server-to-server replication
-         * @param int|null $timestamp Optional. The Timestamp of the message, used for server-to-server replication
+         * @param string|null $messageUuid Optional. The UUID of the message, used for server-to-server replication
+         * @param int|null $messageTimestamp Optional. The Timestamp of the message, used for server-to-server replication
          * @return string Returns the UUID of the message, if $uuid was provided then it's value is returned.
          * @throws DatabaseOperationException Thrown if there was a database error while inserting the record
          */
         public static function sendMessage(string  $channelUuid, EncryptionMessageRecipient $recipient, string $checksum, string $data,
-                                           ?string $uuid=null, ?int $timestamp=null): string
+                                           ?string $messageUuid=null, ?int $messageTimestamp=null): string
         {
-            if($uuid === null)
+            if($messageUuid === null)
             {
-                $uuid = Uuid::v4()->toRfc4122();
+                $messageUuid = Uuid::v4()->toRfc4122();
             }
-            elseif(!Validator::validateUuid($uuid))
+            elseif(!Validator::validateUuid($messageUuid))
             {
                 throw new InvalidArgumentException('Invalid UUID V4 of the message');
             }
 
-            if($timestamp === null)
+            if($messageTimestamp === null)
             {
-                $timestamp = time();
+                $messageTimestamp = time();
             }
 
             try
             {
                 $stmt = Database::getConnection()->prepare('INSERT INTO encryption_channels_com (uuid, channel_uuid, recipient, checksum, data, timestamp) VALUES (:uuid, :channel_uuid, :recipient, :checksum, :data, :timestamp)');
-                $stmt->bindParam(':uuid', $uuid);
+                $stmt->bindParam(':uuid', $messageUuid);
                 $stmt->bindParam(':channel_uuid', $channelUuid);
                 $stmt->bindParam(':recipient', $recipient);
                 $stmt->bindParam(':checksum', $checksum);
                 $stmt->bindParam(':data', $data);
-                $stmt->bindParam(':timestamp', $timestamp);
+                $stmt->bindParam(':timestamp', $messageTimestamp);
 
                 $stmt->execute();
             }
@@ -412,7 +412,7 @@
                 throw new DatabaseOperationException('Failed to send data through the encryption channel', $e);
             }
 
-            return $uuid;
+            return $messageUuid;
         }
 
         /**
