@@ -18,8 +18,8 @@
         case SIGNING_KEYS = 'signing_keys.sql';
         case EXTERNAL_SESSIONS = 'external_sessions.sql';
 
-        case ENCRYPTED_CHANNELS = 'encrypted_channels.sql';
-        case CHANNEL_COM = 'channel_com.sql';
+        case ENCRYPTION_CHANNELS = 'encryption_channels.sql';
+        case ENCRYPTION_CHANNELS_COM = 'encryption_channels_com.sql';
 
         case CONTACT_KNOWN_KEYS = 'contact_known_keys.sql';
 
@@ -46,8 +46,8 @@
                 self::SIGNING_KEYS,
                 self::EXTERNAL_SESSIONS => 2,
 
-                self::ENCRYPTED_CHANNELS,
-                self::CHANNEL_COM,
+                self::ENCRYPTION_CHANNELS,
+                self::ENCRYPTION_CHANNELS_COM,
                 self::CONTACT_KNOWN_KEYS => 3,
             };
         }
