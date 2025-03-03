@@ -181,11 +181,25 @@
          * @param string|PeerAddress $requester The requester of the message
          * @return EncryptionMessageRecipient|null The recipient of the message, or null if the requester is not a participant
          */
-        public function determineRecipient(string|PeerAddress $requester): ?EncryptionMessageRecipient
+        public function determineRecipient(string|PeerAddress $requester, bool $reverse=false): ?EncryptionMessageRecipient
         {
             if($requester instanceof PeerAddress)
             {
                 $requester = $requester->getAddress();
+            }
+
+            if($reverse)
+            {
+                if($this->callingPeerAddress->getAddress() === $requester)
+                {
+                    return EncryptionMessageRecipient::SENDER;
+                }
+                elseif($this->receivingPeerAddress->getAddress() === $requester)
+                {
+                    return EncryptionMessageRecipient::RECEIVER;
+                }
+
+                return null;
             }
 
             if($this->callingPeerAddress->getAddress() === $requester)
@@ -206,7 +220,7 @@
          * @param string|PeerAddress $sender The sender of the message
          * @return PeerAddress|null The receiver of the message, or null if the sender is not a participant
          */
-        public function determineReceiver(string|PeerAddress $sender): ?PeerAddress
+        public function  determineReceiver(string|PeerAddress $sender): ?PeerAddress
         {
             if($sender instanceof PeerAddress)
             {
