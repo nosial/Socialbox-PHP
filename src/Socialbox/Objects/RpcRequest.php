@@ -74,37 +74,37 @@
          * Checks if the parameter exists within the RPC request
          *
          * @param string $parameter The parameter to check
-         * @param bool $nullAllowed True if the parameter value can be null, False otherwise.
+         * @param bool $strict True if the parameter value cannot be null (or empty), False otherwise.
          * @return bool True if the parameter exists, False otherwise.
          */
-        public function containsParameter(string $parameter, bool $nullAllowed=false): bool
+        public function containsParameter(string $parameter, bool $strict=true): bool
         {
-            if(!$nullAllowed)
+            if($strict)
             {
-                return isset($this->parameters[$parameter]) && $this->parameters[$parameter] !== null;
-            }
-
-            return isset($this->parameters[$parameter]);
-        }
-
-        /**
-         * Checks if the parameters exist within the RPC request
-         *
-         * @param array $parameters The parameters to check
-         * @param bool $nullAllowed True if the parameter value can be null, False otherwise.
-         * @return bool True if the parameters exist, False otherwise.
-         */
-        public function containsParameters(array $parameters, bool $nullAllowed=false): bool
-        {
-            foreach($parameters as $parameter)
-            {
-                if(!$this->containsParameter($parameter, $nullAllowed))
+                if(!isset($this->parameters[$parameter]))
                 {
                     return false;
                 }
+
+                if(is_string($this->parameters[$parameter]) && strlen($this->parameters[$parameter]) == 0)
+                {
+                    return false;
+                }
+
+                if(is_array($this->parameters[$parameter]) && count($this->parameters[$parameter]) == 0)
+                {
+                    return false;
+                }
+
+                if(is_null($this->parameters[$parameter]))
+                {
+                    return false;
+                }
+
+                return true;
             }
 
-            return true;
+            return isset($this->parameters[$parameter]);
         }
 
         /**
