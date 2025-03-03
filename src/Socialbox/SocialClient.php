@@ -16,12 +16,14 @@
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
+    use Socialbox\Objects\Client\EncryptionChannelInstance;
     use Socialbox\Objects\Client\EncryptionChannelSecret;
     use Socialbox\Objects\Client\ExportedSession;
     use Socialbox\Objects\Client\SignatureKeyPair;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
     use Socialbox\Objects\Standard\Contact;
+    use Socialbox\Objects\Standard\EncryptionChannel;
     use Socialbox\Objects\Standard\ImageCaptchaVerification;
     use Socialbox\Objects\Standard\InformationFieldState;
     use Socialbox\Objects\Standard\Peer;
@@ -74,6 +76,113 @@
             ]));
 
             return $uuid;
+        }
+
+        /**
+         * Creates a new encryption channel with the given peer, generates a new encryption key pair and sends the public
+         * key to the receiving peer. The private key is stored locally and is never sent to the server.
+         *
+         * @param PeerAddress|string $receivingPeer The address of the peer to create the channel with
+         * @return string The UUID of the encryption channel
+         * @throws CryptographyException Thrown if there was an error while generating the encryption key pair
+         */
+        public function newEncryptionChannel(string|PeerAddress $receivingPeer): string
+        {
+            if($receivingPeer instanceof PeerAddress)
+            {
+                $receivingPeer = $receivingPeer->getAddress();
+            }
+
+            $encryptionKeyPair = Cryptography::generateEncryptionKeyPair();
+            $encryptionChannelUuid = $this->encryptionCreateChannel($receivingPeer, $encryptionKeyPair->getPublicKey());
+            $this->addEncryptionChannelSecret(new EncryptionChannelSecret([
+                'channel_uuid' => $encryptionChannelUuid,
+                'receiver' => $receivingPeer,
+                'local_public_encryption_key' => $encryptionKeyPair->getPublicKey(),
+                'local_private_encryption_key' => $encryptionKeyPair->getPrivateKey()
+            ]));
+
+            return $encryptionChannelUuid;
+        }
+
+        /**
+         * Waits for the encryption channel to be accepted by the receiving peer, returns True if the channel was accepted
+         * or False if the channel was not accepted within the timeout period.
+         *
+         * @param string $channelUuid
+         * @param int|null $timeout
+         * @return bool
+         */
+        public function waitForEncryptionChannel(string $channelUuid, ?int $timeout=30): bool
+        {
+            if($this->getEncryptionChannelSecret($channelUuid) === null)
+            {
+                throw new InvalidArgumentException('Encryption Channel was not created with newEncryptionChannel() or defined with addEncryptionChannelSecret()');
+            }
+
+            $start = time();
+            while(true)
+            {
+                if($timeout !== null && time() - $start > $timeout)
+                {
+                    break;
+                }
+
+                $encryptionChannel = $this->encryptionGetChannel($channelUuid);
+                if($encryptionChannel->getReceivingPublicEncryptionKey() !== null)
+                {
+                    $this->getEncryptionChannelSecret($channelUuid)->setReceivingPublicEncryptionKey($encryptionChannel->getReceivingPublicEncryptionKey());
+                    return true;
+                }
+
+                sleep(1);
+            }
+
+            return false;
+        }
+
+        /**
+         * Accepts an encryption channel with the given UUID, generates a new encryption key pair and sends the public key
+         * to the calling peer. The private key is stored locally and is never sent to the server.
+         *
+         * @param string $channelUuid The UUID of the encryption channel to accept
+         * @return bool Returns True if the channel was accepted
+         * @throws CryptographyException Thrown if there was an error while generating the encryption key pair
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function acceptEncryptionChannel(string $channelUuid): bool
+        {
+            $encryptionChannel = $this->encryptionGetChannel($channelUuid);
+            $encryptionKeyPair = Cryptography::generateEncryptionKeyPair();
+            $this->encryptionAcceptChannel($channelUuid, $encryptionKeyPair->getPublicKey(), $encryptionChannel->getRecipient());
+
+            $this->addEncryptionChannelSecret(new EncryptionChannelSecret([
+                'channel_uuid' => $channelUuid,
+                'receiver' => $encryptionChannel->getCallingPeer(),
+                'local_public_encryption_key' => $encryptionKeyPair->getPublicKey(),
+                'local_private_encryption_key' => $encryptionKeyPair->getPrivateKey(),
+                'receiving_public_encryption_key' => $encryptionChannel->getCallingPublicEncryptionKey()
+            ]));
+
+            return true;
+        }
+
+        /**
+         * Creates a new EncryptionChannelInstance object for the given channel UUID.
+         *
+         * @param string $channelUuid The UUID of the encryption channel
+         * @return EncryptionChannelInstance The EncryptionChannelInstance object
+         * @throws InvalidArgumentException Thrown if the encryption channel secret does not exist
+         */
+        public function createEncryptionChannelInstance(string $channelUuid): EncryptionChannelInstance
+        {
+            if($this->getEncryptionChannelSecret($channelUuid) === null)
+            {
+                throw new InvalidArgumentException('Encryption Channel was not created with newEncryptionChannel() or defined with addEncryptionChannelSecret()');
+            }
+
+            $encryptionChannelSecret = $this->getEncryptionChannelSecret($channelUuid);
+            return new EncryptionChannelInstance($this, $encryptionChannelSecret);
         }
 
         /**
@@ -356,7 +465,7 @@
          * @return Signature|null The signature as a Signature object, or null if the signature does not exist
          * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function resolvePeerSignature(PeerAddress|string $peer, string $signatureUuid): ?Signature
+        public function resolveSignature(PeerAddress|string $peer, string $signatureUuid): ?Signature
         {
             if($peer instanceof PeerAddress)
             {
@@ -364,7 +473,7 @@
             }
 
             $result = $this->sendRequest(
-                new RpcRequest(StandardMethods::RESOLVE_PEER_SIGNATURE, parameters: [
+                new RpcRequest(StandardMethods::RESOLVE_SIGNATURE, parameters: [
                     'peer' => $peer,
                     'signature_uuid' => $signatureUuid
                 ])
@@ -381,7 +490,7 @@
         /**
          * Verifies signature authenticity by resolving the signature UUID and comparing the given parameters with the
          * signature data, returns True if the signature is verified. This is a decentralized method, meaning that any
-         * signature UUID can be verified for as longas the $peer parameter is the address of the peer that created the
+         * signature UUID can be verified for as long as the $peer parameter is the address of the peer that created the
          * signature.
          *
          * @param PeerAddress|string $peer The address of the peer to verify the signature for
@@ -393,7 +502,7 @@
          * @return SignatureVerificationStatus the status of the verification
          * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function verifyPeerSignature(PeerAddress|string $peer, string $signatureUuid, string $signaturePublicKey, string $signature, string $sha512, ?int $signatureTime=null): SignatureVerificationStatus
+        public function verifySignature(PeerAddress|string $peer, string $signatureUuid, string $signaturePublicKey, string $signature, string $sha512, ?int $signatureTime=null): SignatureVerificationStatus
         {
             if($peer instanceof PeerAddress)
             {
@@ -401,15 +510,115 @@
             }
 
             return SignatureVerificationStatus::tryFrom($this->sendRequest(
-                new RpcRequest(StandardMethods::VERIFY_PEER_SIGNATURE, parameters: [
+                new RpcRequest(StandardMethods::VERIFY_SIGNATURE, parameters: [
                     'peer' => $peer,
                     'signature_uuid' => $signatureUuid,
-                    'signature_public_key' => $signaturePublicKey,
                     'signature' => $signature,
                     'sha512' => $sha512,
                     'signature_time' => $signatureTime
                 ])
-            )->getResponse()->getResult()) ?? SignatureVerificationStatus::INVALID;
+            )->getResponse()->getResult()) ?? SignatureVerificationStatus::ERROR;
+        }
+
+        public function encryptionAcceptChannel(string $channelUuid, string $publicEncryptionKey, PeerAddress|string|null $identifiedAs=null): bool
+        {
+
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_ACCEPT_CHANNEL, parameters: [
+                    'channel_uuid' => $channelUuid,
+                    'public_encryption_key' => $publicEncryptionKey
+                ]), true, $identifiedAs
+            )->getResponse()->getResult();
+        }
+
+        public function encryptionChannelExists(string $channelUuid): bool
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_CHANNEL_EXISTS, parameters: [
+                    'channel_uuid' => $channelUuid
+                ])
+            )->getResponse()->getResult();
+        }
+
+        public function encryptionChannelSend(string $channelUuid, string $checksum, string $data, PeerAddress|string|null $identifiedAs=null, ?string $messageUuid=null, ?int $timestamp=null): string
+        {
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_CHANNEL_SEND, parameters: [
+                    'channel_uuid' => $channelUuid,
+                    'checksum' => $checksum,
+                    'data' => $data,
+                    'uuid' => $messageUuid,
+                    'timestamp' => $timestamp
+                ]), true, $identifiedAs
+            )->getResponse()->getResult();
+        }
+
+        public function encryptionCloseChannel(string $channelUuid, PeerAddress|string|null $identifiedAs=null): bool
+        {
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_CLOSE_CHANNEL, parameters: [
+                    'channel_uuid' => $channelUuid
+                ]), true, $identifiedAs
+            )->getResponse()->getResult();
+        }
+
+        public function encryptionCreateChannel(string|PeerAddress $receivingPeer, string $publicEncryptionKey, ?string $channelUuid=null, PeerAddress|string|null $identifiedAs=null): string
+        {
+            if($receivingPeer instanceof PeerAddress)
+            {
+                $receivingPeer = $receivingPeer->getAddress();
+            }
+
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_CREATE_CHANNEL, parameters: [
+                    'receiving_peer' => $receivingPeer,
+                    'public_encryption_key' => $publicEncryptionKey,
+                    'channel_uuid' => $channelUuid
+                ]), true, $identifiedAs
+            )->getResponse()->getResult();
+        }
+
+        public function encryptionDeclineChannel(string $channelUuid, PeerAddress|string|null $identifiedAs=null): bool
+        {
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_DECLINE_CHANNEL, parameters: [
+                    'channel_uuid' => $channelUuid
+                ]), true, $identifiedAs
+            )->getResponse()->getResult();
+        }
+
+        public function encryptionGetChannel(string $channelUuid): EncryptionChannel
+        {
+            return new EncryptionChannel($this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_GET_CHANNEL, parameters: [
+                    'channel_uuid' => $channelUuid
+                ])
+            )->getResponse()->getResult());
         }
 
         /**

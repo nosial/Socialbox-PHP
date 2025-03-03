@@ -18,9 +18,6 @@
     use Socialbox\Classes\StandardMethods\Core\ResolvePeer;
     use Socialbox\Classes\StandardMethods\Core\ResolveSignature;
     use Socialbox\Classes\StandardMethods\Core\VerifySignature;
-    use Socialbox\Classes\StandardMethods\Encryption\EncryptionAcceptChannel;
-    use Socialbox\Classes\StandardMethods\Encryption\EncryptionCloseChannel;
-    use Socialbox\Classes\StandardMethods\Encryption\EncryptionCreateChannel;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptTermsOfService;
@@ -77,8 +74,17 @@
         case GET_SESSION_STATE = 'getSessionState';
         case PING = 'ping';
         case RESOLVE_PEER = 'resolvePeer';
-        case RESOLVE_PEER_SIGNATURE = 'resolvePeerSignature';
-        case VERIFY_PEER_SIGNATURE = 'verifyPeerSignature';
+        case RESOLVE_SIGNATURE = 'resolveSignature';
+        case VERIFY_SIGNATURE = 'verifySignature';
+
+        // Encryption Channel Methods
+        case ENCRYPTION_ACCEPT_CHANNEL = 'encryptionAcceptChannel';
+        case ENCRYPTION_CHANNEL_EXISTS = 'encryptionChannelExists';
+        case ENCRYPTION_CHANNEL_SEND = 'encryptionChannelSend';
+        case ENCRYPTION_CLOSE_CHANNEL = 'encryptionCloseChannel';
+        case ENCRYPTION_CREATE_CHANNEL = 'encryptionCreateChannel';
+        case ENCRYPTION_DECLINE_CHANNEL = 'encryptionDeclineChannel';
+        case ENCRYPTION_GET_CHANNEL = 'encryptionGetChannel';
 
         // ServerDocument Methods
         case ACCEPT_COMMUNITY_GUIDELINES = 'acceptCommunityGuidelines';
@@ -184,8 +190,8 @@
                 self::GET_SESSION_STATE => GetSessionState::execute($request, $rpcRequest),
                 self::PING => Ping::execute($request, $rpcRequest),
                 self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
-                self::RESOLVE_PEER_SIGNATURE => ResolveSignature::execute($request, $rpcRequest),
-                self::VERIFY_PEER_SIGNATURE => VerifySignature::execute($request, $rpcRequest),
+                self::RESOLVE_SIGNATURE => ResolveSignature::execute($request, $rpcRequest),
+                self::VERIFY_SIGNATURE => VerifySignature::execute($request, $rpcRequest),
 
                 // Server Document Methods
                 self::ACCEPT_PRIVACY_POLICY => AcceptPrivacyPolicy::execute($request, $rpcRequest),
@@ -457,8 +463,8 @@
                 self::GET_SESSION_STATE,
                 self::PING,
                 self::RESOLVE_PEER,
-                self::RESOLVE_PEER_SIGNATURE,
-                self::VERIFY_PEER_SIGNATURE
+                self::RESOLVE_SIGNATURE,
+                self::VERIFY_SIGNATURE
             ];
         }
 
