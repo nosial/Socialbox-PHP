@@ -625,6 +625,11 @@
                     Logger::getLogger()->error('An error occurred while processing the RPC request', $e);
                     $results[] = $e->produceError($rpcRequest);
                 }
+                catch(InvalidArgumentException $e)
+                {
+                    Logger::getLogger()->error('Caught invalid argument exception', $e);
+                    $results[] = $rpcRequest->produceError(StandardError::RPC_INVALID_ARGUMENTS, $e->getMessage());
+                }
                 catch(Exception $e)
                 {
                     Logger::getLogger()->error('An internal error occurred while processing the RPC request', $e);
@@ -634,7 +639,7 @@
                     }
                     else
                     {
-                        $results[] = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR);
+                        $results[] = $rpcRequest->produceError(StandardError::INTERNAL_SERVER_ERROR, 'Uncaught Exception');
                     }
                 }
             }
@@ -931,7 +936,7 @@
 
             try
             {
-                return $client->resolvePeerSignature($peerAddress, $signatureUuid);
+                return $client->resolveSignature($peerAddress, $signatureUuid);
             }
             catch(RpcException $e)
             {
