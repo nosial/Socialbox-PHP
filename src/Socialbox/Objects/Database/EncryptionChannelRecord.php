@@ -6,8 +6,11 @@
     use DateTime;
     use InvalidArgumentException;
     use Socialbox\Enums\Status\EncryptionChannelStatus;
+    use Socialbox\Enums\Types\EncryptionMessageRecipient;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\EncryptionChannel;
+    use Socialbox\Objects\Standard\Peer;
 
     class EncryptionChannelRecord implements SerializableInterface
     {
@@ -134,6 +137,110 @@
         public function getCreated(): DateTime
         {
             return $this->created;
+        }
+
+        /**
+         * Checks if the given peer address is a participant in the encryption channel
+         *
+         * @param string|PeerAddress $peerAddress The peer address to check
+         * @return bool True if the peer address is a participant in the encryption channel
+         */
+        public function isParticipant(string|PeerAddress $peerAddress): bool
+        {
+            if($peerAddress instanceof PeerAddress)
+            {
+                $peerAddress = $peerAddress->getAddress();
+            }
+
+            return $this->callingPeerAddress->getAddress() === $peerAddress || $this->receivingPeerAddress->getAddress() === $peerAddress;
+        }
+
+        /**
+         * Returns the external peer address of the encryption channel
+         *
+         * @return PeerAddress|null The external peer address of the encryption channel, or null if there is none
+         */
+        public function getExternalPeer(): ?PeerAddress
+        {
+            if($this->callingPeerAddress->isExternal())
+            {
+                return $this->callingPeerAddress;
+            }
+
+            if($this->receivingPeerAddress->isExternal())
+            {
+                return $this->receivingPeerAddress;
+            }
+
+            return null;
+        }
+
+        /**
+         * Determines the recipient of the encryption message based on the requester
+         *
+         * @param string|PeerAddress $requester The requester of the message
+         * @return EncryptionMessageRecipient|null The recipient of the message, or null if the requester is not a participant
+         */
+        public function determineRecipient(string|PeerAddress $requester): ?EncryptionMessageRecipient
+        {
+            if($requester instanceof PeerAddress)
+            {
+                $requester = $requester->getAddress();
+            }
+
+            if($this->callingPeerAddress->getAddress() === $requester)
+            {
+                return EncryptionMessageRecipient::RECEIVER;
+            }
+            elseif($this->receivingPeerAddress->getAddress() === $requester)
+            {
+                return EncryptionMessageRecipient::SENDER;
+            }
+
+            return null;
+        }
+
+        /**
+         * Determines the receiver of the encryption message based on the sender
+         *
+         * @param string|PeerAddress $sender The sender of the message
+         * @return PeerAddress|null The receiver of the message, or null if the sender is not a participant
+         */
+        public function determineReceiver(string|PeerAddress $sender): ?PeerAddress
+        {
+            if($sender instanceof PeerAddress)
+            {
+                $sender = $sender->getAddress();
+            }
+
+            if($this->callingPeerAddress->getAddress() === $sender)
+            {
+                return $this->receivingPeerAddress;
+            }
+            elseif($this->receivingPeerAddress->getAddress() === $sender)
+            {
+                return $this->callingPeerAddress;
+            }
+
+            return null;
+        }
+
+        /**
+         * Returns a standard representation object representation of this internal database object
+         *
+         * @return EncryptionChannel
+         */
+        public function toStandard(): EncryptionChannel
+        {
+            return new EncryptionChannel([
+                'uuid' => $this->uuid,
+                'status' => $this->status->value,
+                'calling_peer' => $this->callingPeerAddress->getAddress(),
+                'calling_public_encryption_key' => $this->callingPublicEncryptionKey,
+                'receiving_peer' => $this->receivingPeerAddress->getAddress(),
+                'receiving_public_encryption_key' => $this->receivingPublicEncryptionKey,
+                'created' => $this->created
+            ]);
         }
 
         /**
