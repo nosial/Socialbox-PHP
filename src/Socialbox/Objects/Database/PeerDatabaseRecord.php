@@ -192,7 +192,7 @@
          */
         public function isExternal(): bool
         {
-            return $this->username === 'host' && $this->server !== Configuration::getInstanceConfiguration()->getDomain();
+            return $this->username === 'host' || $this->server !== Configuration::getInstanceConfiguration()->getDomain();
         }
 
         /**
