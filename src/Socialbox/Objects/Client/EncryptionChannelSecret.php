@@ -8,12 +8,10 @@
     class EncryptionChannelSecret implements SerializableInterface
     {
         private string $channelUuid;
-        private PeerAddress $receiver;
-        private string $signatureUuid;
-        private string $publicEncryptionKey;
-        private string $privateEncryptionKey;
-        private string $transportEncryptionAlgorithm;
-        private ?string $transportEncryptionKey;
+        private PeerAddress $recipient;
+        private string $localPublicEncryptionKey;
+        private string $localPrivateEncryptionKey;
+        private ?string $receivingPublicEncryptionKey;
 
         /**
          * Public constructor
@@ -22,19 +20,17 @@
          */
         public function __construct(array $data)
         {
-            $this->channelUuid = $data['uuid'];
-            $this->receiver = PeerAddress::fromAddress($data['receiver']);
-            $this->signatureUuid = $data['signature_uuid'];
-            $this->publicEncryptionKey = $data['public_encryption_key'];
-            $this->privateEncryptionKey = $data['private_encryption_key'];
-            $this->transportEncryptionAlgorithm = $data['transport_encryption_algorithm'];
-            $this->transportEncryptionKey = $data['transport_encryption_key'] ?? null;
+            $this->channelUuid = $data['channel_uuid'];
+            $this->recipient = PeerAddress::fromAddress($data['recipient']);
+            $this->localPublicEncryptionKey = $data['local_public_encryption_key'];
+            $this->localPrivateEncryptionKey = $data['local_private_encryption_key'];
+            $this->receivingPublicEncryptionKey = $data['receiving_public_encryption_key'] ?? null;
         }
 
         /**
-         * Returns the UUID of the key pair
+         * Returns the channel UUID
          *
-         * @return string The UUID of the key pair
+         * @return string
          */
         public function getChannelUuid(): string
         {
@@ -42,67 +38,55 @@
         }
 
         /**
+         * Returns the receiver
+         *
          * @return PeerAddress
          */
-        public function getReceiver(): PeerAddress
+        public function getRecipient(): PeerAddress
         {
-            return $this->receiver;
+            return $this->recipient;
         }
 
         /**
-         * Returns the UUID of the signature
+         * Returns the calling public encryption key
          *
-         * @return string The UUID of the signature
-         */
-        public function getSignatureUuid(): string
-        {
-            return $this->signatureUuid;
-        }
-        
-        /**
-         * Returns the public key of the key pair
-         *
-         * @return string The public key of the key pair
-         */
-        public function getPublicEncryptionKey(): string
-        {
-            return $this->publicEncryptionKey;
-        }
-
-        /**
-         * Returns the private key of the key pair
-         *
-         * @return string The private key of the key pair
-         */
-        public function getPrivateEncryptionKey(): string
-        {
-            return $this->privateEncryptionKey;
-        }
-
-        /**
          * @return string
          */
-        public function getTransportEncryptionAlgorithm(): string
+        public function getLocalPublicEncryptionKey(): string
         {
-            return $this->transportEncryptionAlgorithm;
+            return $this->localPublicEncryptionKey;
         }
 
         /**
+         * Returns the calling private encryption key
+         *
+         * @return string
+         */
+        public function getLocalPrivateEncryptionKey(): string
+        {
+            return $this->localPrivateEncryptionKey;
+        }
+
+        /**
+         * Returns the receiving public encryption key
+         *
          * @return string|null
          */
-        public function getTransportEncryptionKey(): ?string
+        public function getReceivingPublicEncryptionKey(): ?string
         {
-            return $this->transportEncryptionKey;
+            return $this->receivingPublicEncryptionKey;
         }
 
         /**
-         * @param string|null $transportEncryptionKey
+         * Sets the receiving public encryption key
+         *
+         * @param string $receivingPublicEncryptionKey The receiving public encryption key
          */
-        public function setTransportEncryptionKey(?string $transportEncryptionKey): void
+        public function setReceivingPublicEncryptionKey(string $receivingPublicEncryptionKey): void
         {
-            $this->transportEncryptionKey = $transportEncryptionKey;
+            $this->receivingPublicEncryptionKey = $receivingPublicEncryptionKey;
         }
-        
+
         /**
          * @inheritDoc
          */
@@ -117,13 +101,11 @@
         public function toArray(): array
         {
             return [
-                'uuid' => $this->channelUuid,
-                'receiver' => $this->receiver->getAddress(),
-                'signature_uuid' => $this->signatureUuid,
-                'public_key' => $this->publicEncryptionKey,
-                'private_key' => $this->privateEncryptionKey,
-                'transport_encryption_algorithm' => $this->transportEncryptionAlgorithm,
-                'transport_encryption_key' => $this->transportEncryptionKey
+                'channel_uuid' => $this->channelUuid,
+                'recipient' => $this->recipient->getAddress(),
+                'local_public_encryption_key' => $this->localPublicEncryptionKey,
+                'local_private_encryption_key' => $this->localPrivateEncryptionKey,
+                'receiving_public_encryption_key' => $this->receivingPublicEncryptionKey
             ];
         }
     }
