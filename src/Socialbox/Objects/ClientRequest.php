@@ -222,7 +222,6 @@
          *
          * @return bool True if the request is external, false otherwise.
          * @throws DatabaseOperationException Thrown if an error occurs while retrieving the peer.
-         * @throws StandardRpcException Thrown if the session UUID is invalid.
          */
         public function isExternal(): bool
         {
