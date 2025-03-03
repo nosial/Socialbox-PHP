@@ -40,6 +40,9 @@
         private string $sessionUuid;
         private ?string $defaultSigningKey;
         private array $signingKeys;
+        /**
+         * @var EncryptionChannelSecret[]
+         */
         private array $encryptionChannelSecrets;
 
         /**
@@ -822,6 +825,11 @@
             return $this->encryptionChannelSecrets;
         }
 
+        public function getEncryptionChannelSecret(string $channelUuid): ?EncryptionChannelSecret
+        {
+            return $this->encryptionChannelSecrets[$channelUuid] ?? null;
+        }
+
         /**
          * Adds a new encryption channel key to the current instance.
          *
@@ -836,45 +844,45 @@
         /**
          * Removes an encryption channel key from the current instance.
          *
-         * @param string $uuid The UUID of the encryption channel key to be removed.
+         * @param string $channelUuid The UUID of the encryption channel key to be removed.
          * @return void
          */
-        public function removeEncryptionChannelKey(string $uuid): void
+        public function removeEncryptionChannelKey(string $channelUuid): void
         {
-            unset($this->encryptionChannelSecrets[$uuid]);
+            unset($this->encryptionChannelSecrets[$channelUuid]);
         }
 
         /**
          * Retrieves the encryption channel key associated with the specified UUID.
          *
-         * @param string $uuid The UUID of the encryption channel key to be retrieved.
+         * @param string $channelUuid The UUID of the encryption channel key to be retrieved.
          * @return EncryptionChannelSecret|null The encryption channel key associated with the UUID, or null if not found.
          */
-        public function getEncryptionChannelKey(string $uuid): ?EncryptionChannelSecret
+        public function getEncryptionChannelKey(string $channelUuid): ?EncryptionChannelSecret
         {
-            return $this->encryptionChannelSecrets[$uuid] ?? null;
+            return $this->encryptionChannelSecrets[$channelUuid] ?? null;
         }
 
         /**
          * Checks if an encryption channel key exists with the specified UUID.
          *
-         * @param string $uuid The UUID of the encryption channel key to check.
+         * @param string $channelUuid The UUID of the encryption channel key to check.
          * @return bool True if the encryption channel key exists, false otherwise.
          */
-        public function encryptionChannelKeyExists(string $uuid): bool
+        public function encryptionChannelKeyExists(string $channelUuid): bool
         {
-            return isset($this->encryptionChannelSecrets[$uuid]);
+            return isset($this->encryptionChannelSecrets[$channelUuid]);
         }
 
         /**
          * Deletes an encryption channel key from the current instance.
          *
-         * @param string $uuid The UUID of the encryption channel key to be deleted.
+         * @param string $channelUuid The UUID of the encryption channel key to be deleted.
          * @return void
          */
-        public function deleteEncryptionChannelKey(string $uuid): void
+        public function deleteEncryptionChannelKey(string $channelUuid): void
         {
-            unset($this->encryptionChannelSecrets[$uuid]);
+            unset($this->encryptionChannelSecrets[$channelUuid]);
         }
 
         /**
