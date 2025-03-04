@@ -520,6 +520,15 @@
             )->getResponse()->getResult()) ?? SignatureVerificationStatus::ERROR;
         }
 
+        /**
+         * Accepts an encrypted channel using the provided public encryption key.
+         *
+         * @param string $channelUuid The UUID of the channel to accept
+         * @param string $publicEncryptionKey The public encryption key to use for the channel
+         * @param PeerAddress|string|null $identifiedAs Optional identifier for the peer (PeerAddress object, string, or null)
+         * 
+         * @return bool Returns true if the channel was successfully accepted, false otherwise
+         */
         public function encryptionAcceptChannel(string $channelUuid, string $publicEncryptionKey, PeerAddress|string|null $identifiedAs=null): bool
         {
 
@@ -536,6 +545,13 @@
             )->getResponse()->getResult();
         }
 
+        /**
+         * Checks if an encryption channel exists for the given channel UUID.
+         *
+         * @param string $channelUuid The UUID of the channel to check.
+         *
+         * @return bool True if an encryption channel exists, false otherwise.
+         */
         public function encryptionChannelExists(string $channelUuid): bool
         {
             return $this->sendRequest(
@@ -545,6 +561,69 @@
             )->getResponse()->getResult();
         }
 
+        /**
+         * Acknowledges an encrypted message in a specific channel.
+         *
+         * This method is used to confirm the successful delivery and decryption of a message
+         * within an encrypted communication channel. It allows the client to signal that a
+         * particular message, identified by its UUID, has been successfully processed.
+         *
+         * @param string $channelUuid The UUID of the channel in which the message was sent.
+         * @param string $messageUuid The UUID of the message being acknowledged.
+         * @param PeerAddress|string|null $identifiedAs Optional. The peer address or identifier of the recipient acknowledging the message.
+         *                                             It can be a PeerAddress object, a string representation of the address, or null if not applicable.
+         *
+         * @return bool True if the acknowledgement was successful, false otherwise.
+         */
+        public function encryptionChannelAcknowledgeMessage(string $channelUuid, string $messageUuid, PeerAddress|string|null $identifiedAs=null): bool
+        {
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_CHANNEL_ACKNOWLEDGE_MESSAGE, parameters: [
+                    'channel_uuid' => $channelUuid,
+                    'message_uuid' => $messageUuid
+                ]), true, $identifiedAs
+            )->getResponse()->getResult();
+        }
+
+        /**
+         * Acknowledges messages in an encryption channel.
+         *
+         * @param string $channelUuid The UUID of the encryption channel.
+         * @param array $messageUuids An array of message UUIDs to acknowledge.
+         * @param PeerAddress|string|null $identifiedAs Optional peer address or identifier.
+         *
+         * @return array An array containing the results of the acknowledgement operation.
+         */
+        public function encryptionChannelAcknowledgeMessages(string $channelUuid, array $messageUuids, PeerAddress|string|null $identifiedAs=null): array
+        {
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return $this->sendRequests(array_map(fn($messageUuid) => new RpcRequest(StandardMethods::ENCRYPTION_CHANNEL_ACKNOWLEDGE_MESSAGE, parameters: [
+                'channel_uuid' => $channelUuid,
+                'message_uuid' => $messageUuid
+            ]), $messageUuids), $identifiedAs);
+        }
+
+        /**
+         * Sends an encrypted message to a specific channel.
+         *
+         * @param string $channelUuid The UUID of the channel to send the message to.
+         * @param string $checksum The checksum of the encrypted data for integrity verification.
+         * @param string $data The encrypted data to be sent.
+         * @param PeerAddress|string|null $identifiedAs The peer address or identifier of the sender (optional).
+         * @param string|null $messageUuid The UUID of the message (optional). If null, a UUID will be generated.
+         * @param int|null $timestamp The timestamp of the message (optional). If null, the current timestamp will be used.
+         *
+         * @return string The UUID of the sent message.
+         */
         public function encryptionChannelSend(string $channelUuid, string $checksum, string $data, PeerAddress|string|null $identifiedAs=null, ?string $messageUuid=null, ?int $timestamp=null): string
         {
             if($identifiedAs instanceof PeerAddress)
@@ -563,6 +642,14 @@
             )->getResponse()->getResult();
         }
 
+        /**
+         * Closes an encrypted communication channel.
+         *
+         * @param string $channelUuid The UUID of the channel to close.
+         * @param PeerAddress|string|null $identifiedAs Optional identifier for the peer, either a PeerAddress object, a string representation, or null if not applicable.
+         *
+         * @return bool True if the channel was successfully closed, false otherwise.
+         */
         public function encryptionCloseChannel(string $channelUuid, PeerAddress|string|null $identifiedAs=null): bool
         {
             if($identifiedAs instanceof PeerAddress)
@@ -577,6 +664,16 @@
             )->getResponse()->getResult();
         }
 
+        /**
+         * Creates an encrypted channel with the specified peer.
+         *
+         * @param string|PeerAddress $receivingPeer The peer to create the channel with. Can be a PeerAddress object or a string representation of the peer's address.
+         * @param string $publicEncryptionKey The public encryption key to use for the channel.
+         * @param string|null $channelUuid Optional UUID for the channel. If null, a UUID will be generated.
+         * @param PeerAddress|string|null $identifiedAs Optional peer address or string to identify the channel as.
+         *
+         * @return string The UUID of the created channel.
+         */
         public function encryptionCreateChannel(string|PeerAddress $receivingPeer, string $publicEncryptionKey, ?string $channelUuid=null, PeerAddress|string|null $identifiedAs=null): string
         {
             if($receivingPeer instanceof PeerAddress)
@@ -598,6 +695,14 @@
             )->getResponse()->getResult();
         }
 
+        /**
+         * Declines an encryption channel request.
+         *
+         * @param string $channelUuid The UUID of the channel to decline.
+         * @param PeerAddress|string|null $identifiedAs The peer address or identifier of the peer that initiated the channel request.
+         *
+         * @return bool True if the channel decline was successful, false otherwise.
+         */
         public function encryptionDeclineChannel(string $channelUuid, PeerAddress|string|null $identifiedAs=null): bool
         {
             if($identifiedAs instanceof PeerAddress)
@@ -612,6 +717,13 @@
             )->getResponse()->getResult();
         }
 
+        /**
+         * Retrieves an encryption channel by its UUID.
+         *
+         * @param string $channelUuid The UUID of the encryption channel to retrieve.
+         *
+         * @return EncryptionChannel The EncryptionChannel object associated with the given UUID.
+         */
         public function encryptionGetChannel(string $channelUuid): EncryptionChannel
         {
             return new EncryptionChannel($this->sendRequest(
