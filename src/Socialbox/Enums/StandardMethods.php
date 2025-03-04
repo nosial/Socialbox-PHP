@@ -79,6 +79,7 @@
 
         // Encryption Channel Methods
         case ENCRYPTION_ACCEPT_CHANNEL = 'encryptionAcceptChannel';
+        case ENCRYPTION_CHANNEL_ACKNOWLEDGE_MESSAGE = 'encryptionChannelAcknowledgeMessage';
         case ENCRYPTION_CHANNEL_EXISTS = 'encryptionChannelExists';
         case ENCRYPTION_CHANNEL_SEND = 'encryptionChannelSend';
         case ENCRYPTION_CLOSE_CHANNEL = 'encryptionCloseChannel';
