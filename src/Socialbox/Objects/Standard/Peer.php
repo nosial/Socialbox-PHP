@@ -104,7 +104,7 @@
          *
          * @return PeerAddress The address associated with the instance.
          */
-        public function getAddress(): PeerAddress
+        public function getPeerAddress(): PeerAddress
         {
             return $this->address;
         }
