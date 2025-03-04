@@ -526,6 +526,46 @@
         }
 
         /**
+         * Acknowledges a batch of messages as received
+         *
+         * @param string $channelUuid The Unique Universal Identifier of the channel
+         * @param array $messageUuids An array of message UUIDs to acknowledge
+         * @return void
+         * @throws DatabaseOperationException Thrown if there was an error with the database operation
+         */
+        public static function acknowledgeMessagesBatch(string $channelUuid, array $messageUuids): void
+        {
+            if(!Validator::validateUuid($channelUuid))
+            {
+                throw new InvalidArgumentException('The given Channel UUID is not a valid V4 UUID');
+            }
+
+            if(empty($messageUuids))
+            {
+                throw new InvalidArgumentException('The given Message UUIDs array is empty');
+            }
+
+            $placeholders = implode(',', array_fill(0, count($messageUuids), '?'));
+            $query = "UPDATE encryption_channels_com SET status='RECEIVED' WHERE channel_uuid=:channel_uuid AND uuid IN ($placeholders)";
+
+            try
+            {
+                $stmt = Database::getConnection()->prepare($query);
+                $stmt->bindParam(':channel_uuid', $channelUuid);
+                foreach($messageUuids as $index => $messageUuid)
+                {
+                    $stmt->bindValue($index + 1, $messageUuid);
+                }
+
+                $stmt->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('There was an error while acknowledging the message records', $e);
+            }
+        }
+
+        /**
          * Rejects the requested message
          *
          * @param string $channelUuid The Unique Universal Identifier of the channel
