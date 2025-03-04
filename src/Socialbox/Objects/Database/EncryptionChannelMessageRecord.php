@@ -8,6 +8,8 @@
     use Socialbox\Enums\Status\EncryptionChannelMessageStatus;
     use Socialbox\Enums\Types\EncryptionMessageRecipient;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Objects\PeerAddress;
+    use Socialbox\Objects\Standard\EncryptionChannelMessage;
 
     class EncryptionChannelMessageRecord implements SerializableInterface
     {
@@ -98,24 +100,7 @@
             return $this->status;
         }
 
-        /**try {
-    switch($fieldName) {
-        case InformationFieldName::DISPLAY_NAME:
-            SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_DISPLAY_NAME]);
-            break;
-        // Other cases...
-    }
-} catch (Exception $e) {
-    try {
-        PeerInformationManager::deleteProperty($peer, $fieldName);
-    } catch (DatabaseOperationException $e) {
-        throw new StandardException('Failed to rollback the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
-    }
-    if($e instanceof StandardException) {
-        throw $e;
-    }
-    throw new StandardException('Failed to update the session flow', StandardError::INTERNAL_SERVER_ERROR, $e);
-}
+        /**
          * Returns the SHA512 hash of the decrypted content
          *
          * @return string The SHA512 hash of the decrypted content
@@ -143,6 +128,55 @@
         public function getTimestamp(): DateTime
         {
             return $this->timestamp;
+        }
+
+        /**
+         * Returns the owner of the message
+         *
+         * @param EncryptionChannelRecord $channelRecord The channel record to use
+         * @return PeerAddress The owner of the message
+         */
+        public function getOwner(EncryptionChannelRecord $channelRecord): PeerAddress
+        {
+            if($this->recipient === EncryptionMessageRecipient::SENDER)
+            {
+                return $channelRecord->getCallingPeerAddress();
+            }
+
+            return $channelRecord->getReceivingPeerAddress();
+        }
+
+        /**
+         * Returns the receiver of the message
+         *
+         * @param EncryptionChannelRecord $channelRecord The channel record to use
+         * @return PeerAddress The receiver of the message
+         */
+        public function getReceiver(EncryptionChannelRecord $channelRecord): PeerAddress
+        {
+            if($this->recipient === EncryptionMessageRecipient::SENDER)
+            {
+                return $channelRecord->getReceivingPeerAddress();
+            }
+
+            return $channelRecord->getCallingPeerAddress();
+        }
+
+        /**
+         * Converts the record to a standard message
+         *
+         * @return EncryptionChannelMessage The standard message
+         */
+        public function toStandard(): EncryptionChannelMessage
+        {
+            return new EncryptionChannelMessage([
+                'message_uuid' => $this->uuid,
+                'channel_uuid' => $this->channelUuid,
+                'status' => $this->status->value,
+                'hash' => $this->hash,
+                'data' => $this->data,
+                'timestamp' => $this->timestamp->getTimestamp()
+            ]);
         }
 
         /**
