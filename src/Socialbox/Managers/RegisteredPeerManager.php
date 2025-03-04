@@ -202,17 +202,17 @@
          */
         public static function synchronizeExternalPeer(Peer $peer): void
         {
-            if($peer->getAddress()->getDomain() === Configuration::getInstanceConfiguration()->getDomain())
+            if($peer->getPeerAddress()->getDomain() === Configuration::getInstanceConfiguration()->getDomain())
             {
                 throw new InvalidArgumentException('Given peer is not an external peer');
             }
 
-            if($peer->getAddress()->getUsername() === ReservedUsernames::HOST->value)
+            if($peer->getPeerAddress()->getUsername() === ReservedUsernames::HOST->value)
             {
                 throw new InvalidArgumentException('Cannot synchronize an external host peer');
             }
 
-            $existingPeer = self::getPeerByAddress($peer->getAddress());
+            $existingPeer = self::getPeerByAddress($peer->getPeerAddress());
             if($existingPeer !== null)
             {
                 // getUpdated is DateTime() if it's older than 1 hour, update it
@@ -263,9 +263,9 @@
             {
                 $statement = Database::getConnection()->prepare('INSERT INTO peers (uuid, username, server, enabled) VALUES (:uuid, :username, :server, 1)');
                 $statement->bindParam(':uuid', $uuid);
-                $username = $peer->getAddress()->getUsername();
+                $username = $peer->getPeerAddress()->getUsername();
                 $statement->bindParam(':username', $username);
-                $server = $peer->getAddress()->getDomain();
+                $server = $peer->getPeerAddress()->getDomain();
                 $statement->bindParam(':server', $server);
 
                 $statement->execute();
