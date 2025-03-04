@@ -2,6 +2,8 @@
 
     namespace Socialbox\Objects\Client;
 
+    use Socialbox\Classes\Cryptography;
+    use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\PeerAddress;
 
@@ -85,6 +87,22 @@
         public function setReceivingPublicEncryptionKey(string $receivingPublicEncryptionKey): void
         {
             $this->receivingPublicEncryptionKey = $receivingPublicEncryptionKey;
+        }
+
+        /**
+         * Preform a Diffie-Hellman Exchange to get the shared secret between the two peers
+         *
+         * @return string The shared secret
+         * @throws CryptographyException If the receiving public encryption key is not set
+         */
+        public function getSharedSecret(): string
+        {
+            if($this->receivingPublicEncryptionKey === null)
+            {
+                throw new CryptographyException('The receiving public encryption key is not set');
+            }
+
+            return Cryptography::performDHE($this->receivingPublicEncryptionKey, $this->localPrivateEncryptionKey);
         }
 
         /**
