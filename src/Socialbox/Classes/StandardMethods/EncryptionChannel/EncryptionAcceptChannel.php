@@ -183,7 +183,7 @@
             {
                 return $rpcRequest->produceError(StandardError::NOT_FOUND, 'The requested encryption channel was not found');
             }
-            elseif($encryptionChannel->getReceivingPeerAddress() !== $receivingPeer->getAddress())
+            elseif($encryptionChannel->getReceivingPeerAddress() !== $receivingPeer->getPeerAddress())
             {
                 return $rpcRequest->produceError(StandardError::UNAUTHORIZED, 'The requested encryption channel is not accessible');
             }
