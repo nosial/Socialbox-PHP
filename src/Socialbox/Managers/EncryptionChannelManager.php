@@ -5,7 +5,9 @@
 
 
     use InvalidArgumentException;
+    use PDO;
     use PDOException;
+    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Validator;
@@ -262,21 +264,102 @@
         /**
          * Returns an array of channels that are outgoing from the specified peer address
          *
-         * @param string $peerAddress The Peer Address of the caller
+         * @param string|PeerAddress $peerAddress The Peer Address of the caller
+         * @param int $page The page number
+         * @param int $limit The limit of records to return
          * @return EncryptionChannelRecord[] An array of channel records
          * @throws DatabaseOperationException Thrown if there was a database error while retrieving the records
          */
-        public static function getIncomingChannels(string $peerAddress): array
+        public static function getChannels(string|PeerAddress $peerAddress, int $page=1, int $limit=100): array
         {
-            if(!Validator::validatePeerAddress($peerAddress))
+            if($peerAddress instanceof PeerAddress)
+            {
+                $peerAddress = $peerAddress->getAddress();
+            }
+            elseif(!Validator::validatePeerAddress($peerAddress))
             {
                 throw new InvalidArgumentException('Invalid Peer Address');
             }
 
+            if($page < 1)
+            {
+                throw new InvalidArgumentException('The page number cannot be less than 1');
+            }
+
+            if($limit < 1)
+            {
+                throw new InvalidArgumentException('The limit cannot be less than 1');
+            }
+            elseif($limit > Configuration::getPoliciesConfiguration()->getEncryptionChannelsLimit())
+            {
+                throw new InvalidArgumentException(sprintf('The limit cannot exceed a value of %d', Configuration::getPoliciesConfiguration()->getEncryptionChannelsLimit()));
+            }
+
             try
             {
-                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE receiving_peer_address=:peer_address');
+                $offset = ($page - 1) * $limit;
+                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE calling_peer_address=:peer_address OR receiving_peer_address=:peer_address LIMIT :limit OFFSET :offset');
                 $stmt->bindParam(':peer_address', $peerAddress);
+                $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+                $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+                $stmt->execute();
+
+                $results = $stmt->fetchAll();
+
+                if(!$results)
+                {
+                    return [];
+                }
+
+                return array_map(fn($result) => EncryptionChannelRecord::fromArray($result), $results);
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to retrieve encryption channels', $e);
+            }
+        }
+
+        /**
+         * Returns an array of channels that are outgoing from the specified peer address
+         *
+         * @param string|PeerAddress $peerAddress The Peer Address of the caller
+         * @param int $page The page number
+         * @param int $limit The limit of records to return
+         * @return EncryptionChannelRecord[] An array of channel records
+         * @throws DatabaseOperationException Thrown if there was a database error while retrieving the records
+         */
+        public static function getIncomingChannels(string|PeerAddress $peerAddress, int $page=1, int $limit=100): array
+        {
+            if($peerAddress instanceof PeerAddress)
+            {
+                $peerAddress = $peerAddress->getAddress();
+            }
+            elseif(!Validator::validatePeerAddress($peerAddress))
+            {
+                throw new InvalidArgumentException('Invalid Peer Address');
+            }
+
+            if($page < 1)
+            {
+                throw new InvalidArgumentException('The page number cannot be less than 1');
+            }
+
+            if($limit < 1)
+            {
+                throw new InvalidArgumentException('The limit cannot be less than 1');
+            }
+            elseif($limit > Configuration::getPoliciesConfiguration()->getEncryptionChannelIncomingLimit())
+            {
+                throw new InvalidArgumentException(sprintf('The limit cannot exceed a value of %d', Configuration::getPoliciesConfiguration()->getEncryptionChannelIncomingLimit()));
+            }
+
+            try
+            {
+                $offset = ($page - 1) * $limit;
+                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE receiving_peer_address=:peer_address LIMIT :limit OFFSET :offset');
+                $stmt->bindParam(':peer_address', $peerAddress);
+                $stmt->bindParam(':limit', $limit);
+                $stmt->bindParam(':offset', $offset);
                 $stmt->execute();
 
                 $results = $stmt->fetchAll();
@@ -297,21 +380,44 @@
         /**
          * Returns an array of outgoing channels for the given peer address
          *
-         * @param string $peerAddress The Peer Address of the caller
+         * @param string|PeerAddress $peerAddress The Peer Address of the caller
+         * @param int $page The page number
+         * @param int $limit The limit of records to return
          * @return EncryptionChannelRecord[] An array of channel records
          * @throws DatabaseOperationException Thrown if there was a database error while retrieving the records
          */
-        public static function getOutgoingChannels(string $peerAddress): array
+        public static function getOutgoingChannels(string|PeerAddress $peerAddress, int $page=1, int $limit=100): array
         {
-            if(!Validator::validatePeerAddress($peerAddress))
+            if($peerAddress instanceof PeerAddress)
+            {
+                $peerAddress = $peerAddress->getAddress();
+            }
+            elseif(!Validator::validatePeerAddress($peerAddress))
             {
                 throw new InvalidArgumentException('Invalid Peer Address');
             }
 
+            if($page < 1)
+            {
+                throw new InvalidArgumentException('The page number cannot be less than 1');
+            }
+
+            if($limit < 1)
+            {
+                throw new InvalidArgumentException('The limit cannot be less than 1');
+            }
+            elseif($limit > Configuration::getPoliciesConfiguration()->getEncryptionChannelOutgoingLimit())
+            {
+                throw new InvalidArgumentException(sprintf('The limit cannot exceed a value of %d', Configuration::getPoliciesConfiguration()->getEncryptionChannelOutgoingLimit()));
+            }
+
             try
             {
-                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE calling_peer_address=:peer_address');
+                $offset = ($page -1) * $limit;
+                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE calling_peer_address=:peer_address LIMIT :limit OFFSET :offset');
                 $stmt->bindParam(':peer_address', $peerAddress);
+                $stmt->bindParam(':limit', $limit);
+                $stmt->bindParam(':offset', $offset);
                 $stmt->execute();
 
                 $results = $stmt->fetchAll();
@@ -332,23 +438,48 @@
         /**
          * Returns an array of channels that are awaiting the receiver to accept the channel
          *
-         * @param string $peerAddress The Peer Address of the receiver
+         * @param string|PeerAddress $peerAddress The Peer Address of the receiver
+         * @param int $page The page number
+         * @param int $limit The limit of records to return
          * @return EncryptionChannelRecord[] An array of channel records
          * @throws DatabaseOperationException Thrown if there was a database error while retrieving the records
          */
-        public static function getChannelRequests(string $peerAddress): array
+        public static function getChannelRequests(string|PeerAddress $peerAddress, int $page=1, int $limit=100): array
         {
-            if(!Validator::validatePeerAddress($peerAddress))
+            if($peerAddress instanceof PeerAddress)
+            {
+                $peerAddress = $peerAddress->getAddress();
+            }
+            elseif(!Validator::validatePeerAddress($peerAddress))
             {
                 throw new InvalidArgumentException('Invalid Peer Address');
             }
 
+
+            if($page < 1)
+            {
+                throw new InvalidArgumentException('The page number cannot be less than 1');
+            }
+
+            if($limit < 1)
+            {
+                throw new InvalidArgumentException('The limit cannot be less than 1');
+            }
+            elseif($limit > Configuration::getPoliciesConfiguration()->getEncryptionChannelRequestsLimit())
+            {
+                throw new InvalidArgumentException(sprintf('The limit cannot exceed a value of %d', Configuration::getPoliciesConfiguration()->getEncryptionChannelRequestsLimit()));
+            }
+
+
             try
             {
-                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE receiving_peer_address=:peer_address AND status=:status');
+                $offset = ($page -1) * $limit;
+                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE receiving_peer_address=:peer_address AND status=:status LIMIT :limit OFFSET :offset');
                 $stmt->bindParam(':peer_address', $peerAddress);
                 $status = EncryptionChannelStatus::AWAITING_RECEIVER->value;
                 $stmt->bindParam(':status', $status);
+                $stmt->bindParam(':limit', $limit);
+                $stmt->bindParam(':offset', $offset);
                 $stmt->execute();
 
                 $results = $stmt->fetchAll();
