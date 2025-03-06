@@ -50,7 +50,7 @@
         }
 
         /**
-         * Create a new signing keypair, sends it to the server and saves it locally with the session so that the client
+         * Create a new signing keypair, sends it to the server, and saves it locally with the session so that the client
          * can use the SigningKey pair for signing and verifying signatures in the future.
          *
          * This is not a server-side operation, the server only stores the public key and associates it with the peer's
@@ -79,7 +79,7 @@
         }
 
         /**
-         * Creates a new encryption channel with the given peer, generates a new encryption key pair and sends the public
+         * Creates a new encryption channel with the given peer, generates a new encryption key pair, and sends the public
          * key to the receiving peer. The private key is stored locally and is never sent to the server.
          *
          * @param PeerAddress|string $receivingPeer The address of the peer to create the channel with
@@ -109,9 +109,10 @@
          * Waits for the encryption channel to be accepted by the receiving peer, returns True if the channel was accepted
          * or False if the channel was not accepted within the timeout period.
          *
-         * @param string $channelUuid
-         * @param int|null $timeout
-         * @return bool
+         * @param string $channelUuid The UUID of the encryption channel to wait for
+         * @param int|null $timeout Optional. The timeout period in seconds
+         * @return bool Returns True if the channel was accepted, False if the channel was not accepted within the timeout period
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function waitForEncryptionChannel(string $channelUuid, ?int $timeout=30): bool
         {
@@ -142,8 +143,8 @@
         }
 
         /**
-         * Accepts an encryption channel with the given UUID, generates a new encryption key pair and sends the public key
-         * to the calling peer. The private key is stored locally and is never sent to the server.
+         * Accepts an encryption channel with the given unique universal identifier, generates a new encryption key pair,
+         * and sends the public key to the calling peer. The private key is stored locally and is never sent to the server.
          *
          * @param string $channelUuid The UUID of the encryption channel to accept
          * @return bool Returns True if the channel was accepted
@@ -154,7 +155,7 @@
         {
             $encryptionChannel = $this->encryptionGetChannel($channelUuid);
             $encryptionKeyPair = Cryptography::generateEncryptionKeyPair();
-            $this->encryptionAcceptChannel($channelUuid, $encryptionKeyPair->getPublicKey(), $encryptionChannel->getRecipient());
+            $this->encryptionAcceptChannel($channelUuid, $encryptionKeyPair->getPublicKey());
 
             $this->addEncryptionChannelSecret(new EncryptionChannelSecret([
                 'channel_uuid' => $channelUuid,
@@ -237,7 +238,7 @@
         }
 
         /**
-         * Deletes a contact from the address book, returns True if the contact was deleted or False if the contact
+         * Deletes a contact from the address book, returns True if the contact was deleted, or False if the contact
          * does not exist.
          *
          * @param PeerAddress|string $peer The address of the peer to delete
@@ -526,12 +527,12 @@
          * @param string $channelUuid The UUID of the channel to accept
          * @param string $publicEncryptionKey The public encryption key to use for the channel
          * @param PeerAddress|string|null $identifiedAs Optional identifier for the peer (PeerAddress object, string, or null)
-         * 
+         *
          * @return bool Returns true if the channel was successfully accepted, false otherwise
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function encryptionAcceptChannel(string $channelUuid, string $publicEncryptionKey, PeerAddress|string|null $identifiedAs=null): bool
         {
-
             if($identifiedAs instanceof PeerAddress)
             {
                 $identifiedAs = $identifiedAs->getAddress();
@@ -551,6 +552,7 @@
          * @param string $channelUuid The UUID of the channel to check.
          *
          * @return bool True if an encryption channel exists, false otherwise.
+         * @throws RpcException Thrown if there was an error with the RPC request.
          */
         public function encryptionChannelExists(string $channelUuid): bool
         {
@@ -574,6 +576,7 @@
          *                                             It can be a PeerAddress object, a string representation of the address, or null if not applicable.
          *
          * @return bool True if the acknowledgement was successful, false otherwise.
+         * @throws RpcException Thrown if there was an error with the RPC request.
          */
         public function encryptionChannelAcknowledgeMessage(string $channelUuid, string $messageUuid, PeerAddress|string|null $identifiedAs=null): bool
         {
@@ -596,8 +599,8 @@
          * @param string $channelUuid The UUID of the encryption channel.
          * @param array $messageUuids An array of message UUIDs to acknowledge.
          * @param PeerAddress|string|null $identifiedAs Optional peer address or identifier.
-         *
          * @return array An array containing the results of the acknowledgement operation.
+         * @throws RpcException Thrown if there was an error with the RPC request.
          */
         public function encryptionChannelAcknowledgeMessages(string $channelUuid, array $messageUuids, PeerAddress|string|null $identifiedAs=null): array
         {
@@ -613,6 +616,30 @@
         }
 
         /**
+         * Rejects a message from the encryption channel
+         *
+         * @param string $channelUuid The channel UUID used for communication
+         * @param string $messageUuid The Message UUID to reject
+         * @param PeerAddress|string|null $identifiedAs Optional. The requesting peer that's rejecting this
+         * @return bool Returns True on success, False if not applicable
+         * @throws RpcException Thrown when there is an error
+         */
+        public function encryptionChannelRejectMessage(string $channelUuid, string $messageUuid, PeerAddress|string|null $identifiedAs): bool
+        {
+            if($identifiedAs instanceof PeerAddress)
+            {
+                $identifiedAs = $identifiedAs->getAddress();
+            }
+
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_CHANNEL_REJECT_MESSAGE, parameters: [
+                    'channel_uuid' => $channelUuid,
+                    'message_uuid' => $messageUuid,
+                ]), true, $identifiedAs
+            )->getResponse()->getResult();
+        }
+
+        /**
          * Sends an encrypted message to a specific channel.
          *
          * @param string $channelUuid The UUID of the channel to send the message to.
@@ -621,8 +648,8 @@
          * @param PeerAddress|string|null $identifiedAs The peer address or identifier of the sender (optional).
          * @param string|null $messageUuid The UUID of the message (optional). If null, a UUID will be generated.
          * @param int|null $timestamp The timestamp of the message (optional). If null, the current timestamp will be used.
-         *
          * @return string The UUID of the sent message.
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function encryptionChannelSend(string $channelUuid, string $checksum, string $data, PeerAddress|string|null $identifiedAs=null, ?string $messageUuid=null, ?int $timestamp=null): string
         {
@@ -647,8 +674,8 @@
          *
          * @param string $channelUuid The UUID of the channel to close.
          * @param PeerAddress|string|null $identifiedAs Optional identifier for the peer, either a PeerAddress object, a string representation, or null if not applicable.
-         *
          * @return bool True if the channel was successfully closed, false otherwise.
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function encryptionCloseChannel(string $channelUuid, PeerAddress|string|null $identifiedAs=null): bool
         {
@@ -671,8 +698,8 @@
          * @param string $publicEncryptionKey The public encryption key to use for the channel.
          * @param string|null $channelUuid Optional UUID for the channel. If null, a UUID will be generated.
          * @param PeerAddress|string|null $identifiedAs Optional peer address or string to identify the channel as.
-         *
          * @return string The UUID of the created channel.
+         * @throws RpcException Thrown if there was an error with the RPC requests
          */
         public function encryptionCreateChannel(string|PeerAddress $receivingPeer, string $publicEncryptionKey, ?string $channelUuid=null, PeerAddress|string|null $identifiedAs=null): string
         {
@@ -700,8 +727,8 @@
          *
          * @param string $channelUuid The UUID of the channel to decline.
          * @param PeerAddress|string|null $identifiedAs The peer address or identifier of the peer that initiated the channel request.
-         *
          * @return bool True if the channel decline was successful, false otherwise.
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function encryptionDeclineChannel(string $channelUuid, PeerAddress|string|null $identifiedAs=null): bool
         {
@@ -721,8 +748,8 @@
          * Retrieves an encryption channel by its UUID.
          *
          * @param string $channelUuid The UUID of the encryption channel to retrieve.
-         *
          * @return EncryptionChannel The EncryptionChannel object associated with the given UUID.
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function encryptionGetChannel(string $channelUuid): EncryptionChannel
         {
