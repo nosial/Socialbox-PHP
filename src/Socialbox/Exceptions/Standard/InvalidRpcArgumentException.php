@@ -48,4 +48,15 @@
 
             parent::__construct(sprintf('Invalid parameter %s: %s', $parameterName, $reason), StandardError::RPC_INVALID_ARGUMENTS);
         }
+
+        /**
+         * Creates an instance of InvalidRpcArgumentException from an InvalidArgumentException
+         *
+         * @param InvalidArgumentException $e The exception to create the instance from
+         * @return InvalidRpcArgumentException The instance created from the exception
+         */
+        public static function fromInvalidArgumentException(InvalidArgumentException $e): InvalidRpcArgumentException
+        {
+            return new InvalidRpcArgumentException(null, $e);
+        }
     }
