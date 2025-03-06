@@ -18,6 +18,20 @@
     use Socialbox\Classes\StandardMethods\Core\ResolvePeer;
     use Socialbox\Classes\StandardMethods\Core\ResolveSignature;
     use Socialbox\Classes\StandardMethods\Core\VerifySignature;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionAcceptChannel;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionChannelAcknowledgeMessage;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionChannelExists;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionChannelReceive;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionChannelRejectMessage;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionChannelSend;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionCloseChannel;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionCreateChannel;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionDeclineChannel;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionGetChannel;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionGetChannelRequests;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionGetChannels;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionGetIncomingChannels;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionGetOutgoingChannels;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptCommunityGuidelines;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptPrivacyPolicy;
     use Socialbox\Classes\StandardMethods\ServerDocuments\AcceptTermsOfService;
@@ -81,11 +95,17 @@
         case ENCRYPTION_ACCEPT_CHANNEL = 'encryptionAcceptChannel';
         case ENCRYPTION_CHANNEL_ACKNOWLEDGE_MESSAGE = 'encryptionChannelAcknowledgeMessage';
         case ENCRYPTION_CHANNEL_EXISTS = 'encryptionChannelExists';
+        case ENCRYPTION_CHANNEL_RECEIVE = 'encryptionChannelReceive';
+        case ENCRYPTION_CHANNEL_REJECT_MESSAGE = 'encryptionChannelRejectMessage';
         case ENCRYPTION_CHANNEL_SEND = 'encryptionChannelSend';
         case ENCRYPTION_CLOSE_CHANNEL = 'encryptionCloseChannel';
         case ENCRYPTION_CREATE_CHANNEL = 'encryptionCreateChannel';
         case ENCRYPTION_DECLINE_CHANNEL = 'encryptionDeclineChannel';
         case ENCRYPTION_GET_CHANNEL = 'encryptionGetChannel';
+        case ENCRYPTION_GET_CHANNEL_REQUESTS = 'encryptionGetChannelRequests';
+        case ENCRYPTION_GET_CHANNELS = 'encryptionGetChannels';
+        case ENCRYPTION_GET_INCOMING_CHANNELS = 'encryptionGetIncomingChannels';
+        case ENCRYPTION_GET_OUTGOING_CHANNELS = 'encryptionGetOutgoingChannels';
 
         // ServerDocument Methods
         case ACCEPT_COMMUNITY_GUIDELINES = 'acceptCommunityGuidelines';
@@ -193,6 +213,22 @@
                 self::RESOLVE_PEER => ResolvePeer::execute($request, $rpcRequest),
                 self::RESOLVE_SIGNATURE => ResolveSignature::execute($request, $rpcRequest),
                 self::VERIFY_SIGNATURE => VerifySignature::execute($request, $rpcRequest),
+
+                // Encryption Channel Methods
+                self::ENCRYPTION_ACCEPT_CHANNEL => EncryptionAcceptChannel::execute($request, $rpcRequest),
+                self::ENCRYPTION_CHANNEL_ACKNOWLEDGE_MESSAGE => EncryptionChannelAcknowledgeMessage::execute($request, $rpcRequest),
+                self::ENCRYPTION_CHANNEL_EXISTS => EncryptionChannelExists::execute($request, $rpcRequest),
+                self::ENCRYPTION_CHANNEL_RECEIVE => EncryptionChannelReceive::execute($request, $rpcRequest),
+                self::ENCRYPTION_CHANNEL_REJECT_MESSAGE => EncryptionChannelRejectMessage::execute($request, $rpcRequest),
+                self::ENCRYPTION_CHANNEL_SEND => EncryptionChannelSend::execute($request, $rpcRequest),
+                self::ENCRYPTION_CLOSE_CHANNEL => EncryptionCloseChannel::execute($request, $rpcRequest),
+                self::ENCRYPTION_CREATE_CHANNEL => EncryptionCreateChannel::execute($request, $rpcRequest),
+                self::ENCRYPTION_DECLINE_CHANNEL => EncryptionDeclineChannel::execute($request, $rpcRequest),
+                self::ENCRYPTION_GET_CHANNEL => EncryptionGetChannel::execute($request, $rpcRequest),
+                self::ENCRYPTION_GET_CHANNEL_REQUESTS => EncryptionGetChannelRequests::execute($request, $rpcRequest),
+                self::ENCRYPTION_GET_CHANNELS => EncryptionGetChannels::execute($request, $rpcRequest),
+                self::ENCRYPTION_GET_INCOMING_CHANNELS => EncryptionGetIncomingChannels::execute($request, $rpcRequest),
+                self::ENCRYPTION_GET_OUTGOING_CHANNELS => EncryptionGetOutgoingChannels::execute($request, $rpcRequest),
 
                 // Server Document Methods
                 self::ACCEPT_PRIVACY_POLICY => AcceptPrivacyPolicy::execute($request, $rpcRequest),
