@@ -4,14 +4,11 @@
 
     use Exception;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Logger;
-    use Socialbox\Classes\Validator;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Status\EncryptionChannelStatus;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -55,18 +52,10 @@
             {
                 throw new MissingRpcArgumentException('channel_uuid');
             }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
-            }
 
             if(!$rpcRequest->containsParameter('public_encryption_key'))
             {
                 throw new MissingRpcArgumentException('public_encryption_key');
-            }
-            elseif(!Cryptography::validatePublicEncryptionKey('public_encryption_key'))
-            {
-                throw new InvalidRpcArgumentException('public_encryption_key', 'The given public encryption key is invalid');
             }
 
             try
@@ -155,18 +144,10 @@
             {
                 throw new MissingRpcArgumentException('channel_uuid');
             }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
-            }
 
             if(!$rpcRequest->containsParameter('public_encryption_key'))
             {
                 throw new MissingRpcArgumentException('public_encryption_key');
-            }
-            elseif(!Cryptography::validatePublicEncryptionKey('public_encryption_key'))
-            {
-                throw new InvalidRpcArgumentException('public_encryption_key', 'The given public encryption key is invalid');
             }
 
             try

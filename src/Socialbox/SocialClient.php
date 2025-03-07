@@ -7,6 +7,7 @@
     use InvalidArgumentException;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\RpcClient;
+    use Socialbox\Classes\Validator;
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\StandardMethods;
     use Socialbox\Enums\Status\SignatureVerificationStatus;
@@ -536,6 +537,20 @@
             if($identifiedAs instanceof PeerAddress)
             {
                 $identifiedAs = $identifiedAs->getAddress();
+            }
+            elseif(is_string($identifiedAs) && !Validator::validatePeerAddress($identifiedAs))
+            {
+                throw new InvalidArgumentException('Invalid Peer Address');
+            }
+
+            if(!Validator::validateUuid($channelUuid))
+            {
+                throw new InvalidArgumentException('Invalid Channel UUID V4');
+            }
+
+            if(!Cryptography::validatePublicEncryptionKey($publicEncryptionKey))
+            {
+                throw new InvalidArgumentException('Invalid Public Encryption Key');
             }
 
             return $this->sendRequest(
