@@ -531,6 +531,15 @@
                 $messageTimestamp = time();
             }
 
+            $currentMessageCount = self::getMessageCount($channelUuid);
+            if($currentMessageCount > Configuration::getPoliciesConfiguration()->getEncryptionChannelMaxMessages())
+            {
+                // Delete the oldest messages to make room for the new one
+                self::deleteMessages($channelUuid, self::getOldestMessage($channelUuid, (
+                    $currentMessageCount - Configuration::getPoliciesConfiguration()->getEncryptionChannelMaxMessages()
+                )));
+            }
+
             try
             {
                 $stmt = Database::getConnection()->prepare('INSERT INTO encryption_channels_com (uuid, channel_uuid, recipient, checksum, data, timestamp) VALUES (:uuid, :channel_uuid, :recipient, :checksum, :data, :timestamp)');
@@ -735,6 +744,158 @@
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('There was an error while rejecting the message record', $e);
+            }
+        }
+
+        /**
+         * Returns the total message count in a given channel
+         *
+         * @param string $channelUuid The channel UUID to check
+         * @return int The number of messages there is
+         * @throws DatabaseOperationException Thrown if there was a database operation error
+         */
+        public static function getMessageCount(string $channelUuid): int
+        {
+            if(!Validator::validateUuid($channelUuid))
+            {
+                throw new InvalidArgumentException('The given Channel UUID is not a valid V4 UUID');
+            }
+
+            try
+            {
+                $stmt = Database::getConnection()->prepare("SELECT COUNT(*) FROM encryption_channels_com WHERE channel_uuid=:channel_uuid");
+                $stmt->bindParam(':channel_uuid', $channelUuid);
+                $stmt->execute();
+
+                return (int)$stmt->fetchColumn();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('There was an error while trying to retrieve the message count', $e);
+            }
+        }
+
+        /**
+         * Returns an array of oldest messages in the queue, sorted by timestamp
+         *
+         * @param string $channelUuid The channel UUID to check
+         * @param int $amount The number of messages to retrieve
+         * @return string[] An array of message records
+         * @throws DatabaseOperationException Thrown if there was a database operation error
+         */
+        public static function getOldestMessage(string $channelUuid, int $amount=1): array
+        {
+            if(!Validator::validateUuid($channelUuid))
+            {
+                throw new InvalidArgumentException('The given Channel UUID is not a valid V4 UUID');
+            }
+
+            if($amount < 1)
+            {
+                throw new InvalidArgumentException('The amount of messages to retrieve cannot be less than 1');
+            }
+
+            try
+            {
+                $stmt = Database::getConnection()->prepare("SELECT uuid FROM encryption_channels_com WHERE channel_uuid=:channel_uuid AND status='SENT' ORDER BY timestamp LIMIT :amount");
+                $stmt->bindParam(':channel_uuid', $channelUuid);
+                $stmt->bindParam(':amount', $amount, PDO::PARAM_INT);
+                $stmt->execute();
+
+                $results = $stmt->fetchAll();
+                if(!$results)
+                {
+                    return [];
+                }
+
+                return array_map(fn($result) => $result['uuid'], $results);
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('There was an error while trying to retrieve the oldest message', $e);
+            }
+        }
+
+        /**
+         * Deletes a message record from the database
+         *
+         * @param string $channelUuid The Unique Universal Identifier of the channel
+         * @param string $messageUuid The Unique Universal Identifier of the message
+         * @return void
+         * @throws DatabaseOperationException Thrown if there was an error with the database operation
+         */
+        public static function deleteMessage(string $channelUuid, string $messageUuid): void
+        {
+            if(!Validator::validateUuid($channelUuid))
+            {
+                throw new InvalidArgumentException('The given Channel UUID is not a valid V4 UUID');
+            }
+
+            if(!Validator::validateUuid($messageUuid))
+            {
+                throw new InvalidArgumentException('The given Message UUID is not a valid V4 UUID');
+            }
+
+            try
+            {
+                $stmt = Database::getConnection()->prepare("DELETE FROM encryption_channels_com WHERE channel_uuid=:channel_uuid AND uuid=:message_uuid LIMIT 1");
+                $stmt->bindParam(':channel_uuid', $channelUuid);
+                $stmt->bindParam(':message_uuid', $messageUuid);
+                $stmt->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('There was an error while trying to delete the message record', $e);
+            }
+        }
+
+        /**
+         * Deletes a batch of messages from the database
+         *
+         * @param string $channelUuid The Unique Universal Identifier of the channel
+         * @param array $messageUuids An array of message UUIDs to delete
+         * @return void
+         * @throws DatabaseOperationException Thrown if there was an error with the database operation
+         */
+        public static function deleteMessages(string $channelUuid, array $messageUuids): void
+        {
+            if(count($messageUuids) === 0)
+            {
+                return;
+            }
+            elseif(count($messageUuids) === 1)
+            {
+                self::deleteMessage($channelUuid, $messageUuids[0]);
+                return;
+            }
+
+            if(!Validator::validateUuid($channelUuid))
+            {
+                throw new InvalidArgumentException('The given Channel UUID is not a valid V4 UUID');
+            }
+
+            if(empty($messageUuids))
+            {
+                throw new InvalidArgumentException('The given Message UUIDs array is empty');
+            }
+
+            $placeholders = implode(',', array_fill(0, count($messageUuids), '?'));
+            $query = "DELETE FROM encryption_channels_com WHERE channel_uuid=:channel_uuid AND uuid IN ($placeholders)";
+
+            try
+            {
+                $stmt = Database::getConnection()->prepare($query);
+                $stmt->bindParam(':channel_uuid', $channelUuid);
+                foreach($messageUuids as $index => $messageUuid)
+                {
+                    $stmt->bindValue($index + 1, $messageUuid);
+                }
+
+                $stmt->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('There was an error while deleting the message records', $e);
             }
         }
     }
