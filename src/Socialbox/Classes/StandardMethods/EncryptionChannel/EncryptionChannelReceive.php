@@ -2,18 +2,20 @@
 
     namespace Socialbox\Classes\StandardMethods\EncryptionChannel;
 
+    use Exception;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Validator;
+    use Socialbox\Classes\Logger;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Status\EncryptionChannelStatus;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
+    use Socialbox\Exceptions\RpcException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Managers\EncryptionChannelManager;
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\RpcRequest;
+    use Socialbox\Socialbox;
 
     class EncryptionChannelReceive extends Method
     {
@@ -26,10 +28,6 @@
             if(!$rpcRequest->containsParameter('channel_uuid'))
             {
                 throw new MissingRpcArgumentException('channel_uuid');
-            }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
             }
 
             try
@@ -82,10 +80,46 @@
                 $messages = EncryptionChannelManager::receiveData(
                     $rpcRequest->getParameter('channel_uuid'), $encryptionChannel->determineRecipient($requestingPeer->getAddress(), true)
                 );
+                $messageUuids = array_map(fn($message) => $message->getUuid(), $messages);
 
                 if($acknowledge)
                 {
-                    EncryptionChannelManager::acknowledgeMessagesBatch($rpcRequest->getParameter('channel_uuid'), array_map(fn($message) => $message->getUuid(), $messages));
+                    EncryptionChannelManager::acknowledgeMessagesBatch(
+                        channelUuid: $rpcRequest->getParameter('channel_uuid'),
+                        messageUuids: $messageUuids,
+                    );
+
+                    $externalPeer = $encryptionChannel->getExternalPeer();
+                    if($externalPeer !== null)
+                    {
+                        try
+                        {
+                            $rpcClient = Socialbox::getExternalSession($externalPeer->getDomain());
+                            $rpcClient->encryptionChannelAcknowledgeMessages(
+                                channelUuid: (string)$rpcRequest->getParameter('channel_uuid'),
+                                messageUuids: $messageUuids,
+                                identifiedAs: $requestingPeer->getAddress()
+                            );
+                        }
+                        catch(Exception $e)
+                        {
+                            try
+                            {
+                                EncryptionChannelManager::rejectMessage($rpcRequest->getParameter('channel_uuid'), $rpcRequest->getParameter('message_uuid'), true);
+                            }
+                            catch (DatabaseOperationException $e)
+                            {
+                                Logger::getLogger()->error('Error rejecting message as server', $e);
+                            }
+
+                            if($e instanceof RpcException)
+                            {
+                                throw StandardRpcException::fromRpcException($e);
+                            }
+
+                            throw new StandardRpcException('Failed to acknowledge the message with the external server', StandardError::INTERNAL_SERVER_ERROR, $e);
+                        }
+                    }
                 }
             }
             catch(DatabaseOperationException $e)

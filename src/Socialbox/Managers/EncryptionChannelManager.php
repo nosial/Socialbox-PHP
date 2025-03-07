@@ -604,23 +604,42 @@
          * @return EncryptionChannelMessageRecord[] An array of message objects returned
          * @throws DatabaseOperationException Thrown if there was a database operation error
          */
-        public static function receiveData(string $channelUuid, EncryptionMessageRecipient|string $recipient): array
+        public static function receiveData(string $channelUuid, EncryptionMessageRecipient|string $recipient, int $limit=100): array
         {
             if(!Validator::validateUuid($channelUuid))
             {
                 throw new InvalidArgumentException('The given Channel UUID is not a valid V4 UUID');
             }
 
+            elseif(is_string($recipient))
+            {
+                $recipient = EncryptionMessageRecipient::tryFrom($recipient);
+                if($recipient === null)
+                {
+                    throw new InvalidArgumentException('The given recipient is not a valid EncryptionMessageRecipient');
+                }
+            }
+
             if($recipient instanceof EncryptionMessageRecipient)
             {
                 $recipient = $recipient->value;
             }
+            else
+            {
+                throw new InvalidArgumentException('The given recipient is not a valid EncryptionMessageRecipient');
+            }
+
+            if($limit < 1)
+            {
+                throw new InvalidArgumentException('The limit cannot be less than 1');
+            }
 
             try
             {
-                $stmt = Database::getConnection()->prepare("SELECT * FROM encryption_channels_com WHERE channel_uuid=:channel_uuid AND recipient=:recipient AND status='SENT' ORDER BY timestamp LIMIT 100");
+                $stmt = Database::getConnection()->prepare("SELECT * FROM encryption_channels_com WHERE channel_uuid=:channel_uuid AND recipient=:recipient AND status='SENT' ORDER BY timestamp LIMIT :limit");
                 $stmt->bindParam(':channel_uuid', $channelUuid);
                 $stmt->bindParam(':recipient', $recipient);
+                $stmt->bindParam(':limit', $limit);
                 $stmt->execute();
                 $results = $stmt->fetchAll();
 
@@ -688,6 +707,14 @@
             if(empty($messageUuids))
             {
                 throw new InvalidArgumentException('The given Message UUIDs array is empty');
+            }
+
+            foreach($messageUuids as $messageUuid)
+            {
+                if(!Validator::validateUuid($messageUuid))
+                {
+                    throw new InvalidArgumentException('The given Message UUID is not a valid V4 uuid');
+                }
             }
 
             $placeholders = implode(',', array_fill(0, count($messageUuids), '?'));
