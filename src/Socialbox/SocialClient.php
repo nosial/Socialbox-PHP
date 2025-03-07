@@ -547,23 +547,6 @@
         }
 
         /**
-         * Checks if an encryption channel exists for the given channel UUID.
-         *
-         * @param string $channelUuid The UUID of the channel to check.
-         *
-         * @return bool True if an encryption channel exists, false otherwise.
-         * @throws RpcException Thrown if there was an error with the RPC request.
-         */
-        public function encryptionChannelExists(string $channelUuid): bool
-        {
-            return $this->sendRequest(
-                new RpcRequest(StandardMethods::ENCRYPTION_CHANNEL_EXISTS, parameters: [
-                    'channel_uuid' => $channelUuid
-                ])
-            )->getResponse()->getResult();
-        }
-
-        /**
          * Acknowledges an encrypted message in a specific channel.
          *
          * This method is used to confirm the successful delivery and decryption of a message
@@ -594,7 +577,7 @@
         }
 
         /**
-         * Acknowledges messages in an encryption channel.
+         * Acknowledges multiple messages in an encryption channel by sending multiple requests at once
          *
          * @param string $channelUuid The UUID of the encryption channel.
          * @param array $messageUuids An array of message UUIDs to acknowledge.
@@ -613,6 +596,23 @@
                 'channel_uuid' => $channelUuid,
                 'message_uuid' => $messageUuid
             ]), $messageUuids), $identifiedAs);
+        }
+
+        /**
+         * Checks if an encryption channel exists for the given channel UUID.
+         *
+         * @param string $channelUuid The UUID of the channel to check.
+         *
+         * @return bool True if an encryption channel exists, false otherwise.
+         * @throws RpcException Thrown if there was an error with the RPC request.
+         */
+        public function encryptionChannelExists(string $channelUuid): bool
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_CHANNEL_EXISTS, parameters: [
+                    'channel_uuid' => $channelUuid
+                ])
+            )->getResponse()->getResult();
         }
 
         /**
