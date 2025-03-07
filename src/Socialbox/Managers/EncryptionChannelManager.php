@@ -30,6 +30,11 @@
          */
         public static function channelUuidExists(string $channelUuid): bool
         {
+            if(!Validator::validateUuid($channelUuid))
+            {
+                throw new InvalidArgumentException('Invalid channel UUID V4');
+            }
+
             try
             {
                 $stmt = Database::getConnection()->prepare('SELECT COUNT(*) FROM encryption_channels WHERE uuid=:uuid');
