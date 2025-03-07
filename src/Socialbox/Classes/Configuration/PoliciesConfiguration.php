@@ -16,6 +16,7 @@
         private int $getEncryptionChannelsLimit;
         private int $getEncryptionChannelIncomingLimit;
         private int $getEncryptionChannelOutgoingLimit;
+        private int $encryptionChannelMaxMessages;
         private PrivacyState $defaultDisplayPicturePrivacy;
         private PrivacyState $defaultFirstNamePrivacy;
         private PrivacyState $defaultMiddleNamePrivacy;
@@ -51,6 +52,7 @@
             $this->getEncryptionChannelsLimit = $data['get_encryption_channels_limit'];
             $this->getEncryptionChannelIncomingLimit = $data['get_encryption_channel_incoming_limit'];
             $this->getEncryptionChannelOutgoingLimit = $data['get_encryption_channel_outgoing_limit'];
+            $this->encryptionChannelMaxMessages = $data['encryption_channel_max_messages'];
             $this->defaultDisplayPicturePrivacy = PrivacyState::tryFrom($data['default_display_picture_privacy']) ?? PrivacyState::PRIVATE;
             $this->defaultFirstNamePrivacy = PrivacyState::tryFrom($data['default_first_name_privacy']) ?? PrivacyState::PRIVATE;
             $this->defaultMiddleNamePrivacy = PrivacyState::tryFrom($data['default_middle_name_privacy']) ?? PrivacyState::PRIVATE;
@@ -156,6 +158,16 @@
         public function getEncryptionChannelOutgoingLimit(): int
         {
             return $this->getEncryptionChannelOutgoingLimit;
+        }
+
+        /**
+         * Returns the maximum number of messages that can be stored in an encryption channel
+         *
+         * @return int
+         */
+        public function getEncryptionChannelMaxMessages(): int
+        {
+            return $this->encryptionChannelMaxMessages;
         }
 
         /**

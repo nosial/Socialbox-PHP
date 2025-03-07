@@ -170,6 +170,7 @@
             $config->setDefault('policies.get_encryption_channels_limit', 100);
             $config->setDefault('policies.get_encryption_channel_incoming_limit', 100);
             $config->setDefault('policies.get_encryption_channel_outgoing_limit', 100);
+            $config->setDefault('policies.encryption_channel_max_messages', 100);
 
             // Default privacy states for information fields associated with the peer
             $config->setDefault('policies.default_display_picture_privacy', 'PUBLIC');
