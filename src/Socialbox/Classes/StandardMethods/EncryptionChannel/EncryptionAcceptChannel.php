@@ -87,8 +87,8 @@
                 {
                     $rpcClient = Socialbox::getExternalSession($encryptionChannel->getCallingPeerAddress()->getDomain());
                     $rpcClient->encryptionAcceptChannel(
-                        channelUuid: $rpcRequest->getParameter('channel_uuid'),
-                        publicEncryptionKey: $rpcRequest->getParameter('public_encryption_key'),
+                        channelUuid: (string)$rpcRequest->getParameter('channel_uuid'),
+                        publicEncryptionKey: (string)$rpcRequest->getParameter('public_encryption_key'),
                         identifiedAs: $receivingPeer->getAddress()
                     );
                 }
