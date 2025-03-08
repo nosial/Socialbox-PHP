@@ -46,7 +46,7 @@
             }
             catch(JsonException $e)
             {
-                throw new InvalidArgumentException("Failed to encode json input", $e);
+                throw new InvalidArgumentException("Failed to encode json input", 0, $e);
             }
         }
 
