@@ -5,12 +5,10 @@
     use Exception;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Logger;
-    use Socialbox\Classes\Validator;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Status\EncryptionChannelStatus;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -32,27 +30,15 @@
             {
                 throw new MissingRpcArgumentException('channel_uuid');
             }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
-            }
 
             if(!$rpcRequest->containsParameter('message_uuid'))
             {
                 throw new MissingRpcArgumentException('message_uuid');
             }
-            elseif(!is_string($rpcRequest->getParameter('message_uuid')))
-            {
-                throw new InvalidRpcArgumentException('message_uuid', 'Must be type string');
-            }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('message_uuid')))
-            {
-                throw new InvalidRpcArgumentException('message_uuid', 'Invalid message UUID V4');
-            }
 
             try
             {
-                $channelUuid = $rpcRequest->getParameter('channel_uuid');
+                $channelUuid = (string)$rpcRequest->getParameter('channel_uuid');
                 $encryptionChannel = EncryptionChannelManager::getChannel($channelUuid);
             }
             catch(DatabaseOperationException $e)
@@ -117,7 +103,7 @@
                 }
 
                 EncryptionChannelManager::rejectMessage(
-                    $rpcRequest->getParameter('channel_uuid'), $rpcRequest->getParameter('message_uuid')
+                    (string)$rpcRequest->getParameter('channel_uuid'), (string)$rpcRequest->getParameter('message_uuid')
                 );
             }
             catch(DatabaseOperationException $e)
@@ -176,8 +162,8 @@
                     return $rpcRequest->produceError(StandardError::UNAUTHORIZED, 'The message is not for the requesting peer');
                 }
 
-                EncryptionChannelManager::acknowledgeMessage(
-                    $rpcRequest->getParameter('channel_uuid'), $rpcRequest->getParameter('message_uuid')
+                EncryptionChannelManager::rejectMessage(
+                    (string)$rpcRequest->getParameter('channel_uuid'), (string)$rpcRequest->getParameter('message_uuid')
                 );
             }
             catch(DatabaseOperationException $e)
@@ -191,8 +177,8 @@
                 {
                     $rpcClient = Socialbox::getExternalSession($message->getOwner($encryptionChannel)->getDomain());
                     $rpcClient->encryptionChannelRejectMessage(
-                        channelUuid: $rpcRequest->getParameter('channel_uuid'),
-                        messageUuid: $rpcRequest->getParameter('message_uuid'),
+                        channelUuid: (string)$rpcRequest->getParameter('channel_uuid'),
+                        messageUuid: (string)$rpcRequest->getParameter('message_uuid'),
                         identifiedAs: $requestingPeer->getAddress()
                     );
                 }
@@ -200,7 +186,7 @@
                 {
                     try
                     {
-                        EncryptionChannelManager::rejectMessage($rpcRequest->getParameter('channel_uuid'), $rpcRequest->getParameter('message_uuid'), true);
+                        EncryptionChannelManager::rejectMessage((string)$rpcRequest->getParameter('channel_uuid'), (string)$rpcRequest->getParameter('message_uuid'), true);
                     }
                     catch (DatabaseOperationException $e)
                     {
