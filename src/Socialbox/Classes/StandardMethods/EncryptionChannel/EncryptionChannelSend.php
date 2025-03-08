@@ -32,10 +32,6 @@
             {
                 throw new MissingRpcArgumentException('channel_uuid');
             }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
-            }
 
             try
             {
@@ -101,10 +97,6 @@
             if(!$rpcRequest->containsParameter('checksum'))
             {
                 throw new MissingRpcArgumentException('checksum');
-            }
-            elseif(!Cryptography::validateSha512($rpcRequest->getParameter('checksum')))
-            {
-                throw new InvalidRpcArgumentException('checksum', 'The given checksum is not a valid SHA-512 checksum');
             }
 
             if(!$rpcRequest->containsParameter('data'))

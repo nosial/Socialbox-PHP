@@ -79,4 +79,17 @@
         {
             return preg_match("/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/", $uuid) === 1;
         }
+
+        /**
+         * Checks if a given Unix timestamp falls within a specified range of the current time.
+         *
+         * @param int $timestamp The Unix timestamp to check.
+         * @param int $range The range in seconds within which the timestamp should fall.
+         * @return bool True if the timestamp is within the range, false otherwise.
+         */
+        public static function isTimestampInRange(int $timestamp, int $range): bool
+        {
+            $currentTime = time();
+            return ($timestamp >= ($currentTime - $range)) && ($timestamp <= ($currentTime + $range));
+        }
     }

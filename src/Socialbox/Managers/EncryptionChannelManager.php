@@ -527,9 +527,28 @@
                 throw new InvalidArgumentException('Invalid UUID V4 of the message');
             }
 
+            if(!Validator::validateUuid($channelUuid))
+            {
+                throw new InvalidArgumentException('Invalid UUID V4 of the channel');
+            }
+
+            if(!Cryptography::validateSha512($checksum))
+            {
+                throw new InvalidArgumentException('Invalid checksum, must be SHA512');
+            }
+
+            if(empty($data))
+            {
+                throw new InvalidArgumentException('Data cannot be empty');
+            }
+
             if($messageTimestamp === null)
             {
                 $messageTimestamp = time();
+            }
+            elseif(!Validator::isTimestampInRange($messageTimestamp, 3600))
+            {
+                throw new InvalidArgumentException('Invalid timestamp, must be within 1 hour');
             }
 
             $currentMessageCount = self::getMessageCount($channelUuid);
