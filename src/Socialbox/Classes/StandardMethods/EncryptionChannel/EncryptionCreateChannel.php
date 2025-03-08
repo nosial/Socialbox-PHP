@@ -3,15 +3,11 @@
     namespace Socialbox\Classes\StandardMethods\EncryptionChannel;
 
     use Exception;
-    use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Logger;
-    use Socialbox\Classes\Validator;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -57,18 +53,10 @@
             {
                 throw new MissingRpcArgumentException('receiving_peer');
             }
-            elseif(!Validator::validatePeerAddress($rpcRequest->getParameter('receiving_peer')))
-            {
-                throw new InvalidRpcArgumentException('receiving_peer', 'Invalid Receiving Peer Address');
-            }
 
             if(!$rpcRequest->containsParameter('public_encryption_key'))
             {
                 throw new MissingRpcArgumentException('public_encryption_key');
-            }
-            elseif(!Cryptography::validatePublicEncryptionKey($rpcRequest->getParameter('public_encryption_key')))
-            {
-                throw new InvalidRpcArgumentException('public_encryption_key', 'The given public encryption key is invalid');
             }
 
             $receivingPeerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('receiving_peer'));
@@ -91,10 +79,6 @@
                     receivingPeer: $receivingPeerAddress,
                     callingPublicEncryptionKey: $rpcRequest->getParameter('public_encryption_ke')
                 );
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException(null, $e);
             }
             catch (DatabaseOperationException $e)
             {
@@ -133,21 +117,6 @@
 
                     throw new StandardRpcException('There was an error while trying to notify the external server of the encryption channel', StandardError::INTERNAL_SERVER_ERROR, $e);
                 }
-
-                // Check for sanity reasons
-                if($externalUuid !== $uuid)
-                {
-                    try
-                    {
-                        EncryptionChannelManager::declineChannel($uuid, true);
-                    }
-                    catch(DatabaseOperationException $e)
-                    {
-                        Logger::getLogger()->error('Error declining channel as server', $e);
-                    }
-
-                    throw new StandardRpcException('The external server did not return the correct UUID', StandardError::UUID_MISMATCH);
-                }
             }
 
             return null;
@@ -173,28 +142,16 @@
             {
                 throw new MissingRpcArgumentException('receiving_peer');
             }
-            elseif(!Validator::validatePeerAddress($rpcRequest->getParameter('receiving_peer')))
-            {
-                throw new InvalidRpcArgumentException('receiving_peer', 'Invalid Receiving Peer Address');
-            }
 
             if(!$rpcRequest->containsParameter('public_encryption_key'))
             {
                 throw new MissingRpcArgumentException('public_encryption_key');
-            }
-            elseif(!Cryptography::validatePublicEncryptionKey($rpcRequest->getParameter('public_encryption_key')))
-            {
-                throw new InvalidRpcArgumentException('public_encryption_key', 'The given public encryption key is invalid');
             }
 
             // Check for an additional required parameter 'channel_uuid'
             if(!$rpcRequest->containsParameter('channel_uuid'))
             {
                 throw new MissingRpcArgumentException('channel_uuid');
-            }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given UUID is not a valid UUID v4 format');
             }
 
             // Check if the UUID already is used on this server
@@ -236,7 +193,7 @@
                     callingPeer: $callingPeer,
                     receivingPeer: $receivingPeerAddress,
                     callingPublicEncryptionKey: $rpcRequest->getParameter('public_encryption_key'),
-                    channelUUid: $rpcRequest->getParameter('channel_uuid')
+                    channelUuid: $rpcRequest->getParameter('channel_uuid')
                 );
             }
             catch(DatabaseOperationException $e)

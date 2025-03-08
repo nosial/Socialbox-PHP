@@ -81,18 +81,18 @@
          * @param string|PeerAddress $callingPeer The peer address of the caller.
          * @param string|PeerAddress $receivingPeer The peer address of the receiver.
          * @param string $callingPublicEncryptionKey The public encryption key of the caller.
-         * @param string|null $channelUUid The UUID of the channel. If not provided, a new UUID will be generated.
+         * @param string|null $channelUuid The UUID of the channel. If not provided, a new UUID will be generated.
          * @return string The UUID of the created channel.
          * @throws DatabaseOperationException If the database operation fails.
          */
         public static function createChannel(string|PeerAddress $callingPeer, string|PeerAddress $receivingPeer,
-            string                                              $callingPublicEncryptionKey, ?string $channelUUid=null): string
+            string                                              $callingPublicEncryptionKey, ?string $channelUuid=null): string
         {
-            if($channelUUid === null)
+            if($channelUuid === null)
             {
                 $channelUUid = Uuid::v4()->toRfc4122();
             }
-            elseif(!Validator::validateUuid($channelUUid))
+            elseif(!Validator::validateUuid($channelUuid))
             {
                 throw new InvalidArgumentException('Invalid UUID V4');
             }
@@ -122,15 +122,15 @@
 
             try
             {
-                $channelUUid = $channelUUid ?? Uuid::v4()->toRfc4122();
+                $channelUuid = $channelUuid ?? Uuid::v4()->toRfc4122();
                 $stmt = Database::getConnection()->prepare('INSERT INTO encryption_channels (uuid, calling_peer_address, receiving_peer_address, calling_peer_address, calling_public_encryption_key) VALUES (:uuid, :calling_peer_address, :receiving_peer_address, :calling_peer_address, :calling_public_encryption_key)');
-                $stmt->bindParam(':uuid', $channelUUid);
+                $stmt->bindParam(':uuid', $channelUuid);
                 $stmt->bindParam(':calling_peer_address', $callingPeer);
                 $stmt->bindParam(':receiving_peer_address', $receivingPeer);
                 $stmt->bindParam(':calling_public_encryption_key', $callingPublicEncryptionKey);
                 $stmt->execute();
 
-                return $channelUUid;
+                return $channelUuid;
             }
             catch (PDOException $e)
             {
