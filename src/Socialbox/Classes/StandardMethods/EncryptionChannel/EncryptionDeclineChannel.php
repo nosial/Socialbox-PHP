@@ -5,12 +5,10 @@
     use Exception;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Logger;
-    use Socialbox\Classes\Validator;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Status\EncryptionChannelStatus;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -53,10 +51,6 @@
             if(!$rpcRequest->containsParameter('channel_uuid'))
             {
                 throw new MissingRpcArgumentException('channel_uuid');
-            }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
             }
 
             try
@@ -142,10 +136,6 @@
             if(!$rpcRequest->containsParameter('channel_uuid'))
             {
                 throw new MissingRpcArgumentException('channel_uuid');
-            }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
             }
 
             try
