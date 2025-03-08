@@ -5,7 +5,6 @@
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
-    use Socialbox\Classes\Validator;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
@@ -27,10 +26,6 @@
             if(!$rpcRequest->containsParameter('channel_uuid'))
             {
                 throw new MissingRpcArgumentException('channel_uuid');
-            }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
             }
 
             $page = 1;

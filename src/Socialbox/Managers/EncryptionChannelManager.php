@@ -451,15 +451,15 @@
          */
         public static function getChannelRequests(string|PeerAddress $peerAddress, int $page=1, int $limit=100): array
         {
-            if($peerAddress instanceof PeerAddress)
-            {
-                $peerAddress = $peerAddress->getAddress();
-            }
-            elseif(!Validator::validatePeerAddress($peerAddress))
+            if(is_string($peerAddress) && !Validator::validatePeerAddress($peerAddress))
             {
                 throw new InvalidArgumentException('Invalid Peer Address');
             }
 
+            if($peerAddress instanceof PeerAddress)
+            {
+                $peerAddress = $peerAddress->getAddress();
+            }
 
             if($page < 1)
             {
