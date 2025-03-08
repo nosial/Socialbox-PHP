@@ -76,55 +76,62 @@
 
             try
             {
-
                 $messages = EncryptionChannelManager::receiveData(
                     $rpcRequest->getParameter('channel_uuid'), $encryptionChannel->determineRecipient($requestingPeer->getAddress(), true)
                 );
+            }
+            catch(DatabaseOperationException $e)
+            {
+                throw new StandardRpcException('Failed to retrieve the messages', StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
+
+            if($acknowledge)
+            {
                 $messageUuids = array_map(fn($message) => $message->getUuid(), $messages);
 
-                if($acknowledge)
+                try
                 {
                     EncryptionChannelManager::acknowledgeMessagesBatch(
                         channelUuid: $rpcRequest->getParameter('channel_uuid'),
                         messageUuids: $messageUuids,
                     );
+                }
+                catch (DatabaseOperationException $e)
+                {
+                    throw new StandardRpcException('Failed to acknowledge the messages locally', StandardError::INTERNAL_SERVER_ERROR, $e);
+                }
 
-                    $externalPeer = $encryptionChannel->getExternalPeer();
-                    if($externalPeer !== null)
+                $externalPeer = $encryptionChannel->getExternalPeer();
+                if($externalPeer !== null)
+                {
+                    try
+                    {
+                        $rpcClient = Socialbox::getExternalSession($externalPeer->getDomain());
+                        $rpcClient->encryptionChannelAcknowledgeMessages(
+                            channelUuid: (string)$rpcRequest->getParameter('channel_uuid'),
+                            messageUuids: $messageUuids,
+                            identifiedAs: $requestingPeer->getAddress()
+                        );
+                    }
+                    catch(Exception $e)
                     {
                         try
                         {
-                            $rpcClient = Socialbox::getExternalSession($externalPeer->getDomain());
-                            $rpcClient->encryptionChannelAcknowledgeMessages(
-                                channelUuid: (string)$rpcRequest->getParameter('channel_uuid'),
-                                messageUuids: $messageUuids,
-                                identifiedAs: $requestingPeer->getAddress()
-                            );
+                            EncryptionChannelManager::rejectMessage($rpcRequest->getParameter('channel_uuid'), $rpcRequest->getParameter('message_uuid'), true);
                         }
-                        catch(Exception $e)
+                        catch (DatabaseOperationException $e)
                         {
-                            try
-                            {
-                                EncryptionChannelManager::rejectMessage($rpcRequest->getParameter('channel_uuid'), $rpcRequest->getParameter('message_uuid'), true);
-                            }
-                            catch (DatabaseOperationException $e)
-                            {
-                                Logger::getLogger()->error('Error rejecting message as server', $e);
-                            }
-
-                            if($e instanceof RpcException)
-                            {
-                                throw StandardRpcException::fromRpcException($e);
-                            }
-
-                            throw new StandardRpcException('Failed to acknowledge the message with the external server', StandardError::INTERNAL_SERVER_ERROR, $e);
+                            Logger::getLogger()->error('Error rejecting message as server', $e);
                         }
+
+                        if($e instanceof RpcException)
+                        {
+                            throw StandardRpcException::fromRpcException($e);
+                        }
+
+                        throw new StandardRpcException('Failed to acknowledge the message with the external server', StandardError::INTERNAL_SERVER_ERROR, $e);
                     }
                 }
-            }
-            catch(DatabaseOperationException $e)
-            {
-                throw new StandardRpcException('Failed to retrieve the messages', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return $rpcRequest->produceResponse(array_map(fn($message) => $message->toStandard(), $messages));
