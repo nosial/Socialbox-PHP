@@ -86,6 +86,7 @@
          * @param PeerAddress|string $receivingPeer The address of the peer to create the channel with
          * @return string The UUID of the encryption channel
          * @throws CryptographyException Thrown if there was an error while generating the encryption key pair
+         * @throws RpcException Thrown if there was an error with the RPC request
          */
         public function newEncryptionChannel(string|PeerAddress $receivingPeer): string
         {
@@ -497,14 +498,13 @@
          *
          * @param PeerAddress|string $peer The address of the peer to verify the signature for
          * @param string $signatureUuid The UUID of the signature to verify
-         * @param string $signaturePublicKey The public key that was used to create the signature
          * @param string $signature The signature to verify
          * @param string $sha512 The SHA512 hash of the data that was signed
          * @param int|null $signatureTime Optional. The timestamp of the signature creation time
          * @return SignatureVerificationStatus the status of the verification
          * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function verifySignature(PeerAddress|string $peer, string $signatureUuid, string $signaturePublicKey, string $signature, string $sha512, ?int $signatureTime=null): SignatureVerificationStatus
+        public function verifySignature(PeerAddress|string $peer, string $signatureUuid, string $signature, string $sha512, ?int $signatureTime=null): SignatureVerificationStatus
         {
             if($peer instanceof PeerAddress)
             {
@@ -773,6 +773,66 @@
                     'channel_uuid' => $channelUuid
                 ])
             )->getResponse()->getResult());
+        }
+
+        /**
+         * Retrieves encrypted channel requests with pagination support.
+         *
+         * This method fetches channel requests that have encryption enabled.
+         *
+         * @param int|null $page The page number to retrieve (defaults to 1)
+         * @param int|null $limit The maximum number of items per page (null means use default system limit)
+         * @return EncryptionChannel[] An array containing encryption channels
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function encryptionGetChannelRequests(?int $page=1, ?int $limit=null): array
+        {
+            return array_map(fn($channel) => new EncryptionChannel($channel),
+                $this->sendRequest(new RpcRequest(StandardMethods::ENCRYPTION_GET_CHANNEL_REQUESTS, parameters: [
+                    'page' => $page,
+                    'limit' => $limit
+                ]))->getResponse()->getResult()
+            );
+        }
+
+        /**
+         * Retrieves incoming encryption channels with pagination support.
+         *
+         * This method fetches channels that are incoming to the authenticated peer.
+         *
+         * @param int|null $page The page number to retrieve (defaults to 1)
+         * @param int|null $limit The maximum number of items per page (null means use default system limit)
+         * @return EncryptionChannel[] An array containing encryption channels
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function encryptionGetIncomingChannels(?int $page=1, ?int $limit=null): array
+        {
+            return array_map(fn($channel) => new EncryptionChannel($channel),
+                $this->sendRequest(new RpcRequest(StandardMethods::ENCRYPTION_GET_INCOMING_CHANNELS, parameters: [
+                    'page' => $page,
+                    'limit' => $limit
+                ]))->getResponse()->getResult()
+            );
+        }
+
+        /**
+         * Retrieves outgoing encryption channels with pagination support.
+         *
+         * This method fetches channels that are outgoing from the authenticated peer.
+         *
+         * @param int|null $page The page number to retrieve (defaults to 1)
+         * @param int|null $limit The maximum number of items per page (null means use default system limit)
+         * @return EncryptionChannel[] An array containing encryption channels
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function getOutgoingChannels(?int $page=1, ?int $limit=null): array
+        {
+            return array_map(fn($channel) => new EncryptionChannel($channel),
+                $this->sendRequest(new RpcRequest(StandardMethods::ENCRYPTION_GET_OUTGOING_CHANNELS, parameters: [
+                    'page' => $page,
+                    'limit' => $limit
+                ]))->getResponse()->getResult()
+            );
         }
 
         /**
