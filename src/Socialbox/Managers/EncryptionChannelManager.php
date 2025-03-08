@@ -419,7 +419,7 @@
             try
             {
                 $offset = ($page -1) * $limit;
-                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE calling_peer_address=:peer_address LIMIT :limit OFFSET :offset');
+                $stmt = Database::getConnection()->prepare('SELECT * FROM encryption_channels WHERE calling_peer_address=:peer_address ORDER BY created LIMIT :limit OFFSET :offset');
                 $stmt->bindParam(':peer_address', $peerAddress);
                 $stmt->bindParam(':limit', $limit);
                 $stmt->bindParam(':offset', $offset);
