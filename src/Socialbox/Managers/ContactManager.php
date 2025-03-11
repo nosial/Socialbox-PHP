@@ -2,10 +2,13 @@
 
     namespace Socialbox\Managers;
 
+    use DateTime;
+    use InvalidArgumentException;
     use ncc\ThirdParty\Symfony\Uid\UuidV4;
     use PDO;
     use PDOException;
     use Socialbox\Classes\Database;
+    use Socialbox\Classes\Validator;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\ContactDatabaseRecord;
@@ -29,6 +32,15 @@
             if($contactAddress instanceof PeerAddress)
             {
                 $contactAddress = $contactAddress->getAddress();
+            }
+            elseif(!Validator::validateUuid($contactAddress))
+            {
+                throw new InvalidArgumentException('The given contact address is invalid');
+            }
+
+            if(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given peer internal UUID is not a valid UUID V4');
             }
 
             try
@@ -187,6 +199,15 @@
             if($contactAddress instanceof PeerAddress)
             {
                 $contactAddress = $contactAddress->getAddress();
+            }
+            elseif(!Validator::validatePeerAddress($contactAddress))
+            {
+                throw new InvalidArgumentException('The given contact address is not a valid peer address');
+            }
+
+            if(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
             }
 
             try
@@ -360,7 +381,7 @@
                 $statement->bindParam(':expires', $expires);
                 $created = $signingKey->getCreated();
                 $statement->bindParam(':created', $created);
-                $trustedOn = (new \DateTime())->format('Y-m-d H:i:s');
+                $trustedOn = (new DateTime())->format('Y-m-d H:i:s');
                 $statement->bindParam(':trusted_on', $trustedOn);
             }
             catch(PDOException $e)
