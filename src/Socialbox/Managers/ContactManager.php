@@ -330,6 +330,11 @@
                 throw new InvalidArgumentException('The limit cannot exceed a value of ' . Configuration::getPoliciesConfiguration()->getGetContactsLimit());
             }
 
+            if(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given peer UUID is not a valid UUID V4');
+            }
+
             $contacts = [];
 
             try
