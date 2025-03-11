@@ -7,6 +7,7 @@
     use ncc\ThirdParty\Symfony\Uid\UuidV4;
     use PDO;
     use PDOException;
+    use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Validator;
@@ -317,12 +318,16 @@
         {
             if ($page < 1)
             {
-                $page = 1;
+                throw new InvalidArgumentException('The page number cannot be less than 1');
             }
 
             if ($limit < 1)
             {
-                $limit = 1;
+                throw new InvalidArgumentException('The limit cannot be less than 1');
+            }
+            elseif($limit > Configuration::getPoliciesConfiguration()->getGetContactsLimit())
+            {
+                throw new InvalidArgumentException('The limit cannot exceed a value of ' . Configuration::getPoliciesConfiguration()->getGetContactsLimit());
             }
 
             $contacts = [];
