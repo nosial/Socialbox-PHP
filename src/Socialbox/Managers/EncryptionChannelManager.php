@@ -90,7 +90,7 @@
         {
             if($channelUuid === null)
             {
-                $channelUUid = Uuid::v4()->toRfc4122();
+                $channelUuid = Uuid::v4()->toRfc4122();
             }
             elseif(!Validator::validateUuid($channelUuid))
             {
