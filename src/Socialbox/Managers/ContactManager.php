@@ -7,6 +7,7 @@
     use ncc\ThirdParty\Symfony\Uid\UuidV4;
     use PDO;
     use PDOException;
+    use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Validator;
     use Socialbox\Enums\Types\ContactRelationshipType;
@@ -423,6 +424,15 @@
             if($contactUuid instanceof ContactDatabaseRecord)
             {
                 $contactUuid = $contactUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($contactUuid))
+            {
+                throw new InvalidArgumentException('The given contact UUID is not a valid UUID V4');
+            }
+
+            if(!Validator::validateUuid($signatureUuid))
+            {
+                throw new InvalidArgumentException('The given signature UUID is not a valid UUID V4');
             }
 
             try

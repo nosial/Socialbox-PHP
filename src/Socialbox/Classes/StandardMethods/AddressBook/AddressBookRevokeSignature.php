@@ -14,7 +14,6 @@
     use Socialbox\Objects\ClientRequest;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
-    use Symfony\Component\Uid\Uuid;
 
     class AddressBookRevokeSignature extends Method
     {
@@ -45,18 +44,8 @@
 
             try
             {
-                $signatureUuid = Uuid::fromString($rpcRequest->getParameter('signature_uuid'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException('signature_uuid', $e);
-            }
-
-            try
-            {
                 // Check if the contact already exists
-                $peer = $request->getPeer();
-                $contact = ContactManager::getContact($peer, $address);
+                $contact = ContactManager::getContact($request->getPeer(), $address);
             }
             catch (DatabaseOperationException $e)
             {
@@ -70,6 +59,7 @@
 
             try
             {
+                $signatureUuid = (string)$rpcRequest->getParameter('signature_uuid');
                 if(!ContactManager::contactSigningKeyUuidExists($contact, $signatureUuid))
                 {
                     return $rpcRequest->produceResponse(false);
