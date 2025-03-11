@@ -4,13 +4,10 @@
 
     use Exception;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Logger;
-    use Socialbox\Classes\Validator;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Status\EncryptionChannelStatus;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\RpcException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -31,14 +28,17 @@
             {
                 throw new MissingRpcArgumentException('channel_uuid');
             }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
-            }
 
-            if($request->isExternal())
+            try
             {
-                return self::handleExternal($request, $rpcRequest);
+                if ($request->isExternal())
+                {
+                    return self::handleExternal($request, $rpcRequest);
+                }
+            }
+            catch (DatabaseOperationException $e)
+            {
+                throw new StandardRpcException('There was an error while handling the external request', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             return self::handleInternal($request, $rpcRequest);
@@ -98,15 +98,6 @@
                 }
                 catch(Exception $e)
                 {
-                    try
-                    {
-                        EncryptionChannelManager::declineChannel($rpcRequest->getParameter('channel_uuid'), true);
-                    }
-                    catch(DatabaseOperationException $e)
-                    {
-                        Logger::getLogger()->error('Error declining channel as server', $e);
-                    }
-
                     if($e instanceof RpcException)
                     {
                         throw StandardRpcException::fromRpcException($e);
@@ -145,13 +136,11 @@
             {
                 return $rpcRequest->produceError(StandardError::NOT_FOUND, 'The requested encryption channel was not found');
             }
-
-            if(!$encryptionChannel->isParticipant($request->getIdentifyAs()))
+            elseif(!$encryptionChannel->isParticipant($request->getIdentifyAs()))
             {
                 return $rpcRequest->produceError(StandardError::UNAUTHORIZED, 'The requested encryption channel is not accessible');
             }
-
-            if($encryptionChannel->getStatus() === EncryptionChannelStatus::CLOSED)
+            elseif($encryptionChannel->getStatus() === EncryptionChannelStatus::CLOSED)
             {
                 return $rpcRequest->produceResponse(false);
             }
