@@ -26,15 +26,11 @@
             {
                 throw new MissingRpcArgumentException('channel_uuid');
             }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('channel_uuid')))
-            {
-                throw new InvalidRpcArgumentException('channel_uuid', 'The given channel uuid is not a valid UUID V4');
-            }
 
             try
             {
                 $requestingPeer = $request->getPeer();
-                $encryptionChannel = EncryptionChannelManager::getChannel($rpcRequest->getParameter('channel_uuid'));
+                $encryptionChannel = EncryptionChannelManager::getChannel((string)$rpcRequest->getParameter('channel_uuid'));
             }
             catch(DatabaseOperationException $e)
             {
