@@ -191,6 +191,15 @@
             {
                 $contactAddress = $contactAddress->getAddress();
             }
+            elseif(!Validator::validatePeerAddress($contactAddress))
+            {
+                throw new InvalidArgumentException('The given contact address is invalid');
+            }
+
+            if(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
 
             try
             {
