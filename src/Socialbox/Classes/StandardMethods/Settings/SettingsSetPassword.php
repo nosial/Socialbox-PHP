@@ -3,12 +3,10 @@
     namespace Socialbox\Classes\StandardMethods\Settings;
 
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -28,12 +26,6 @@
             {
                 throw new MissingRpcArgumentException('password');
             }
-
-            if(!Cryptography::validatePasswordHash($rpcRequest->getParameter('password')))
-            {
-                throw new InvalidRpcArgumentException('password', "Must be a valid argon2id hash");
-            }
-
             try
             {
                 if (PasswordManager::usesPassword($request->getPeer()->getUuid()))
@@ -49,7 +41,7 @@
             try
             {
                 // Set the password
-                PasswordManager::setPassword($request->getPeer(), $rpcRequest->getParameter('password'));
+                PasswordManager::setPassword($request->getPeer(), (string)$rpcRequest->getParameter('password'));
 
                 // Remove the SET_PASSWORD flag & update the session flow if necessary
                 SessionManager::updateFlow($request->getSession(), [SessionFlags::SET_PASSWORD]);

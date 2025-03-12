@@ -63,11 +63,15 @@
             {
                 $peerUuid = $peerUuid->getUuid();
             }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
 
             // Throws an exception if the hash is invalid
             if(!Cryptography::validatePasswordHash($hash))
             {
-                throw new CryptographyException('Invalid password hash');
+                throw new CryptographyException('Invalid password aragon2id hash');
             }
 
             $encryptionKey = Configuration::getCryptographyConfiguration()->getRandomInternalEncryptionKey();
