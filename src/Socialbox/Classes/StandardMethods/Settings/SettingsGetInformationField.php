@@ -25,6 +25,7 @@
             {
                 throw new MissingRpcArgumentException('field');
             }
+
             $fieldName = InformationFieldName::tryFrom(strtoupper($rpcRequest->getParameter('field')));
             if($fieldName === null)
             {
