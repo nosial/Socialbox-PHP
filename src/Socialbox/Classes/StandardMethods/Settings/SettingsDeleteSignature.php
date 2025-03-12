@@ -23,28 +23,21 @@
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-            if(!$rpcRequest->containsParameter('uuid'))
+            if(!$rpcRequest->containsParameter('signature_uuid'))
             {
-                throw new MissingRpcArgumentException('uuid');
+                throw new MissingRpcArgumentException('signature_uuid');
             }
+
+            $signatureUuid = (string)$rpcRequest->getParameter('signature_uuid');
 
             try
             {
-                $uuid = Uuid::fromString($rpcRequest->getParameter('uuid'));
-            }
-            catch(InvalidArgumentException)
-            {
-                throw new InvalidRpcArgumentException('uuid');
-            }
-
-            try
-            {
-                if(!SigningKeysManager::signingKeyExists($request->getPeer()->getUuid(), $uuid))
+                if(!SigningKeysManager::signingKeyExists($request->getPeer()->getUuid(), $signatureUuid))
                 {
                     return $rpcRequest->produceResponse(false);
                 }
 
-                SigningKeysManager::deleteSigningKey($request->getPeer()->getUuid(), $uuid);
+                SigningKeysManager::deleteSigningKey($request->getPeer()->getUuid(), $signatureUuid);
             }
             catch(DatabaseOperationException $e)
             {

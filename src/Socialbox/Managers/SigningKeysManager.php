@@ -235,16 +235,26 @@
          * Deletes a signing key from the database using the provided UUID.
          *
          * @param string $peerUuid The UUID of the peer associated with the signing key.
-         * @param string $uuid The UUID of the signing key to delete.
+         * @param string $signatureUuid The UUID of the signing key to delete.
          * @return void
          * @throws DatabaseOperationException If a database error occurs during the operation.
          */
-        public static function deleteSigningKey(string $peerUuid, string $uuid): void
+        public static function deleteSigningKey(string $peerUuid, string $signatureUuid): void
         {
+            if(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
+
+            if(!Validator::validateUuid($signatureUuid))
+            {
+                throw new InvalidArgumentException('The given signature UUID is not a valid UUID V4');
+            }
+
             try
             {
                 $statement = Database::getConnection()->prepare("DELETE FROM signing_keys WHERE uuid=:uuid AND peer_uuid=:peer_uuid");
-                $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':uuid', $signatureUuid);
                 $statement->bindParam(':peer_uuid', $peerUuid);
                 $statement->execute();
             }
