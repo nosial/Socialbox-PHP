@@ -27,7 +27,7 @@
             {
                 throw new MissingRpcArgumentException('field');
             }
-            $fieldName = InformationFieldName::tryFrom(strtoupper($rpcRequest->getParameter('field')));
+            $fieldName = InformationFieldName::tryFrom(strtoupper((string)$rpcRequest->getParameter('field')));
             if($fieldName === null)
             {
                 throw new InvalidRpcArgumentException('field');
@@ -39,7 +39,7 @@
                 throw new MissingRpcArgumentException('privacy');
             }
 
-            $privacy = PrivacyState::tryFrom(strtoupper($rpcRequest->getParameter('privacy')));
+            $privacy = PrivacyState::tryFrom(strtoupper((string)$rpcRequest->getParameter('privacy')));
             if($privacy === null)
             {
                 throw new InvalidRpcArgumentException('privacy');
@@ -47,19 +47,18 @@
 
             try
             {
-                $peer = $request->getPeer();
-                if(!PeerInformationManager::fieldExists($peer, $fieldName))
+                $requestingPeer = $request->getPeer();
+                if(!PeerInformationManager::fieldExists($requestingPeer, $fieldName))
                 {
                     return $rpcRequest->produceResponse(false);
                 }
 
-                PeerInformationManager::updatePrivacyState($peer, $fieldName, $privacy);
+                PeerInformationManager::updatePrivacyState($requestingPeer, $fieldName, $privacy);
             }
             catch(DatabaseOperationException $e)
             {
                 throw new StandardRpcException('Failed to update the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
-
 
             return $rpcRequest->produceResponse(true);
         }

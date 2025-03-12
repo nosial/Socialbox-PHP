@@ -2,9 +2,11 @@
 
     namespace Socialbox\Managers;
 
+    use InvalidArgumentException;
     use PDOException;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Database;
+    use Socialbox\Classes\Validator;
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -113,10 +115,14 @@
             {
                 $peerUuid = $peerUuid->getUuid();
             }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
 
             if(!self::fieldExists($peerUuid, $property))
             {
-                throw new \InvalidArgumentException(sprintf('Cannot update privacy state, the requested property %s does not exist with %s', $property->value, $peerUuid));
+                throw new InvalidArgumentException(sprintf('Cannot update privacy state, the requested property %s does not exist with %s', $property->value, $peerUuid));
             }
             
             try
@@ -148,6 +154,10 @@
             if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
             }
 
             try
@@ -253,7 +263,6 @@
             }
 
             $results = [];
-            /** @var PrivacyState $privacyState */
             foreach($privacyFilters as $privacyState)
             {
                 try
