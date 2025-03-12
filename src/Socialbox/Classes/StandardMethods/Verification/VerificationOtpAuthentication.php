@@ -8,6 +8,7 @@
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
@@ -35,7 +36,15 @@
                 throw new InvalidRpcArgumentException('code', 'Invalid OTP code length');
             }
 
-            $session = $request->getSession();
+            try
+            {
+                $session = $request->getSession();
+            }
+            catch (DatabaseOperationException $e)
+            {
+                throw new StandardRpcException('An error occurred while trying to get the session', StandardError::INTERNAL_SERVER_ERROR, $e);
+            }
+
             if(!$session->flagExists(SessionFlags::VER_OTP))
             {
                 return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'One Time Password verification is not required at this time');
