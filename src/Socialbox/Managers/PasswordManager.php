@@ -8,6 +8,7 @@
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
+    use Socialbox\Classes\Validator;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\PeerDatabaseRecord;
@@ -161,6 +162,15 @@
             if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new CryptographyException('The given internal peer UUID is not a valid UUID V4');
+            }
+
+            if(!Cryptography::validateSha512($sha512))
+            {
+                throw new CryptographyException('Invalid SHA-512 hash');
             }
 
             try

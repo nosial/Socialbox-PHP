@@ -4,11 +4,9 @@
 
     use Exception;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -28,11 +26,6 @@
             if(!$rpcRequest->containsParameter('password'))
             {
                 throw new MissingRpcArgumentException('password');
-            }
-
-            if(!Cryptography::validateSha512($rpcRequest->getParameter('password')))
-            {
-                throw new InvalidRpcArgumentException('password', 'Invalid SHA-512 hash');
             }
 
             try
