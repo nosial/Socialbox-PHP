@@ -12,6 +12,7 @@
     use Socialbox\Enums\SigningKeyState;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Objects\Database\PeerDatabaseRecord;
     use Socialbox\Objects\Database\SigningKeyRecord;
 
     class SigningKeysManager
@@ -20,12 +21,21 @@
         /**
          * Retrieves the count of signing keys associated with a specific peer UUID.
          *
-         * @param string $peerUuid The UUID of the peer for which to count the signing keys.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer for which to count the signing keys.
          * @return int The number of signing keys associated with the given peer UUID.
          * @throws DatabaseOperationException If there is an error during the database operation.
          */
-        public static function getSigningKeyCount(string $peerUuid): int
+        public static function getSigningKeyCount(string|PeerDatabaseRecord $peerUuid): int
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
+
             try
             {
                 $statement = Database::getConnection()->prepare("SELECT COUNT(*) FROM signing_keys WHERE peer_uuid=:peer_uuid");
@@ -43,20 +53,28 @@
         /**
          * Adds a signing key to the database for a specific peer.
          *
-         * @param string $peerUuid The unique identifier of the peer associated with the signing key.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier of the peer associated with the signing key.
          * @param string $publicKey The public signing key to be added. Must be valid according to the Cryptography::validatePublicSigningKey method.
          * @param string $name Optional name associated with the signing key. Must not exceed 64 characters in length.
          * @param int|null $expires Optional expiration timestamp for the signing key. Can be null if the key does not expire.
          * @return string The UUID of the newly added signing key.
          * @throws DatabaseOperationException If the operation to add the signing key to the database fails.
          */
-        public static function addSigningKey(string $peerUuid, string $publicKey, string $name, ?int $expires=null): string
+        public static function addSigningKey(string|PeerDatabaseRecord $peerUuid, string $publicKey, string $name, ?int $expires=null): string
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
+
             if(!Cryptography::validatePublicSigningKey($publicKey))
             {
                 throw new InvalidArgumentException('The public key is invalid');
             }
-
 
             if(empty($name))
             {
@@ -113,14 +131,28 @@
         /**
          * Updates the state of a signing key in the database identified by its UUID.
          *
-         * @param string $peerUuid The UUID of the peer associated with the signing key.
-         * @param string $uuid The unique identifier of the signing key to update.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer associated with the signing key.
+         * @param string $signatureUuid The unique identifier of the signing key to update.
          * @param SigningKeyState $state The new state to set for the signing key.
          * @return void
          * @throws DatabaseOperationException
          */
-        public static function updateSigningKeyState(string $peerUuid, string $uuid, SigningKeyState $state): void
+        public static function updateSigningKeyState(string|PeerDatabaseRecord $peerUuid, string $signatureUuid, SigningKeyState $state): void
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
+
+            if(!Validator::validateUuid($signatureUuid))
+            {
+                throw new InvalidArgumentException('The given signature UUID is not a valid UUID V4');
+            }
+
             $state = $state->value;
 
             try
@@ -128,7 +160,7 @@
                 $statement = Database::getConnection()->prepare("UPDATE signing_keys SET state=:state WHERE peer_uuid=:peer_uuid AND uuid=:uuid");
                 $statement->bindParam(':state', $state);
                 $statement->bindParam(':peer_uuid', $peerUuid);
-                $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':uuid', $signatureUuid);
                 $statement->execute();
             }
             catch (PDOException $e)
@@ -140,17 +172,31 @@
         /**
          * Retrieves a signing key from the database using the provided UUID.
          *
-         * @param string $peerUuid The UUID of the peer associated with the signing key.
-         * @param string $uuid The UUID of the signing key to retrieve.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer associated with the signing key.
+         * @param string $signatureUuid The UUID of the signing key to retrieve.
          * @return SigningKeyRecord|null The signing key record if found, or null if no record exists.
          * @throws DatabaseOperationException If a database error occurs during the operation.
          */
-        public static function getSigningKey(string $peerUuid, string $uuid): ?SigningKeyRecord
+        public static function getSigningKey(string|PeerDatabaseRecord $peerUuid, string $signatureUuid): ?SigningKeyRecord
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
+
+            if(!Validator::validateUuid($signatureUuid))
+            {
+                throw new InvalidArgumentException('The given signature UUID is not a valid UUID V4');
+            }
+
             try
             {
                 $statement = Database::getConnection()->prepare("SELECT * FROM signing_keys WHERE uuid=:uuid AND peer_uuid=:peer_uuid");
-                $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':uuid', $signatureUuid);
                 $statement->bindParam(':peer_uuid', $peerUuid);
                 $statement->execute();
 
@@ -170,12 +216,21 @@
         /**
          * Retrieves the signing keys associated with a specific peer UUID.
          *
-         * @param string $peerUuid The UUID of the peer whose signing keys are to be retrieved.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer whose signing keys are to be retrieved.
          * @return SigningKeyRecord[] An array of SigningKeyRecord objects representing the signing keys.
          * @throws DatabaseOperationException If an error occurs during the database operation.
          */
-        public static function getSigningKeys(string $peerUuid): array
+        public static function getSigningKeys(string|PeerDatabaseRecord $peerUuid): array
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
+
             try
             {
                 $statement = Database::getConnection()->prepare("SELECT * FROM signing_keys WHERE peer_uuid=:peer_uuid");
@@ -199,14 +254,18 @@
         /**
          * Checks if a signing key exists in the database using the provided UUID.
          *
-         * @param string $peerUuid The UUID of the peer associated with the signing key.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer associated with the signing key.
          * @param string $signatureUuid The UUID of the signing key to check.
          * @return bool True if the signing key exists, false otherwise.
          * @throws DatabaseOperationException If a database error occurs during the operation.
          */
-        public static function signingKeyExists(string $peerUuid, string $signatureUuid): bool
+        public static function signingKeyExists(string|PeerDatabaseRecord $peerUuid, string $signatureUuid): bool
         {
-            if(!Validator::validateUuid($peerUuid))
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
             {
                 throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
             }
@@ -234,14 +293,18 @@
         /**
          * Deletes a signing key from the database using the provided UUID.
          *
-         * @param string $peerUuid The UUID of the peer associated with the signing key.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID of the peer associated with the signing key.
          * @param string $signatureUuid The UUID of the signing key to delete.
          * @return void
          * @throws DatabaseOperationException If a database error occurs during the operation.
          */
-        public static function deleteSigningKey(string $peerUuid, string $signatureUuid): void
+        public static function deleteSigningKey(string|PeerDatabaseRecord $peerUuid, string $signatureUuid): void
         {
-            if(!Validator::validateUuid($peerUuid))
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
             {
                 throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
             }
