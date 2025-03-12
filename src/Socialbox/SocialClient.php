@@ -1030,7 +1030,7 @@
         {
             return $this->sendRequest(
                 new RpcRequest(StandardMethods::SETTINGS_DELETE_SIGNATURE, parameters: [
-                    'uuid' => $uuid
+                    'signature_uuid' => $uuid
                 ])
             )->getResponse()->getResult();
         }
@@ -1081,7 +1081,7 @@
         {
             return new Signature($this->sendRequest(
                 new RpcRequest(StandardMethods::SETTINGS_GET_SIGNATURE, parameters: [
-                    'uuid' => $uuid
+                    'signature_uuid' => $uuid
                 ])
             )->getResponse()->getResult());
         }
