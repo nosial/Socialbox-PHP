@@ -3,6 +3,7 @@
     namespace Socialbox\Managers;
     
     use DateTime;
+    use InvalidArgumentException;
     use PDO;
     use PDOException;
     use Socialbox\Classes\Configuration;
@@ -27,6 +28,10 @@
             if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
             }
             
             try
@@ -97,10 +102,14 @@
             {
                 $peerUuid = $peerUuid->getUuid();
             }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new CryptographyException('The given internal peer UUID is not a valid UUID V4');
+            }
 
             if(!Cryptography::validatePasswordHash($hash))
             {
-                throw new CryptographyException('Invalid password hash');
+                throw new CryptographyException('Invalid password argon2id hash');
             }
 
             $encryptionKey = Configuration::getCryptographyConfiguration()->getRandomInternalEncryptionKey();

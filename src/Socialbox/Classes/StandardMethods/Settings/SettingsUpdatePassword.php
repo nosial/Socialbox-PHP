@@ -3,11 +3,9 @@
     namespace Socialbox\Classes\StandardMethods\Settings;
 
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -26,20 +24,9 @@
             {
                 throw new MissingRpcArgumentException('password');
             }
-
-            if(!Cryptography::validatePasswordHash($rpcRequest->getParameter('password')))
-            {
-                throw new InvalidRpcArgumentException('password', 'Must be a valid argon2id hash');
-            }
-
             if(!$rpcRequest->containsParameter('existing_password'))
             {
                 throw new MissingRpcArgumentException('existing_password');
-            }
-
-            if(!Cryptography::validateSha512($rpcRequest->getParameter('existing_password')))
-            {
-                throw new InvalidRpcArgumentException('existing_password', 'Must be a valid SHA-512 hash');
             }
 
             try
@@ -73,7 +60,7 @@
             try
             {
                 // Set the password
-                PasswordManager::updatePassword($request->getPeer(), $rpcRequest->getParameter('password'));
+                PasswordManager::updatePassword($request->getPeer(), (string)$rpcRequest->getParameter('password'));
             }
             catch(CryptographyException $e)
             {
