@@ -21,7 +21,7 @@
         {
             try
             {
-                if(!$request->getPeer()->isExternal())
+                if(!$request->isExternal())
                 {
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Only external peers can authenticate using this method');
                 }
