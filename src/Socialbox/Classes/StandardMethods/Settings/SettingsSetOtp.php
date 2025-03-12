@@ -4,12 +4,10 @@
 
     use Exception;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -26,7 +24,6 @@
          */
         public static function execute(ClientRequest $request, RpcRequest $rpcRequest): ?SerializableInterface
         {
-
             try
             {
                 $peer = $request->getPeer();
@@ -65,14 +62,9 @@
                     throw new MissingRpcArgumentException('password');
                 }
 
-                if(!Cryptography::validateSha512($rpcRequest->getParameter('password')))
-                {
-                    throw new InvalidRpcArgumentException('password', 'The provided password is not a valid SHA-512 hash');
-                }
-
                 try
                 {
-                    if(!PasswordManager::verifyPassword($peer, $rpcRequest->getParameter('password')))
+                    if(!PasswordManager::verifyPassword($peer, (string)$rpcRequest->getParameter('password')))
                     {
                         return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The provided password is incorrect');
                     }

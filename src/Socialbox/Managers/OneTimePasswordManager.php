@@ -2,12 +2,14 @@
 
     namespace Socialbox\Managers;
 
-    use DateTime;
+    use InvalidArgumentException;
     use PDOException;
+    use Random\RandomException;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\OtpCryptography;
+    use Socialbox\Classes\Validator;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\PeerDatabaseRecord;
@@ -27,6 +29,10 @@
             {
                 $peerUuid = $peerUuid->getUuid();
             }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
 
             try
             {
@@ -45,18 +51,15 @@
         /**
          * Creates and stores a new OTP (One-Time Password) secret for the specified peer, and generates a key URI.
          *
-         * @param string|PeerDatabaseRecord $peer The unique identifier of the peer, either as a string UUID
+         * @param PeerDatabaseRecord $peerDatabaseRecord The unique identifier of the peer, either as a string UUID
          *                                          or an instance of RegisteredPeerRecord.
          * @return string The generated OTP key URI that can be used for applications like authenticator apps.
+         * @throws CryptographyException If there is an error during the encryption of the OTP secret.
          * @throws DatabaseOperationException If there is an error during the database operation.
+         * @throws RandomException If there is an error during the generation of the OTP secret.
          */
-        public static function createOtp(string|PeerDatabaseRecord $peer): string
+        public static function createOtp(PeerDatabaseRecord $peerDatabaseRecord): string
         {
-            if(is_string($peer))
-            {
-                $peer = RegisteredPeerManager::getPeer($peer);
-            }
-
             $secret = OtpCryptography::generateSecretKey(Configuration::getSecurityConfiguration()->getOtpSecretKeyLength());
             $encryptionKey = Configuration::getCryptographyConfiguration()->getRandomInternalEncryptionKey();
             $encryptedSecret = Cryptography::encryptMessage($secret, $encryptionKey, Configuration::getCryptographyConfiguration()->getEncryptionKeysAlgorithm());
@@ -64,7 +67,8 @@
             try
             {
                 $stmt = Database::getConnection()->prepare("INSERT INTO authentication_otp (peer_uuid, secret) VALUES (:peer_uuid, :secret)");
-                $stmt->bindParam(':peer_uuid', $peer);
+                $peerUuid = $peerDatabaseRecord->getUuid();
+                $stmt->bindParam(':peer_uuid', $peerUuid);
                 $stmt->bindParam(':secret', $encryptedSecret);
                 $stmt->execute();
             }
@@ -73,7 +77,7 @@
                 throw new DatabaseOperationException('An error occurred while creating the OTP secret in the database', $e);
             }
 
-            return OtpCryptography::generateKeyUri($peer->getAddress(), $secret,
+            return OtpCryptography::generateKeyUri($peerDatabaseRecord->getAddress(), $secret,
                 Configuration::getInstanceConfiguration()->getDomain(),
                 Configuration::getSecurityConfiguration()->getOtpTimeStep(),
                 Configuration::getSecurityConfiguration()->getOtpDigits(),
@@ -173,6 +177,7 @@
          *
          * @param string|PeerDatabaseRecord $peerUuid The peer's UUID or an instance of RegisteredPeerRecord whose OTP record's last updated timestamp needs to be retrieved
          * @return int The last updated timestamp of the OTP record, or 0 if no such record exists
+         * @throws DatabaseOperationException if the database operation fails.
          */
         public static function getLastUpdated(string|PeerDatabaseRecord $peerUuid): int
         {
