@@ -881,14 +881,7 @@
             // Convert string peer address to object PeerAddress
             if(is_string($peerAddress))
             {
-                try
-                {
-                    $peerAddress = PeerAddress::fromAddress($peerAddress);
-                }
-                catch(InvalidArgumentException $e)
-                {
-                    throw new StandardRpcException($e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
-                }
+                $peerAddress = PeerAddress::fromAddress($peerAddress);
             }
 
             // Prevent resolutions against any host

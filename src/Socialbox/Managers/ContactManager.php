@@ -77,6 +77,15 @@
             {
                 $contactAddress = $contactAddress->getAddress();
             }
+            elseif(!Validator::validatePeerAddress($contactAddress))
+            {
+                throw new InvalidArgumentException('The given contact address is not a valid peer address');
+            }
+
+            if(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
 
             $uuid = UuidV4::v4()->toRfc4122();
 
@@ -135,6 +144,15 @@
             if($contactAddress instanceof PeerAddress)
             {
                 $contactAddress = $contactAddress->getAddress();
+            }
+            elseif(!Validator::validatePeerAddress($contactAddress))
+            {
+                throw new InvalidArgumentException('The given contact address is not a valid peer address');
+            }
+
+            if(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
             }
 
             try
@@ -376,6 +394,10 @@
             {
                 $contactUuid = $contactUuid->getUuid();
             }
+            elseif(!Validator::validateUuid($contactUuid))
+            {
+                throw new InvalidArgumentException('The given contact UUID is not a valid UUID V4');
+            }
 
             try
             {
@@ -472,6 +494,10 @@
             if($contactUuid instanceof ContactDatabaseRecord)
             {
                 $contactUuid = $contactUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($contactUuid))
+            {
+                throw new InvalidArgumentException('The given contact UUID is not a valid UUID V4');
             }
 
             try
@@ -572,6 +598,10 @@
             if($contactUuid instanceof ContactDatabaseRecord)
             {
                 $contactUuid = $contactUuid->getUuid();
+            }
+            elseif(!Validator::validateUuid($contactUuid))
+            {
+                throw new InvalidArgumentException('The given contact UUID is not a valid UUID V4');
             }
 
             try

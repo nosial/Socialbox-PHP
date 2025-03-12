@@ -2,12 +2,10 @@
 
     namespace Socialbox\Classes\StandardMethods\AddressBook;
 
-    use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -16,7 +14,6 @@
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\RpcRequest;
     use Socialbox\Socialbox;
-    use Symfony\Component\Uid\Uuid;
 
     class AddressBookTrustSignature extends Method
     {
@@ -30,29 +27,14 @@
                 throw new MissingRpcArgumentException('peer');
             }
 
-            try
-            {
-                $address = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException('peer', $e);
-            }
+            $address = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
 
             if(!$rpcRequest->containsParameter('signature_uuid'))
             {
                 throw new MissingRpcArgumentException('signature_uuid');
             }
 
-            try
-            {
-                $signatureUuid = Uuid::fromString($rpcRequest->getParameter('signature_uuid'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException('signature_uuid', $e);
-            }
-
+            $signatureUuid = (string)$rpcRequest->getParameter('signature_uuid');
             $signingKey = Socialbox::resolvePeerSignature($address, $signatureUuid);
 
             try
