@@ -8,6 +8,7 @@
     use PDOException;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
+    use Socialbox\Classes\Validator;
     use Socialbox\Enums\SigningKeyState;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -199,16 +200,26 @@
          * Checks if a signing key exists in the database using the provided UUID.
          *
          * @param string $peerUuid The UUID of the peer associated with the signing key.
-         * @param string $uuid The UUID of the signing key to check.
+         * @param string $signatureUuid The UUID of the signing key to check.
          * @return bool True if the signing key exists, false otherwise.
          * @throws DatabaseOperationException If a database error occurs during the operation.
          */
-        public static function signingKeyExists(string $peerUuid, string $uuid): bool
+        public static function signingKeyExists(string $peerUuid, string $signatureUuid): bool
         {
+            if(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
+
+            if(!Validator::validateUuid($signatureUuid))
+            {
+                throw new InvalidArgumentException('The given signature UUID is not a valid UUID V4');
+            }
+
             try
             {
                 $statement = Database::getConnection()->prepare("SELECT COUNT(*) FROM signing_keys WHERE uuid=:uuid AND peer_uuid=:peer_uuid");
-                $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':uuid', $signatureUuid);
                 $statement->bindParam(':peer_uuid', $peerUuid);
                 $statement->execute();
 

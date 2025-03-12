@@ -1168,15 +1168,15 @@
         /**
          * Checks if a signature exists in the peer's profile, returns True if the signature exists.
          *
-         * @param string $uuid The UUID of the signature to check for it's existence
+         * @param string $signatureUuid The UUID of the signature to check for it's existence
          * @return bool Returns True if the signature exists, False otherwise
          * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function settingsSignatureExists(string $uuid): bool
+        public function settingsSignatureExists(string $signatureUuid): bool
         {
             return $this->sendRequest(
                 new RpcRequest(StandardMethods::SETTINGS_SIGNATURE_EXISTS, parameters: [
-                    'uuid' => $uuid
+                    'signature_uuid' => $signatureUuid
                 ])
             )->getResponse()->getResult();
         }
