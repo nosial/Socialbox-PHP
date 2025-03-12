@@ -29,16 +29,16 @@
                 throw new MissingRpcArgumentException('peer');
             }
 
-            $address = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
+            $peerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
 
             try
             {
-                if(!ContactManager::isContact($request->getPeer(), $address))
+                if(!ContactManager::isContact($request->getPeer(), $peerAddress))
                 {
                     return $rpcRequest->produceResponse();
                 }
 
-                return $rpcRequest->produceResponse(ContactManager::getStandardContact($request->getPeer(), $address));
+                return $rpcRequest->produceResponse(ContactManager::getStandardContact($request->getPeer(), $peerAddress));
             }
             catch(DatabaseOperationException $e)
             {

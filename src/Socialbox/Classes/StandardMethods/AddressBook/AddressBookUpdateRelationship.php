@@ -28,14 +28,7 @@
                 throw new MissingRpcArgumentException('peer');
             }
 
-            try
-            {
-                $receivingPeerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException('peer', $e);
-            }
+            $peerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
 
             if(!$rpcRequest->containsParameter('relationship'))
             {
@@ -51,13 +44,13 @@
             {
                 // Check if the contact already exists
                 $requestingPeer = $request->getPeer();
-                if(!ContactManager::isContact($requestingPeer->getUuid(), $receivingPeerAddress))
+                if(!ContactManager::isContact($requestingPeer->getUuid(), $peerAddress))
                 {
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Contact does not exist');
                 }
 
                 // Create the contact
-                ContactManager::updateContactRelationship($requestingPeer->getUuid(), $receivingPeerAddress, $newRelationship);
+                ContactManager::updateContactRelationship($requestingPeer->getUuid(), $peerAddress, $newRelationship);
             }
             catch (DatabaseOperationException $e)
             {

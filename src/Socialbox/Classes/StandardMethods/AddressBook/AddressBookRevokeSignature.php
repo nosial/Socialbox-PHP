@@ -28,14 +28,7 @@
                 throw new MissingRpcArgumentException('peer');
             }
 
-            try
-            {
-                $address = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException('peer', $e);
-            }
+            $peerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
 
             if(!$rpcRequest->containsParameter('signature_uuid'))
             {
@@ -45,7 +38,7 @@
             try
             {
                 // Check if the contact already exists
-                $contact = ContactManager::getContact($request->getPeer(), $address);
+                $contact = ContactManager::getContact($request->getPeer(), $peerAddress);
             }
             catch (DatabaseOperationException $e)
             {

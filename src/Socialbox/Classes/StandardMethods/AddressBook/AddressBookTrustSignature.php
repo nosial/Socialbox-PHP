@@ -27,7 +27,7 @@
                 throw new MissingRpcArgumentException('peer');
             }
 
-            $address = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
+            $peerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
 
             if(!$rpcRequest->containsParameter('signature_uuid'))
             {
@@ -35,18 +35,18 @@
             }
 
             $signatureUuid = (string)$rpcRequest->getParameter('signature_uuid');
-            $signingKey = Socialbox::resolvePeerSignature($address, $signatureUuid);
+            $signingKey = Socialbox::resolvePeerSignature($peerAddress, $signatureUuid);
 
             try
             {
                 // Check if the contact already exists
                 $peer = $request->getPeer();
-                if(!ContactManager::isContact($peer, $address))
+                if(!ContactManager::isContact($peer, $peerAddress))
                 {
-                    ContactManager::createContact($peer, $address);
+                    ContactManager::createContact($peer, $peerAddress);
                 }
 
-                $contact = ContactManager::getContact($peer, $address);
+                $contact = ContactManager::getContact($peer, $peerAddress);
                 if(ContactManager::contactGetSigningKeysCount($contact) > Configuration::getPoliciesConfiguration()->getMaxContactSigningKeys())
                 {
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The contact has exceeded the maximum amount of trusted signatures');

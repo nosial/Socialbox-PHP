@@ -32,14 +32,7 @@
                 throw new MissingRpcArgumentException('peer');
             }
 
-            try
-            {
-                $address = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new InvalidRpcArgumentException('peer', $e);
-            }
+            $peerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
 
             if($rpcRequest->containsParameter('relationship') && $rpcRequest->getParameter('relationship') !== null)
             {
@@ -57,22 +50,22 @@
             try
             {
                 $peer = $request->getPeer();
-                if($peer->getAddress() == $address)
+                if($peer->getAddress() == $peerAddress)
                 {
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Cannot add self as contact');
                 }
 
                 // Resolve the peer, this would throw a StandardException if something goes wrong
-                Socialbox::resolvePeer($address);
+                Socialbox::resolvePeer($peerAddress);
 
                 // Check if the contact already exists
-                if(ContactManager::isContact($peer, $address))
+                if(ContactManager::isContact($peer, $peerAddress))
                 {
                     return $rpcRequest->produceResponse(false);
                 }
 
                 // Create the contact
-                ContactManager::createContact($peer, $address, $relationship);
+                ContactManager::createContact($peer, $peerAddress, $relationship);
             }
             catch (DatabaseOperationException $e)
             {
