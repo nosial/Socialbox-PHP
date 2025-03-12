@@ -4,7 +4,6 @@
 
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -58,14 +57,9 @@
                     throw new InvalidRpcArgumentException('password', 'When a password is set, the current password must be provided to delete an OTP');
                 }
 
-                if(!Cryptography::validateSha512($rpcRequest->getParameter('password')))
-                {
-                    throw new InvalidRpcArgumentException('password', 'The provided password is not a valid SHA-512 hash');
-                }
-
                 try
                 {
-                    if(!PasswordManager::verifyPassword($peer, $rpcRequest->getParameter('password')))
+                    if(!PasswordManager::verifyPassword($peer, (string)$rpcRequest->getParameter('password')))
                     {
                         return $rpcRequest->produceError(StandardError::FORBIDDEN, 'The provided password is incorrect');
                     }
