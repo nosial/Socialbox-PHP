@@ -27,7 +27,8 @@
             {
                 throw new MissingRpcArgumentException('field');
             }
-            $fieldName = InformationFieldName::tryFrom(strtoupper($rpcRequest->getParameter('field')));
+
+            $fieldName = InformationFieldName::tryFrom(strtoupper((string)$rpcRequest->getParameter('field')));
             if($fieldName === null)
             {
                 throw new InvalidRpcArgumentException('field');
@@ -38,11 +39,7 @@
             {
                 throw new MissingRpcArgumentException('value');
             }
-            $value = $rpcRequest->getParameter('value');
-            if(!$fieldName->validate($value))
-            {
-                throw new InvalidRpcArgumentException('value');
-            }
+            $value = (string)$rpcRequest->getParameter('value');
 
             try
             {

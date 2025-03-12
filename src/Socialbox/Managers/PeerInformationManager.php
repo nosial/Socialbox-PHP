@@ -31,6 +31,15 @@
             {
                 $peerUuid = $peerUuid->getUuid();
             }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
+
+            if(!$property->validate($value))
+            {
+                throw new InvalidArgumentException(sprintf('The given value %s is not valid for property %s', $value, $property->value));
+            }
 
             if($privacyState === null)
             {
@@ -79,10 +88,19 @@
             {
                 $peerUuid = $peerUuid->getUuid();
             }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
 
             if(!self::fieldExists($peerUuid, $property))
             {
-                throw new DatabaseOperationException(sprintf('Cannot to update property %s for peer %s, property does not exist', $property->value, $peerUuid));
+                self::addField($peerUuid, $property, $value);
+            }
+
+            if(!$property->validate($value))
+            {
+                throw new InvalidArgumentException(sprintf('The given value %s is not valid for property %s', $value, $property->value));
             }
 
             try
