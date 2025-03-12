@@ -42,7 +42,7 @@
 
             try
             {
-                $result = CaptchaManager::answerCaptcha($session->getPeerUuid(), $rpcRequest->getParameter('answer'));
+                $result = CaptchaManager::answerCaptcha($session->getPeerUuid(), (string)$rpcRequest->getParameter('answer'));
 
                 if($result)
                 {
