@@ -4,6 +4,7 @@
 
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
+    use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -53,6 +54,10 @@
                 if($peer->getAddress() == $peerAddress)
                 {
                     return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Cannot add self as contact');
+                }
+                elseif($peer->getUsername() === ReservedUsernames::HOST->value)
+                {
+                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Cannot add host as contact');
                 }
 
                 // Resolve the peer, this would throw a StandardException if something goes wrong
