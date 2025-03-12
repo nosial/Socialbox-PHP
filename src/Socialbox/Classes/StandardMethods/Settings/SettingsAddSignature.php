@@ -2,7 +2,6 @@
 
     namespace Socialbox\Classes\StandardMethods\Settings;
 
-    use Exception;
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
@@ -33,15 +32,11 @@
             {
                 $expires = (int)$rpcRequest->getParameter('expires');
             }
-            if(!$rpcRequest->containsParameter('name'))
-            {
-                throw new MissingRpcArgumentException('name');
-            }
 
             $name = null;
             if($rpcRequest->containsParameter('name'))
             {
-                $name = $rpcRequest->getParameter('name');
+                $name = (string)$rpcRequest->getParameter('name');
             }
 
             try
