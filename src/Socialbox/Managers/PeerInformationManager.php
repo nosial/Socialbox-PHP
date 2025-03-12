@@ -248,6 +248,10 @@
             {
                 $peerUuid = $peerUuid->getUuid();
             }
+            elseif(!Validator::validateUuid($peerUuid))
+            {
+                throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
+            }
 
             try
             {
