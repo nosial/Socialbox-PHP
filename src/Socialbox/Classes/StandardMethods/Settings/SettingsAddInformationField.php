@@ -4,6 +4,7 @@
 
     use Exception;
     use Socialbox\Abstracts\Method;
+    use Socialbox\Classes\Logger;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\StandardError;
@@ -31,7 +32,8 @@
             {
                 throw new MissingRpcArgumentException('field');
             }
-            $fieldName = InformationFieldName::tryFrom(strtoupper($rpcRequest->getParameter('field')));
+
+            $fieldName = InformationFieldName::tryFrom(strtoupper((string)$rpcRequest->getParameter('field')));
             if($fieldName === null)
             {
                 throw new InvalidRpcArgumentException('field');
@@ -42,17 +44,14 @@
             {
                 throw new MissingRpcArgumentException('value');
             }
+
             $value = $rpcRequest->getParameter('value');
-            if(!$fieldName->validate($value))
-            {
-                throw new InvalidRpcArgumentException('value');
-            }
 
             // Privacy parameter is optional
             $privacy = null;
             if($rpcRequest->containsParameter('privacy') && $rpcRequest->getParameter('privacy') !== null)
             {
-                $privacy = PrivacyState::tryFrom(strtoupper($rpcRequest->getParameter('privacy')));
+                $privacy = PrivacyState::tryFrom(strtoupper((string)$rpcRequest->getParameter('privacy')));
                 if($privacy === null)
                 {
                     throw new InvalidRpcArgumentException('privacy');
@@ -133,8 +132,7 @@
                 }
                 catch (DatabaseOperationException $e)
                 {
-                    // Something is seriously wrong if we can't roll back the information field
-                    throw new StandardRpcException('Failed to rollback the information field', StandardError::INTERNAL_SERVER_ERROR, $e);
+                    Logger::getLogger()->critical('Failed to rollback information field', $e);
                 }
 
                 if($e instanceof StandardRpcException)
