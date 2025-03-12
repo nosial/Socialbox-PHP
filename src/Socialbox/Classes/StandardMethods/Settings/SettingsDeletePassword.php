@@ -4,11 +4,9 @@
 
     use Socialbox\Abstracts\Method;
     use Socialbox\Classes\Configuration;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
-    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -37,31 +35,25 @@
                 throw new MissingRpcArgumentException('password');
             }
 
-            // Validate the password parameter
-            if(!Cryptography::validateSha512($rpcRequest->getParameter('password')))
-            {
-                throw new InvalidRpcArgumentException('password', 'Must be a valid SHA-512 hash');
-            }
-
             try
             {
                 // Get the peer
-                $peer = $request->getPeer();
+                $requestingPeer = $request->getPeer();
 
                 // Check if the password is set
-                if (!PasswordManager::usesPassword($peer->getUuid()))
+                if (!PasswordManager::usesPassword($requestingPeer->getUuid()))
                 {
                     return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, "Cannot delete password when one isn't already set");
                 }
 
                 // Verify the existing password before deleting it
-                if (!PasswordManager::verifyPassword($peer->getUuid(), $rpcRequest->getParameter('password')))
+                if (!PasswordManager::verifyPassword($requestingPeer->getUuid(), (string)$rpcRequest->getParameter('password')))
                 {
                     return $rpcRequest->produceResponse(false);
                 }
 
                 // Delete the password
-                PasswordManager::deletePassword($peer->getUuid());
+                PasswordManager::deletePassword($requestingPeer->getUuid());
             }
             catch(CryptographyException)
             {
