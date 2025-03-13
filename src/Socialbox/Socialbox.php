@@ -27,6 +27,7 @@
     use Socialbox\Exceptions\RequestException;
     use Socialbox\Exceptions\ResolutionException;
     use Socialbox\Exceptions\RpcException;
+    use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\StandardRpcException;
     use Socialbox\Managers\ContactManager;
     use Socialbox\Managers\ExternalSessionManager;
@@ -908,6 +909,11 @@
             if($peerAddress->getUsername() == ReservedUsernames::HOST)
             {
                 throw new StandardRpcException('Cannot resolve signature for a host peer', StandardError::FORBIDDEN);
+            }
+
+            if(!Validator::validateUuid($signatureUuid))
+            {
+                throw new InvalidRpcArgumentException('The given signature UUID is not a valid UUID V4');
             }
 
             // If the peer is registered within this server

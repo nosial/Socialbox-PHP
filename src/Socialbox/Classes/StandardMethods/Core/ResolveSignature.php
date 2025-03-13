@@ -35,10 +35,6 @@
             {
                 throw new MissingRpcArgumentException('signature_uuid');
             }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('signature_uuid')))
-            {
-                throw new InvalidRpcArgumentException('signature_uuid', 'Invalid UUID V4');
-            }
 
             return $rpcRequest->produceResponse(Socialbox::resolvePeerSignature(
                 $rpcRequest->getParameter('peer'), $rpcRequest->getParameter('signature_uuid')
