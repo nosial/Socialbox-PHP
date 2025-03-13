@@ -5,7 +5,6 @@
     class CacheConfiguration
     {
         private bool $enabled;
-        private string $engine;
         private string $host;
         private int $port;
         private ?string $username;
@@ -38,7 +37,6 @@
         public function __construct(array $data)
         {
             $this->enabled = (bool)$data['enabled'];
-            $this->engine = (string)$data['engine'];
             $this->host = (string)$data['host'];
             $this->port = (int)$data['port'];
             $this->username = $data['username'] ? (string)$data['username'] : null;
@@ -58,17 +56,7 @@
         {
             return $this->enabled;
         }
-
-        /**
-         * Retrieves the engine name.
-         *
-         * @return string Returns the name of the engine.
-         */
-        public function getEngine(): string
-        {
-            return $this->engine;
-        }
-
+        
         /**
          * Retrieves the host value.
          *

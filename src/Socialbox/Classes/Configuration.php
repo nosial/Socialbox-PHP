@@ -109,7 +109,6 @@
 
             // Cache layer configuration
             $config->setDefault('cache.enabled', false);
-            $config->setDefault('cache.engine', 'redis');
             $config->setDefault('cache.host', '127.0.0.1');
             $config->setDefault('cache.port', 6379);
             $config->setDefault('cache.username', null);
