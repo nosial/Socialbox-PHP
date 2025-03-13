@@ -760,6 +760,22 @@
         }
 
         /**
+         * Deletes an encryption channel by its UUID.
+         *
+         * @param string $channelUuid The UUID of the encryption channel to delete.
+         * @return bool True if the channel was successfully deleted, false otherwise.
+         * @throws RpcException Thrown if there was an error with the RPC request
+         */
+        public function encryptionDeleteChannel(string $channelUuid): bool
+        {
+            return $this->sendRequest(
+                new RpcRequest(StandardMethods::ENCRYPTION_DELETE_CHANNEL, parameters: [
+                    'channel_uuid' => $channelUuid
+                ])
+            )->getResponse()->getResult();
+        }
+
+        /**
          * Retrieves an encryption channel by its UUID.
          *
          * @param string $channelUuid The UUID of the encryption channel to retrieve.

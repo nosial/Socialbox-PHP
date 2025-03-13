@@ -27,6 +27,7 @@
     use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionCloseChannel;
     use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionCreateChannel;
     use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionDeclineChannel;
+    use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionDeleteChannel;
     use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionGetChannel;
     use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionGetChannelRequests;
     use Socialbox\Classes\StandardMethods\EncryptionChannel\EncryptionGetChannels;
@@ -101,6 +102,7 @@
         case ENCRYPTION_CLOSE_CHANNEL = 'encryptionCloseChannel';
         case ENCRYPTION_CREATE_CHANNEL = 'encryptionCreateChannel';
         case ENCRYPTION_DECLINE_CHANNEL = 'encryptionDeclineChannel';
+        case ENCRYPTION_DELETE_CHANNEL = 'encryptionDeleteChannel';
         case ENCRYPTION_GET_CHANNEL = 'encryptionGetChannel';
         case ENCRYPTION_GET_CHANNEL_REQUESTS = 'encryptionGetChannelRequests';
         case ENCRYPTION_GET_CHANNELS = 'encryptionGetChannels';
@@ -224,6 +226,7 @@
                 self::ENCRYPTION_CLOSE_CHANNEL => EncryptionCloseChannel::execute($request, $rpcRequest),
                 self::ENCRYPTION_CREATE_CHANNEL => EncryptionCreateChannel::execute($request, $rpcRequest),
                 self::ENCRYPTION_DECLINE_CHANNEL => EncryptionDeclineChannel::execute($request, $rpcRequest),
+                self::ENCRYPTION_DELETE_CHANNEL => EncryptionDeleteChannel::execute($request, $rpcRequest),
                 self::ENCRYPTION_GET_CHANNEL => EncryptionGetChannel::execute($request, $rpcRequest),
                 self::ENCRYPTION_GET_CHANNEL_REQUESTS => EncryptionGetChannelRequests::execute($request, $rpcRequest),
                 self::ENCRYPTION_GET_CHANNELS => EncryptionGetChannels::execute($request, $rpcRequest),
