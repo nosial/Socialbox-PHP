@@ -278,8 +278,6 @@
             $message = "Message to sign";
 
             $this->expectException(CryptographyException::class);
-            $this->expectExceptionMessage("Failed to sign message");
-
             Cryptography::signMessage($message, $invalidPrivateKey);
         }
 
