@@ -1,18 +1,18 @@
 <?php
 
-namespace Socialbox\Classes;
-
-class CacheLayer
-{
-    private static CacheLayer $instance;
-
-    public static function getInstance(): CacheLayer
+    namespace Socialbox\Classes;
+    
+    class CacheLayer
     {
-        if (!isset(self::$instance))
+        private static CacheLayer $instance;
+    
+        public static function getInstance(): CacheLayer
         {
-            self::$instance = new CacheLayer();
+            if (!isset(self::$instance))
+            {
+                self::$instance = new CacheLayer();
+            }
+    
+            return self::$instance;
         }
-
-        return self::$instance;
     }
-}
