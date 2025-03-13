@@ -244,7 +244,6 @@
          * @param string $decryptedContent The decrypted content to verify the signature against.
          * @return bool True if the signature is valid, false otherwise.
          * @throws DatabaseOperationException Thrown if an error occurs while retrieving the client's public signing key.
-         * @throws StandardRpcException Thrown if the session UUID is invalid.
          */
         private function verifySignature(string $decryptedContent): bool
         {
