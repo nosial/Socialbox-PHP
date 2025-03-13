@@ -4,8 +4,6 @@
 
     use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
-    use Socialbox\Classes\Cryptography;
-    use Socialbox\Classes\Validator;
     use Socialbox\Exceptions\Standard\InvalidRpcArgumentException;
     use Socialbox\Exceptions\Standard\MissingRpcArgumentException;
     use Socialbox\Interfaces\SerializableInterface;
@@ -32,10 +30,6 @@
             {
                 throw new MissingRpcArgumentException('signature_uuid');
             }
-            elseif(!Validator::validateUuid($rpcRequest->getParameter('signature_uuid')))
-            {
-                throw new InvalidRpcArgumentException('signature_uuid', 'Invalid UUID V4');
-            }
 
             if(!$rpcRequest->containsParameter('signature'))
             {
@@ -45,10 +39,6 @@
             if(!$rpcRequest->containsParameter('sha512'))
             {
                 throw new MissingRpcArgumentException('sha512');
-            }
-            elseif(!Cryptography::validateSha512($rpcRequest->getParameter('sha512')))
-            {
-                throw new InvalidRpcArgumentException('sha512', 'Invalid SHA512');
             }
 
             // Parse the peer address

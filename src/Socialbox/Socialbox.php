@@ -789,6 +789,16 @@
          */
         public static function verifyTimedSignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signature, string $messageHash, int $signatureTime): SignatureVerificationStatus
         {
+            if(!Validator::validateUuid($signatureUuid))
+            {
+                return SignatureVerificationStatus::INVALID;
+            }
+
+            if(!Cryptography::validateSha512($messageHash))
+            {
+                return SignatureVerificationStatus::INVALID;
+            }
+
             // Resolve the peer signature key
             try
             {
@@ -838,6 +848,16 @@
          */
         public static function verifySignature(PeerAddress|string $signingPeer, string $signatureUuid, string $signature, string $messageHash): SignatureVerificationStatus
         {
+            if(!Validator::validateUuid($signatureUuid))
+            {
+                return SignatureVerificationStatus::INVALID;
+            }
+
+            if(!Cryptography::validateSha512($messageHash))
+            {
+                return SignatureVerificationStatus::INVALID;
+            }
+
             try
             {
                 $signingKey = self::resolvePeerSignature($signingPeer, $signatureUuid);
