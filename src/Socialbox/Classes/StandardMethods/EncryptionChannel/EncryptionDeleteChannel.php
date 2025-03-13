@@ -58,7 +58,7 @@
             }
             catch(DatabaseOperationException $e)
             {
-                throw new StandardRpcException('An error occurred while trying to close the encryption channel', StandardError::INTERNAL_SERVER_ERROR, $e);
+                throw new StandardRpcException('An error occurred while trying to delete the encryption channel', StandardError::INTERNAL_SERVER_ERROR, $e);
             }
 
             $externalPeer = $encryptionChannel->getExternalPeer();
