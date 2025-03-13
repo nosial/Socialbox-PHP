@@ -2,7 +2,6 @@
 
     namespace Socialbox\Classes\StandardMethods\Core;
 
-    use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
@@ -30,20 +29,13 @@
             }
 
             // Parse the peer address
-            try
-            {
-                $peerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
-            }
-            catch(InvalidArgumentException $e)
-            {
-                throw new StandardRpcException('Peer Address Error: ' . $e->getMessage(), StandardError::RPC_INVALID_ARGUMENTS, $e);
-            }
+            $peerAddress = PeerAddress::fromAddress((string)$rpcRequest->getParameter('peer'));
 
             // Check if host is making the request & the identifier is not empty
             try
             {
                 $identifyAs = null;
-                if ($request->getPeer()->getUsername() == ReservedUsernames::HOST && $request->getIdentifyAs() != null)
+                if ($request->getPeer()->getUsername() === ReservedUsernames::HOST->value && $request->getIdentifyAs() !== null)
                 {
                     $identifyAs = $request->getIdentifyAs();
                 }
