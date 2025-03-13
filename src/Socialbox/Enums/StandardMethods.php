@@ -8,6 +8,7 @@
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookDeleteContact;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookGetContact;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookGetContacts;
+    use Socialbox\Classes\StandardMethods\AddressBook\AddressBookRevokeAllSignatures;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookRevokeSignature;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookTrustSignature;
     use Socialbox\Classes\StandardMethods\AddressBook\AddressBookUpdateRelationship;
@@ -79,8 +80,9 @@
         case ADDRESS_BOOK_DELETE_CONTACT = 'addressBookDeleteContact';
         case ADDRESS_BOOK_GET_CONTACT = 'addressBookGetContact';
         case ADDRESS_BOOK_GET_CONTACTS = 'addressBookGetContacts';
-        case ADDRESS_BOOK_TRUST_SIGNATURE = 'addressBookTrustSignature';
+        case ADDRESS_BOOK_REVOKE_ALL_SIGNATURES = 'addressBookRevokeAllSignatures';
         case ADDRESS_BOOK_REVOKE_SIGNATURE = 'addressBookRevokeSignature';
+        case ADDRESS_BOOK_TRUST_SIGNATURE = 'addressBookTrustSignature';
         case ADDRESS_BOOK_UPDATE_RELATIONSHIP = 'addressBookUpdateRelationship';
 
         // Core Methods
@@ -203,8 +205,9 @@
                 self::ADDRESS_BOOK_DELETE_CONTACT => AddressBookDeleteContact::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_GET_CONTACT => AddressBookGetContact::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_GET_CONTACTS => AddressBookGetContacts::execute($request, $rpcRequest),
-                self::ADDRESS_BOOK_TRUST_SIGNATURE => AddressBookTrustSignature::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_REVOKE_ALL_SIGNATURES => AddressBookRevokeAllSignatures::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_REVOKE_SIGNATURE => AddressBookRevokeSignature::execute($request, $rpcRequest),
+                self::ADDRESS_BOOK_TRUST_SIGNATURE => AddressBookTrustSignature::execute($request, $rpcRequest),
                 self::ADDRESS_BOOK_UPDATE_RELATIONSHIP => AddressBookUpdateRelationship::execute($request, $rpcRequest),
 
                 // Core Methods

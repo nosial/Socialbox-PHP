@@ -432,6 +432,14 @@
             }
         }
 
+        /**
+         * Removes a signing key from a contact in the database.
+         *
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to remove the signing key from.
+         * @param string $signatureUuid The UUID of the signing key to remove.
+         * @return void
+         * @throws DatabaseOperationException If the database query fails.
+         */
         public static function removeContactSigningKey(string|ContactDatabaseRecord $contactUuid, string $signatureUuid): void
         {
             if($contactUuid instanceof ContactDatabaseRecord)
@@ -449,6 +457,32 @@
             catch(PDOException $e)
             {
                 throw new DatabaseOperationException('Failed to remove a signing key from a contact in the database', $e);
+            }
+        }
+
+        /**
+         * Removes all signing keys for a contact from the database.
+         *
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to remove all signing keys from.
+         * @return void
+         * @throws DatabaseOperationException If the database query fails.
+         */
+        public static function removeAllContactSigningKeys(string|ContactDatabaseRecord $contactUuid): void
+        {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
+            try
+            {
+                $statement = Database::getConnection()->prepare('DELETE FROM contacts_known_keys WHERE contact_uuid=:contact_uuid');
+                $statement->bindParam(':contact_uuid', $contactUuid);
+                $statement->execute();
+            }
+            catch(PDOException $e)
+            {
+                throw new DatabaseOperationException('Failed to remove all signing keys from a contact in the database', $e);
             }
         }
 
