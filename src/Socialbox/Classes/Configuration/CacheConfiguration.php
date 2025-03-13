@@ -56,7 +56,7 @@
         {
             return $this->enabled;
         }
-        
+
         /**
          * Retrieves the host value.
          *
