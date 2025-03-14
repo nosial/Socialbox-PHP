@@ -9,3 +9,5 @@
 /coffee_socialbox/logs/
 /teapot_socialbox/data/
 /teapot_socialbox/logs/
+/tests/docker/coffee/data/
+/tests/docker/teapot/data/
