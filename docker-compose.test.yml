@@ -22,8 +22,8 @@ services:
       - shared_network
     restart: unless-stopped
     volumes:
-      - ./coffee_socialbox/config:/etc/config
-      - ./coffee_socialbox/data:/etc/socialbox
+      - ./tests/docker/coffee/config:/etc/config
+      - ./tests/docker/coffee/data:/etc/socialbox
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}
@@ -132,8 +132,8 @@ services:
       - shared_network
     restart: unless-stopped
     volumes:
-      - ./teapot_socialbox/config:/etc/config
-      - ./teapot_socialbox/data:/etc/socialbox
+      - ./tests/docker/teapot/config:/etc/config
+      - ./tests/docker/teapot/data:/etc/socialbox
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}

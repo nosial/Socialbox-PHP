@@ -107,6 +107,8 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Copy docker.conf & zz-docker.conf for PHP-FPM
 COPY docker/docker.conf /usr/local/etc/php-fpm.d/docker.conf
 COPY docker/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+# Copy the logging server script over
+COPY docker/logger.py /logger.py
 
 # Configure php.ini and enable error and log it to /var/log rather than stdout
 RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini && \
