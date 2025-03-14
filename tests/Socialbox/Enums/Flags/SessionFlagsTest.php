@@ -101,7 +101,6 @@
             $flags = [];
 
             $result = SessionFlags::isComplete($flags);
-
             $this->assertTrue($result);
         }
 
