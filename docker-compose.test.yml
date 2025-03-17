@@ -63,7 +63,7 @@ services:
       SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://teapot_socialbox:8085/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
       # UDP Logging, won't cause issues if the server is not available
       # See https://github.com/nosial/LogLib2/blob/master/server.py for more information
-      LOGLIB_UDP_ENABLED: true
+      LOGLIB_UDP_ENABLED: 'true'
       LOGLIB_UDP_HOST: 172.17.0.1
       LOGLIB_UDP_PORT: 5131
     healthcheck:
@@ -173,7 +173,7 @@ services:
       SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://teapot_socialbox:8085/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
       # UDP Logging, won't cause issues if the server is not available
       # See https://github.com/nosial/LogLib2/blob/master/server.py for more information
-      LOGLIB_UDP_ENABLED: true
+      LOGLIB_UDP_ENABLED: 'true'
       LOGLIB_UDP_HOST: 172.17.0.1
       LOGLIB_UDP_PORT: 5131
     healthcheck:
