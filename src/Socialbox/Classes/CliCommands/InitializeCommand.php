@@ -3,14 +3,11 @@
     namespace Socialbox\Classes\CliCommands;
 
     use Exception;
-    use ncc\CLI\Main;
     use ncc\ThirdParty\Symfony\Process\Exception\InvalidArgumentException;
     use PDOException;
-    use Socialbox\Abstracts\CacheLayer;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
-    use Socialbox\Classes\Logger;
     use Socialbox\Classes\Resources;
     use Socialbox\Enums\DatabaseObjects;
     use Socialbox\Exceptions\CryptographyException;
@@ -92,7 +89,8 @@
             if(Configuration::getCacheConfiguration()->isEnabled())
             {
                 Program::getLogger()->verbose('Clearing cache layer...');
-                CacheLayer::getInstance()->clear();
+                // TODO: Re-implement cache layer
+                //CacheLayer::getInstance()->clear();
             }
 
             foreach(DatabaseObjects::casesOrdered() as $object)
