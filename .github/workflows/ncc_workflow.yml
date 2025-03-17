@@ -294,7 +294,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt update -yqq
-          apt install git libpq-dev libzip-dev zip make wget gnupg -yqq
+          apt install git libpq-dev libzip-dev zip make wget gnupg curl docker.io docker-compose -yqq
           curl -sSLf -o /usr/local/bin/install-php-extensions https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions
           chmod +x /usr/local/bin/install-php-extensions
           install-php-extensions zip
@@ -329,10 +329,50 @@ jobs:
         run: |
           ncc package install --package="release/net.nosial.socialbox.ncc" --build-source --reinstall -y --log-level debug
 
+      - name: Deploy test environment
+        run: |
+          docker-compose -f docker-compose.test.yml up -d
+
+      - name: Wait for services to be available
+        run: |
+          # Function to check if a service is available
+          check_service() {
+            local url=$1
+            local max_attempts=200
+            local wait_seconds=5
+            local attempt=1
+          
+            echo "Checking availability of $url"
+          
+            while [ $attempt -le $max_attempts ]; do
+              response=$(curl -s -o /dev/null -w "%{http_code}" -f -H "Request-Type: ping" $url || echo "failed")
+          
+              if [ "$response" = "200" ]; then
+                echo "Service at $url is available!"
+                return 0
+              fi
+          
+              echo "Attempt $attempt/$max_attempts: Service at $url is not available yet (status: $response). Waiting $wait_seconds seconds..."
+              sleep $wait_seconds
+              attempt=$((attempt + 1))
+            done
+          
+            echo "Service at $url is not available after $max_attempts attempts."
+            return 1
+          }
+          
+          # Check both services
+          check_service "http://127.0.0.1:8085/" && check_service "http://127.0.0.1:8086/"
+
       - name: Run PHPUnit tests
         run: |
           wget https://phar.phpunit.de/phpunit-11.3.phar
           php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
+
+      - name: Stop test environment
+        run: |
+          docker-compose -f docker-compose.test.yml down
+        if: always()  # Always run this step, even if previous steps fail
 
       - name: Upload test reports
         uses: actions/upload-artifact@v4
@@ -362,10 +402,10 @@ jobs:
       - name: Upload documentation artifact
         uses: softprops/action-gh-release@v1
         with:
-            files: |
-                documentation/*
+          files: |
+            documentation/*
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
   release-artifacts:
@@ -388,10 +428,10 @@ jobs:
       - name: Upload release artifact to release
         uses: softprops/action-gh-release@v1
         with:
-            files: |
-                release/*
+          files: |
+            release/*
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Download debug artifact
         uses: actions/download-artifact@v4
         with:
@@ -400,10 +440,10 @@ jobs:
       - name: Upload debug artifact to release
         uses: softprops/action-gh-release@v1
         with:
-            files: |
-                debug/*
+          files: |
+            debug/*
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Download release_executable artifact
         uses: actions/download-artifact@v4
         with:
@@ -412,10 +452,10 @@ jobs:
       - name: Upload release_executable artifact to release
         uses: softprops/action-gh-release@v1
         with:
-            files: |
-                release_executable/*
+          files: |
+            release_executable/*
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Download debug_executable artifact
         uses: actions/download-artifact@v4
         with:
@@ -424,7 +464,7 @@ jobs:
       - name: Upload debug_executable artifact to release
         uses: softprops/action-gh-release@v1
         with:
-            files: |
-                debug_executable/*
+          files: |
+            debug_executable/*
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
