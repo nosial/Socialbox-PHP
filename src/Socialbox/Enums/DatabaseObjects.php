@@ -47,8 +47,9 @@
                 self::EXTERNAL_SESSIONS => 2,
 
                 self::ENCRYPTION_CHANNELS,
-                self::ENCRYPTION_CHANNELS_COM,
                 self::CONTACT_KNOWN_KEYS => 3,
+
+                self::ENCRYPTION_CHANNELS_COM => 4,
             };
         }
 
