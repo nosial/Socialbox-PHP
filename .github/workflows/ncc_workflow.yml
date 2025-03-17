@@ -331,7 +331,16 @@ jobs:
 
       - name: Deploy test environment
         run: |
+          # Create logs directory
+          mkdir -p docker-logs
+          
+          # Start Docker Compose in detached mode
+          echo "Starting Docker Compose services..."
           docker-compose -f docker-compose.test.yml up -d
+          
+          # Save container IDs for later log extraction
+          CONTAINER_IDS=$(docker-compose -f docker-compose.test.yml ps -q)
+          echo "Started containers: $CONTAINER_IDS"
 
       - name: Wait for services to be available
         run: |
@@ -364,10 +373,37 @@ jobs:
           # Check both services
           check_service "http://127.0.0.1:8085/" && check_service "http://127.0.0.1:8086/"
 
+      - name: Start log streaming in background
+        run: |
+          # Start a background process to stream logs to a file
+          docker-compose -f docker-compose.test.yml logs -f > docker-logs/live-logs.txt 2>&1 &
+          echo $! > .docker-logs-pid
+          
+          # Also save current logs to a separate file
+          docker-compose -f docker-compose.test.yml logs > docker-logs/startup-logs.txt 2>&1
+
       - name: Run PHPUnit tests
         run: |
           wget https://phar.phpunit.de/phpunit-11.3.phar
           php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
+
+      - name: Capture final logs
+        if: always()
+        run: |
+          # Stop the background log process if it's running
+          if [ -f .docker-logs-pid ]; then
+            kill $(cat .docker-logs-pid) || true
+            rm .docker-logs-pid
+          fi
+          
+          # Capture one final set of logs
+          docker-compose -f docker-compose.test.yml logs > docker-logs/final-logs.txt 2>&1
+          
+          # Get individual container logs as well (with timestamps)
+          for container in $(docker-compose -f docker-compose.test.yml ps -q); do
+            container_name=$(docker inspect --format='{{.Name}}' $container | sed 's/^\///')
+            docker logs --timestamps $container > "docker-logs/$container_name.log" 2>&1
+          done
 
       - name: Stop test environment
         run: |
@@ -379,6 +415,13 @@ jobs:
         with:
           name: reports
           path: reports
+
+      - name: Upload Docker logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-logs
+          path: docker-logs
+        if: always()  # Always upload logs, even if tests fail
 
 
   release-documentation:
