@@ -279,6 +279,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: php:8.3
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      options: --network host
     if: needs.check-phpunit.outputs.phpunit-exists == 'true'
 
     steps:
@@ -294,10 +297,21 @@ jobs:
       - name: Install dependencies
         run: |
           apt update -yqq
-          apt install git libpq-dev libzip-dev zip make wget gnupg curl docker.io docker-compose -yqq
+          apt install git libpq-dev libzip-dev zip make wget gnupg -yqq
           curl -sSLf -o /usr/local/bin/install-php-extensions https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions
           chmod +x /usr/local/bin/install-php-extensions
           install-php-extensions zip
+
+      - name: Install Docker CLI and Docker Compose
+        run: |
+          apt-get update -yqq
+          apt-get install -y ca-certificates curl gnupg
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          chmod a+r /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update -yqq
+          apt-get install -y docker-ce-cli docker-compose-plugin
 
       - name: Install phive
         run: |
@@ -329,99 +343,26 @@ jobs:
         run: |
           ncc package install --package="release/net.nosial.socialbox.ncc" --build-source --reinstall -y --log-level debug
 
-      - name: Deploy test environment
-        run: |
-          # Create logs directory
-          mkdir -p docker-logs
-          
-          # Start Docker Compose in detached mode
-          echo "Starting Docker Compose services..."
-          docker-compose -f docker-compose.test.yml up -d
-          
-          # Save container IDs for later log extraction
-          CONTAINER_IDS=$(docker-compose -f docker-compose.test.yml ps -q)
-          echo "Started containers: $CONTAINER_IDS"
+      - name: Start Docker services
+        run: docker compose -f docker-compose.test.yml up -d
 
-      - name: Wait for services to be available
+      - name: Wait for services to be ready
         run: |
-          # Function to check if a service is available
-          check_service() {
-            local url=$1
-            local max_attempts=200
-            local wait_seconds=5
-            local attempt=1
-          
-            echo "Checking availability of $url"
-          
-            while [ $attempt -le $max_attempts ]; do
-              response=$(curl -s -o /dev/null -w "%{http_code}" -f -H "Request-Type: ping" $url || echo "failed")
-          
-              if [ "$response" = "200" ]; then
-                echo "Service at $url is available!"
-                return 0
-              fi
-          
-              echo "Attempt $attempt/$max_attempts: Service at $url is not available yet (status: $response). Waiting $wait_seconds seconds..."
-              sleep $wait_seconds
-              attempt=$((attempt + 1))
-            done
-          
-            echo "Service at $url is not available after $max_attempts attempts."
-            return 1
-          }
-          
-          # Check both services
-          check_service "http://127.0.0.1:8085/" && check_service "http://127.0.0.1:8086/"
-
-      - name: Start log streaming in background
-        run: |
-          # Start a background process to stream logs to a file
-          docker-compose -f docker-compose.test.yml logs -f > docker-logs/live-logs.txt 2>&1 &
-          echo $! > .docker-logs-pid
-          
-          # Also save current logs to a separate file
-          docker-compose -f docker-compose.test.yml logs > docker-logs/startup-logs.txt 2>&1
+          until curl -f -H "Request-Type: ping" http://localhost:8085/ && curl -f -H "Request-Type: ping" http://localhost:8086/; do
+            echo "Waiting for services to become available..."
+            sleep 1
+          done
 
       - name: Run PHPUnit tests
         run: |
           wget https://phar.phpunit.de/phpunit-11.3.phar
           php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
 
-      - name: Capture final logs
-        if: always()
-        run: |
-          # Stop the background log process if it's running
-          if [ -f .docker-logs-pid ]; then
-            kill $(cat .docker-logs-pid) || true
-            rm .docker-logs-pid
-          fi
-          
-          # Capture one final set of logs
-          docker-compose -f docker-compose.test.yml logs > docker-logs/final-logs.txt 2>&1
-          
-          # Get individual container logs as well (with timestamps)
-          for container in $(docker-compose -f docker-compose.test.yml ps -q); do
-            container_name=$(docker inspect --format='{{.Name}}' $container | sed 's/^\///')
-            docker logs --timestamps $container > "docker-logs/$container_name.log" 2>&1
-          done
-
-      - name: Stop test environment
-        run: |
-          docker-compose -f docker-compose.test.yml down
-        if: always()  # Always run this step, even if previous steps fail
-
       - name: Upload test reports
         uses: actions/upload-artifact@v4
         with:
           name: reports
           path: reports
-
-      - name: Upload Docker logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-logs
-          path: docker-logs
-        if: always()  # Always upload logs, even if tests fail
 
 
   release-documentation:
