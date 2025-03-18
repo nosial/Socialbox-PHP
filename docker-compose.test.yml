@@ -27,10 +27,6 @@ services:
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}
-      CONFIGLIB_PATH: /etc/config
-      LOGGING_DIRECTORY: /var/log
-      SB_MODE: automated
-      SB_STORAGE_PATH: /etc/socialbox
       # Change these values to match your environment or update the .env file
       SB_INSTANCE_NAME: ${SB_COFFEE_NAME:-coffee} # Instance name SB_COFFEE_NAME
       SB_INSTANCE_DOMAIN: ${SB_COFFEE_DOMAIN:-coffee.com} # Instance domain SB_COFFEE_DOMAIN
@@ -61,11 +57,6 @@ services:
       # the instance name and the suffix being used to detect the TXT record
       SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://coffee_socialbox:8085/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
       SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://teapot_socialbox:8085/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
-      # UDP Logging, won't cause issues if the server is not available
-      # See https://github.com/nosial/LogLib2/blob/master/server.py for more information
-      LOGLIB_UDP_ENABLED: 'true'
-      LOGLIB_UDP_HOST: 172.17.0.1
-      LOGLIB_UDP_PORT: 5131
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://coffee_socialbox:8085/}"]
       interval: 30s
@@ -137,10 +128,6 @@ services:
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}
-      CONFIGLIB_PATH: /etc/config
-      LOGGING_DIRECTORY: /var/log
-      SB_MODE: automated
-      SB_STORAGE_PATH: /etc/socialbox
       # Change these values to match your environment or update the .env file
       SB_INSTANCE_NAME: ${SB_TEAPOT_NAME:-teapot} # Instance name SB_TEAPOT_NAME
       SB_INSTANCE_DOMAIN: ${SB_TEAPOT_DOMAIN:-teapot.com} # Instance domain SB_TEAPOT_DOMAIN
@@ -171,11 +158,6 @@ services:
       # the instance name and the suffix being used to detect the TXT record
       SB_INSTANCE_DNS_MOCK_COFFEE: ${SB_INSTANCE_DNS_MOCK_COFFEE:-"coffee.com v=socialbox;sb-rpc=http://coffee_socialbox:8085/;sb-key=sig:g59Cf8j1wmQmRg1MkveYbpdiZ-1-_hFU9eRRJmQAwmc;sb-exp=0"}
       SB_INSTANCE_DNS_MOCK_TEAPOT: ${SB_INSTANCE_DNS_MOCK_TEAPOT:-"teapot.com v=socialbox;sb-rpc=http://teapot_socialbox:8085/;sb-key=sig:MDXUuripAo_IAv-EZTEoFhpIdhsXxfMLNunSnQzxYiY;sb-exp=0"}
-      # UDP Logging, won't cause issues if the server is not available
-      # See https://github.com/nosial/LogLib2/blob/master/server.py for more information
-      LOGLIB_UDP_ENABLED: 'true'
-      LOGLIB_UDP_HOST: 172.17.0.1
-      LOGLIB_UDP_PORT: 5131
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "Request-Type: ping", "${SB_INSTANCE_RPC_ENDPOINT-http://teapot_socialbox:8085/}"]
       interval: 30s

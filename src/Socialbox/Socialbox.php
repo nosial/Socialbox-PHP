@@ -61,6 +61,7 @@
                 return;
             }
 
+            Logger::getLogger()->debug('Received request from ' . $_SERVER['REMOTE_ADDR']);
             $clientRequest = new ClientRequest($requestHeaders, file_get_contents('php://input') ?? null);
 
             // Handle the request type, only `init` and `dhe` are not encrypted using the session's encrypted key

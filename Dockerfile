@@ -33,6 +33,7 @@ RUN apt-get update -yqq && apt-get install -yqq --no-install-recommends \
     redis \
     libgd-dev \
     nginx \
+    python3-colorama \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ----------------------------- PHP Extensions -------------------------------
@@ -129,6 +130,16 @@ EXPOSE 8085
 # Copy over entrypoint script and set it as executable
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Environment
+ENV SB_MODE="automated"
+ENV SB_STORAGE_PATH="/etc/socialbox"
+ENV CONFIGLIB_PATH="/etc/config"
+ENV LOGGING_DIRECTORY="/var/log"
+ENV LOGLIB_UDP_ENABLED="true"
+ENV LOGLIB_UDP_HOST="127.0.0.1"
+ENV LOGLIB_UDP_PORT="5131"
+ENV LOGLIB_UDP_TRACE_FORMAT="4096"
 
 # Set the entrypoint
 ENTRYPOINT ["/usr/bin/bash", "/usr/local/bin/entrypoint.sh"]

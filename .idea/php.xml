@@ -17,19 +17,12 @@
   </component>
   <component name="PhpIncludePathManager">
     <include_path>
-      <path value="/var/ncc/packages/net.nosial.loglib2=1.0.0" />
-      <path value="/var/ncc/packages/net.nosial.loglib=2.0.0" />
+      <path value="/var/ncc/packages" />
       <path value="/var/ncc/packages/com.symfony.finder=2.0.7" />
       <path value="/var/ncc/packages/com.gregwar.captcha=v1.2.1" />
-      <path value="/var/ncc/packages/com.symfony.filesystem=v7.1.5" />
       <path value="/var/ncc/packages/com.symfony.polyfill_ctype=v1.31.0" />
       <path value="/var/ncc/packages/com.symfony.polyfill_mbstring=v1.31.0" />
       <path value="/var/ncc/packages/com.symfony.polyfill_uuid=v1.31.0" />
-      <path value="/var/ncc/packages/com.symfony.process=v7.1.5" />
-      <path value="/var/ncc/packages/com.symfony.uid=v7.1.5" />
-      <path value="/var/ncc/packages/com.symfony.yaml=v7.1.5" />
-      <path value="/var/ncc/packages/net.nosial.configlib=1.1.0" />
-      <path value="/var/ncc/packages/net.nosial.optslib=1.1.2" />
       <path value="$USER_HOME$/phar" />
       <path value="/usr/share/ncc" />
     </include_path>
