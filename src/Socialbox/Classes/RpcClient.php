@@ -481,7 +481,7 @@
                     publicKey: $this->serverPublicSigningKey,
                 ))
                 {
-                    throw new RpcException('The response signature cannot be verified with the server\'s public signing key');
+                    throw new RpcException('The response signature cannot be verified with the server\'s public signing key: ' . $this->serverPublicSigningKey);
                 }
             }
             catch (CryptographyException $e)
