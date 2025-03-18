@@ -11,3 +11,5 @@
 /teapot_socialbox/logs/
 /tests/docker/coffee/data/
 /tests/docker/teapot/data/
+/tests/docker/teapot/logs/
+/tests/docker/coffee/logs/
