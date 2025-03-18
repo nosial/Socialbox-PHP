@@ -335,8 +335,32 @@ jobs:
 
       - name: Run PHPUnit tests
         run: |
-          curl -sSf https://sshx.io/get | sh -s run
+          check_service() {
+              local port=$1
+              local max_attempts=30
+              local wait_seconds=2
+              local attempt=1
+              
+              while [ $attempt -le $max_attempts ]; do
+              echo "Checking service on port $port (attempt $attempt/$max_attempts)..."
+              if curl -s -o /dev/null -w "%{http_code}" -H "Request-Type: ping" http://172.17.0.1:$port | grep -q "200"; then
+                echo "Service on port $port is available!"
+                return 0
+              fi
+              
+              echo "Service on port $port not yet available. Waiting ${wait_seconds}s before next attempt..."
+              sleep $wait_seconds
+              attempt=$((attempt + 1))
+              done
+              
+              echo "Error: Service on port $port not available after $max_attempts attempts"
+              return 1
+          }
+          
           wget https://phar.phpunit.de/phpunit-11.3.phar
+          docker-compose -f docker-compose.test.yml up -d
+          check_service 8087 || exit 1
+          check_service 8086 || exit 1
           php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
 
       - name: Upload test reports
