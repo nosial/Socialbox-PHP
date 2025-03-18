@@ -15,7 +15,12 @@
             if(self::$logger === null)
             {
                 self::$logger = new \LogLib2\Logger(Configuration::getInstanceConfiguration()->getName());
-                \LogLib2\Logger::registerHandlers();
+
+                // Don't register handlers if we are testing. This conflicts with PHPUnit.
+                if(!defined('SB_TEST'))
+                {
+                    \LogLib2\Logger::registerHandlers();
+                }
             }
 
             return self::$logger;
