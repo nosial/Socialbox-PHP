@@ -32,7 +32,7 @@
 
         // coffee.com
         define('COFFEE_DOMAIN', 'coffee.com');
-        define('COFFEE_RPC_HOST', '127.0.0.0');
+        define('COFFEE_RPC_HOST', '172.17.0.1');
         define('COFFEE_RPC_PORT', 8086);
         define('COFFEE_RPC_SSL', false);
         define('COFFEE_PUBLIC_KEY', file_get_contents($dockerTestPath . 'coffee' . DIRECTORY_SEPARATOR . 'signature.pub'));
@@ -40,7 +40,7 @@
 
         // teapot.com
         define('TEAPOT_DOMAIN', 'teapot.com');
-        define('TEAPOT_RPC_HOST', '127.0.0.0');
+        define('TEAPOT_RPC_HOST', '172.17.0.1');
         define('TEAPOT_RPC_PORT', 8087);
         define('TEAPOT_RPC_SSL', false);
         define('TEAPOT_PUBLIC_KEY', file_get_contents($dockerTestPath . 'teapot' . DIRECTORY_SEPARATOR . 'signature.pub'));
