@@ -251,15 +251,11 @@
 
                 // If-clause for handling the host peer, host peers are always enabled unless the fist clause is true
                 // in which case the host was blocked by this server.
-                if($clientRequest->getIdentifyAs()->getUsername() === ReservedUsernames::HOST->value)
+                if($clientRequest->getIdentifyAs()->getUsername() === ReservedUsernames::HOST->value && $registeredPeer === null)
                 {
-                    // If the host is not registered, register it
-                    if($registeredPeer === null)
-                    {
-                        $peerUuid = RegisteredPeerManager::createPeer(PeerAddress::fromAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)));
-                        RegisteredPeerManager::enablePeer($peerUuid);
-                        $registeredPeer = RegisteredPeerManager::getPeer($peerUuid);
-                    }
+                    $peerUuid = RegisteredPeerManager::createPeer($clientRequest->getIdentifyAs());
+                    RegisteredPeerManager::enablePeer($peerUuid);
+                    $registeredPeer = RegisteredPeerManager::getPeer($peerUuid);
                 }
 
                 if($registeredPeer === null)
@@ -272,7 +268,7 @@
                     }
 
                     // Register the peer if it is not already registered
-                    $peerUuid = RegisteredPeerManager::createPeer(PeerAddress::fromAddress($clientRequest->getHeader(StandardHeaders::IDENTIFY_AS)));
+                    $peerUuid = RegisteredPeerManager::createPeer($clientRequest->getIdentifyAs());
                     // Retrieve the peer object
                     $registeredPeer = RegisteredPeerManager::getPeer($peerUuid);
                 }

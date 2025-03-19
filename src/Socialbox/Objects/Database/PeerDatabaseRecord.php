@@ -6,6 +6,7 @@
     use InvalidArgumentException;
     use Socialbox\Classes\Configuration;
     use Socialbox\Enums\Flags\PeerFlags;
+    use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\Standard\InformationFieldState;
     use Socialbox\Objects\Standard\Peer;
@@ -32,7 +33,15 @@
         {
             $this->uuid = $data['uuid'];
             $this->username = $data['username'];
-            $this->server = $data['server'];
+
+            if($data['server'] === ReservedUsernames::HOST->value)
+            {
+                $this->server = Configuration::getInstanceConfiguration()->getDomain();
+            }
+            else
+            {
+                $this->server = $data['server'];
+            }
 
             if($data['flags'])
             {
@@ -55,7 +64,14 @@
             }
             elseif(is_string($data['created']))
             {
-                $this->created = new DateTime($data['created']);
+                try
+                {
+                    $this->created = new DateTime($data['created']);
+                }
+                catch (\DateMalformedStringException $e)
+                {
+                    throw new InvalidArgumentException($e->getMessage(), $e->getCode(), $e);
+                }
             }
             else
             {
@@ -72,7 +88,14 @@
             }
             elseif(is_string($data['updated']))
             {
-                $this->updated = new DateTime($data['updated']);
+                try
+                {
+                    $this->updated = new DateTime($data['updated']);
+                }
+                catch (\DateMalformedStringException $e)
+                {
+                    throw new InvalidArgumentException($e->getMessage(), $e->getCode(), $e);
+                }
             }
             else
             {
@@ -192,7 +215,7 @@
          */
         public function isExternal(): bool
         {
-            return $this->username === 'host' || $this->server !== Configuration::getInstanceConfiguration()->getDomain();
+            return $this->username === ReservedUsernames::HOST->value || $this->server !== Configuration::getInstanceConfiguration()->getDomain();
         }
 
         /**

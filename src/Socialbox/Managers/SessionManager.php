@@ -54,13 +54,14 @@
             // TODO: Update this to support `host` peers
             if($peer->isExternal())
             {
+                Logger::getLogger()->debug('Creating a session for an external peer');
                 $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
                 $flags[] = SessionFlags::VER_AUTHENTICATION;
             }
             else if($peer->isEnabled())
             {
+                Logger::getLogger()->debug('Creating a session for an enabled peer');
                 $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
-
                 if(PasswordManager::usesPassword($peer->getUuid()))
                 {
                     $flags[] = SessionFlags::VER_PASSWORD;
@@ -73,6 +74,7 @@
             }
             else
             {
+                Logger::getLogger()->debug('Creating a session for a disabled peer');
                 $flags[] = SessionFlags::REGISTRATION_REQUIRED;
 
                 if(Configuration::getRegistrationConfiguration()->isDisplayNameRequired())
