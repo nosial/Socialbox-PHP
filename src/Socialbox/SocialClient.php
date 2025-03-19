@@ -938,7 +938,7 @@
          * @return bool Returns True if the field was added
          * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function settingsAddInformationField(InformationFieldName|string $field, string $value, null|PrivacyState|string $privacy): bool
+        public function settingsAddInformationField(InformationFieldName|string $field, string $value, null|PrivacyState|string $privacy=null): bool
         {
             if($field instanceof InformationFieldName)
             {
