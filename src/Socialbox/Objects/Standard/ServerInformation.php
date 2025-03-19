@@ -19,7 +19,7 @@
         public function __construct(array $data)
         {
             $this->serverName = $data['server_name'];
-            $this->serverKeypairExpires = $data['server_keypair_expires'];
+            $this->serverKeypairExpires = (int)$data['server_keypair_expires'] ?? 0;
             $this->transportEncryptionAlgorithm = $data['transport_encryption_algorithm'];
         }
 

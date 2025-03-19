@@ -348,7 +348,7 @@
                     case 'SB_CRYPTO_KEYPAIR_EXPIRES':
                     case 'SB_CRYPTO_ENCRYPTION_KEYS_COUNT':
                     case 'SB_CACHE_PORT':
-                        if($variable !== false)
+                        if($variable !== false && is_numeric($variable))
                         {
                             Configuration::getConfigurationLib()->set($config, (int) $variable);
                             Program::getLogger()->info(sprintf('Set %s to %s', $config, $variable));
