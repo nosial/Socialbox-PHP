@@ -135,11 +135,12 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 ENV SB_MODE="automated"
 ENV SB_STORAGE_PATH="/etc/socialbox"
 ENV CONFIGLIB_PATH="/etc/config"
-ENV LOGGING_DIRECTORY="/var/log"
 ENV LOGLIB_UDP_ENABLED="true"
 ENV LOGLIB_UDP_HOST="127.0.0.1"
 ENV LOGLIB_UDP_PORT="5131"
-ENV LOGLIB_UDP_TRACE_FORMAT="4096"
+ENV LOGLIB_UDP_TRACE_FORMAT="full"
+ENV LOGLIB_CONSOLE_ENABLED="true"
+ENV LOGLIB_CONSOLE_TRACE_FORMAT="full"
 
 # Set the entrypoint
 ENTRYPOINT ["/usr/bin/bash", "/usr/local/bin/entrypoint.sh"]

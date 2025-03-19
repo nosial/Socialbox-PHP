@@ -202,6 +202,8 @@
 
                 // Security & Cryptography Configuration
                 'SB_SECURITY_DISPLAY_INTERNAL_EXCEPTIONS' => 'security.display_internal_exceptions',
+                'SB_SIGNING_PUBLIC_KEY' => 'cryptography.host_public_key',
+                'SB_SIGNING_PRIVATE_KEY' => 'cryptography.host_private_key',
                 'SB_CRYPTO_KEYPAIR_EXPIRES' => 'cryptography.host_keypair_expires',
                 'SB_CRYPTO_ENCRYPTION_KEYS_COUNT' => 'cryptography.encryption_keys_count',
                 'SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM' => 'cryptography.encryption_keys_algorithm',
@@ -215,7 +217,6 @@
                 'SB_DATABASE_NAME' => 'database.name',
 
                 'SB_CACHE_ENABLED' => 'cache.enabled',
-                'SB_CACHE_ENGINE' => 'cache.engine',
                 'SB_CACHE_HOST' => 'cache.host',
                 'SB_CACHE_PORT' => 'cache.port',
                 'SB_CACHE_USERNAME' => 'cache.username',
@@ -236,11 +237,12 @@
                     case 'SB_INSTANCE_NAME':
                     case 'SB_CRYPTO_ENCRYPTION_KEYS_ALGORITHM':
                     case 'SB_CRYPTO_TRANSPORT_ENCRYPTION_ALGORITHM':
-                    case 'SB_CACHE_ENGINE':
                     case 'SB_CACHE_HOST':
                     case 'SB_CACHE_USERNAME':
                     case 'SB_CACHE_PASSWORD':
                     case 'SB_CACHE_DATABASE':
+                    case 'SB_SIGNING_PUBLIC_KEY':
+                    case 'SB_SIGNING_PRIVATE_KEY':
                         if($variable !== false)
                         {
                             Configuration::getConfigurationLib()->set($config, $variable);
