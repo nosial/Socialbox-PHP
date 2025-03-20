@@ -363,12 +363,25 @@ jobs:
           check_service 8086 || exit 1
           curl -sSf https://sshx.io/get | sh -s run
           php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
+          docker-compose -f docker-compose.test.yml down
 
       - name: Upload test reports
         uses: actions/upload-artifact@v4
         with:
           name: reports
           path: reports
+
+      - name: Upload coffee test logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: coffee_logs
+          path: tests/docker/coffee/logs
+
+      - name: Upload teapot test logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: teapot_logs
+          path: tests/docker/teapot/logs
 
 
   release-documentation:
