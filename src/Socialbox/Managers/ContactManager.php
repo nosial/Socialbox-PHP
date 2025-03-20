@@ -15,6 +15,7 @@
     use Socialbox\Exceptions\DatabaseOperationException;
     use Socialbox\Objects\Database\ContactDatabaseRecord;
     use Socialbox\Objects\Database\ContactKnownKeyRecord;
+    use Socialbox\Objects\Database\PeerDatabaseRecord;
     use Socialbox\Objects\PeerAddress;
     use Socialbox\Objects\Standard\Contact;
     use Socialbox\Objects\Standard\Signature;
@@ -24,13 +25,18 @@
         /**
          * Determines if a given contact address is associated with a specified peer UUID in the database.
          *
-         * @param string $peerUuid The unique identifier of the peer.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier of the peer.
          * @param string|PeerAddress $contactAddress The contact's address, either as a string or a PeerAddress instance.
          * @return bool Returns true if the contact exists in the database; otherwise, returns false.
          * @throws DatabaseOperationException If the operation fails.
          */
-        public static function isContact(string $peerUuid, string|PeerAddress $contactAddress): bool
+        public static function isContact(string|PeerDatabaseRecord $peerUuid, string|PeerAddress $contactAddress): bool
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             if($contactAddress instanceof PeerAddress)
             {
                 $contactAddress = $contactAddress->getAddress();
@@ -65,14 +71,19 @@
          * Creates a new contact associated with the given peer UUID and contact address
          * in the database, with a specified relationship type.
          *
-         * @param string $peerUuid The unique identifier of the peer.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier of the peer.
          * @param string|PeerAddress $contactAddress The contact's address, either as a string or a PeerAddress instance.
          * @param ContactRelationshipType $relationship The type of relationship between the peer and the contact. Defaults to ContactRelationshipType::MUTUAL.
          * @return string The UUID of the newly created contact.
          * @throws DatabaseOperationException If the operation fails.
          */
-        public static function createContact(string $peerUuid, string|PeerAddress $contactAddress, ContactRelationshipType $relationship=ContactRelationshipType::MUTUAL): string
+        public static function createContact(string|PeerDatabaseRecord $peerUuid, string|PeerAddress $contactAddress, ContactRelationshipType $relationship=ContactRelationshipType::MUTUAL): string
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             if($contactAddress instanceof PeerAddress)
             {
                 $contactAddress = $contactAddress->getAddress();
@@ -111,12 +122,17 @@
         /**
          * Retrieves the total number of contacts associated with a specific peer.
          *
-         * @param string $peerUuid The unique identifier for the peer whose contact count is to be retrieved.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier for the peer whose contact count is to be retrieved.
          * @return int The total number of contacts for the given peer.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getContactCount(string $peerUuid): int
+        public static function getContactCount(string|PeerDatabaseRecord $peerUuid): int
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             try
             {
                 // Get the contact count from the database
@@ -134,13 +150,18 @@
         /**
          * Retrieves a specific contact associated with a peer based on the contact's address.
          *
-         * @param string $peerUuid The unique identifier for the peer whose contact is to be retrieved.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier for the peer whose contact is to be retrieved.
          * @param string|PeerAddress $contactAddress The address of the contact, either as a string or a PeerAddress object.
          * @return ContactDatabaseRecord|null The retrieved ContactRecord instance if found, or null if no matching contact exists.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getContact(string $peerUuid, string|PeerAddress $contactAddress): ?ContactDatabaseRecord
+        public static function getContact(string|PeerDatabaseRecord $peerUuid, string|PeerAddress $contactAddress): ?ContactDatabaseRecord
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             if($contactAddress instanceof PeerAddress)
             {
                 $contactAddress = $contactAddress->getAddress();
@@ -180,13 +201,18 @@
         /**
          * Deletes a specific contact associated with a given peer.
          *
-         * @param string $peerUuid The unique identifier for the peer whose contact is to be deleted.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier for the peer whose contact is to be deleted.
          * @param string|PeerAddress $contactAddress The address of the contact to be deleted. Can be provided as a string or a PeerAddress instance.
          * @return void
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function deleteContact(string $peerUuid, string|PeerAddress $contactAddress): void
+        public static function deleteContact(string|PeerDatabaseRecord $peerUuid, string|PeerAddress $contactAddress): void
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             if($contactAddress instanceof PeerAddress)
             {
                 $contactAddress = $contactAddress->getAddress();
@@ -217,14 +243,19 @@
         /**
          * Updates the relationship type of contact associated with a specific peer.
          *
-         * @param string $peerUuid The unique identifier for the peer whose contact relationship is to be updated.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier for the peer whose contact relationship is to be updated.
          * @param string|PeerAddress $contactAddress The address of the contact to update. Can be provided as a string or an instance of PeerAddress.
          * @param ContactRelationshipType $relationship The new relationship type to assign to the contact.
          * @return void
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function updateContactRelationship(string $peerUuid, string|PeerAddress $contactAddress, ContactRelationshipType $relationship): void
+        public static function updateContactRelationship(string|PeerDatabaseRecord $peerUuid, string|PeerAddress $contactAddress, ContactRelationshipType $relationship): void
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             if($contactAddress instanceof PeerAddress)
             {
                 $contactAddress = $contactAddress->getAddress();
@@ -257,17 +288,22 @@
         /**
          * Retrieves a contact by its unique identifier.
          *
-         * @param string $uuid The unique identifier of the contact to retrieve.
+         * @param string|ContactDatabaseRecord $contactUuid The unique identifier of the contact to retrieve.
          * @return ContactDatabaseRecord|null A ContactRecord instance if the contact is found, or null if no contact exists with the provided UUID.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getContactByUuid(string $uuid): ?ContactDatabaseRecord
+        public static function getContactByUuid(string|ContactDatabaseRecord $contactUuid): ?ContactDatabaseRecord
         {
+            if($contactUuid instanceof ContactDatabaseRecord)
+            {
+                $contactUuid = $contactUuid->getUuid();
+            }
+
             try
             {
                 // Get the contact from the database
                 $statement = Database::getConnection()->prepare('SELECT * FROM contacts WHERE uuid=:uuid LIMIT 1');
-                $statement->bindParam(':uuid', $uuid);
+                $statement->bindParam(':uuid', $contactUuid);
                 $statement->execute();
                 $result = $statement->fetch();
             }
@@ -287,14 +323,19 @@
         /**
          * Retrieves a list of contacts associated with a specific peer.
          *
-         * @param string $peerUuid The unique identifier for the peer whose contacts are to be retrieved.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier for the peer whose contacts are to be retrieved.
          * @param int $limit The maximum number of contacts to retrieve per page. Defaults to 100.
          * @param int $page The page number to retrieve. Defaults to 1.
          * @return ContactDatabaseRecord[] An array of ContactRecord instances representing the contacts for the given peer.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getContacts(string $peerUuid, int $limit=100, int $page=1): array
+        public static function getContacts(string|PeerDatabaseRecord $peerUuid, int $limit=100, int $page=1): array
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             if ($page < 1)
             {
                 $page = 1;
@@ -335,14 +376,19 @@
         /**
          * Retrieves a list of standard contacts associated with a specific peer.
          *
-         * @param string $peerUuid The unique identifier for the peer whose contacts are to be retrieved.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier for the peer whose contacts are to be retrieved.
          * @param int $limit The maximum number of contacts to retrieve per page. Defaults to 100.
          * @param int $page The page number to retrieve. Defaults to 1.
          * @return Contact[] An array of ContactRecord instances representing the contacts for the given peer.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getStandardContacts(string $peerUuid, int $limit=100, int $page=1): array
+        public static function getStandardContacts(string|PeerDatabaseRecord $peerUuid, int $limit=100, int $page=1): array
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             if ($page < 1)
             {
                 throw new InvalidArgumentException('The page number cannot be less than 1');
@@ -663,13 +709,18 @@
         /**
          * Returns a standard contact record for a given peer UUID and contact address.
          *
-         * @param string $peerUuid The unique identifier of the peer.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier of the peer.
          * @param string|PeerAddress $contactAddress The contact's address, either as a string or a PeerAddress instance.
          * @return Contact|null The standard contact record if found, or null if no matching contact exists.
          * @throws DatabaseOperationException If the database query fails.
          */
-        public static function getStandardContact(string $peerUuid, string|PeerAddress $contactAddress): ?Contact
+        public static function getStandardContact(string|PeerDatabaseRecord $peerUuid, string|PeerAddress $contactAddress): ?Contact
         {
+            if($peerUuid instanceof PeerDatabaseRecord)
+            {
+                $peerUuid = $peerUuid->getUuid();
+            }
+
             $contact = self::getContact($peerUuid, $contactAddress);
             if($contact === null)
             {
