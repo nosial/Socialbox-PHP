@@ -398,9 +398,9 @@
          */
         public function getSelf(): Peer
         {
-            return $this->sendRequest(
+            return new Peer($this->sendRequest(
                 new RpcRequest(StandardMethods::GET_SELF)
-            )->getResponse()->getResult();
+            )->getResponse()->getResult());
         }
 
         /**
