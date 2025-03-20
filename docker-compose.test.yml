@@ -28,6 +28,7 @@ services:
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}
+      CONFIGLIB_PATH: /etc/config
       # Change these values to match your environment or update the .env file
       SB_INSTANCE_NAME: ${SB_COFFEE_NAME:-coffee} # Instance name SB_COFFEE_NAME
       SB_INSTANCE_DOMAIN: ${SB_COFFEE_DOMAIN:-coffee.com} # Instance domain SB_COFFEE_DOMAIN
@@ -125,6 +126,7 @@ services:
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}
+      CONFIGLIB_PATH: /etc/config
       # Change these values to match your environment or update the .env file
       SB_INSTANCE_NAME: ${SB_TEAPOT_NAME:-teapot} # Instance name SB_TEAPOT_NAME
       SB_INSTANCE_DOMAIN: ${SB_TEAPOT_DOMAIN:-teapot.com} # Instance domain SB_TEAPOT_DOMAIN
