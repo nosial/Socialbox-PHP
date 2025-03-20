@@ -290,7 +290,7 @@
          * @return Contact[] An array of Contact objects
          * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function addressBookGetContacts(int $page=0, ?int $limit=null): array
+        public function addressBookGetContacts(int $page=1, ?int $limit=null): array
         {
             $request = new RpcRequest(StandardMethods::ADDRESS_BOOK_GET_CONTACTS, parameters: [
                 'page' => $page,
