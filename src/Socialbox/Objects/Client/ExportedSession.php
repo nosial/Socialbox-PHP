@@ -65,8 +65,8 @@
             $this->clientTransportEncryptionKey = $data['client_transport_encryption_key'];
             $this->serverTransportEncryptionKey = $data['server_transport_encryption_key'];
             $this->defaultSigningKey = $data['default_signing_key'] ?? null;
-            $this->signingKeys = array_map(fn($key) => SignatureKeyPair::fromArray($key), $data['signing_keys']);
-            $this->encryptionChannelSecrets = array_map(fn($key) => EncryptionChannelSecret::fromArray($key), $data['encryption_channel_secrets']);
+            $this->signingKeys = array_map(fn($key) => SignatureKeyPair::fromArray($key), $data['signing_keys'] ?? []);
+            $this->encryptionChannelSecrets = array_map(fn($key) => EncryptionChannelSecret::fromArray($key), $data['encryption_channel_secrets'] ?? []);
         }
 
         /**
