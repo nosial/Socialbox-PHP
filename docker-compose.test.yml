@@ -22,7 +22,7 @@ services:
       - shared_network
     restart: unless-stopped
     volumes:
-      - ./tests/docker/coffee/config:/etc/config
+      - ./tests/docker/coffee/config:/etc/configlib
       - ./tests/docker/coffee/data:/etc/socialbox
       - ./tests/docker/coffee/logs:/var/log
     environment:
@@ -119,7 +119,7 @@ services:
       - shared_network
     restart: unless-stopped
     volumes:
-      - ./tests/docker/teapot/config:/etc/config
+      - ./tests/docker/teapot/config:/etc/configlib
       - ./tests/docker/teapot/data:/etc/socialbox
       - ./tests/docker/teapot/logs:/var/log
     environment:
