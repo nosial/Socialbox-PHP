@@ -14,7 +14,7 @@
         private string $identifiedAs;
         private bool $authenticated;
         /**
-         * @var SessionFlags[]|null
+         * @var string[]|null
          */
         private ?array $flags;
         private int $created;
