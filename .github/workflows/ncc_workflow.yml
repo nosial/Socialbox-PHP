@@ -329,18 +329,6 @@ jobs:
         run: |
           ncc package install --package="release/net.nosial.socialbox.ncc" --build-source --reinstall -y --log-level debug
 
-      - name: Modify docker-compose file for GitHub workflow
-        run: |
-          WORKSPACE_DIR="${GITHUB_WORKSPACE}"
-          sed -i "s|- ./tests/docker/coffee/config:/etc/config:z|- ${WORKSPACE_DIR}/tests/docker/coffee/config:/etc/config:z|g" docker-compose.test.yml
-          sed -i "s|- ./tests/docker/coffee/data:/etc/socialbox:z|- ${WORKSPACE_DIR}/tests/docker/coffee/data:/etc/socialbox:z|g" docker-compose.test.yml
-          sed -i "s|- ./tests/docker/coffee/logs:/var/log:z|- ${WORKSPACE_DIR}/tests/docker/coffee/logs:/var/log:z|g" docker-compose.test.yml
-          sed -i "s|- ./tests/docker/teapot/config:/etc/config:z|- ${WORKSPACE_DIR}/tests/docker/teapot/config:/etc/config:z|g" docker-compose.test.yml
-          sed -i "s|- ./tests/docker/teapot/data:/etc/socialbox:z|- ${WORKSPACE_DIR}/tests/docker/teapot/data:/etc/socialbox:z|g" docker-compose.test.yml
-          sed -i "s|- ./tests/docker/teapot/logs:/var/log:z|- ${WORKSPACE_DIR}/tests/docker/teapot/logs:/var/log:z|g" docker-compose.test.yml
-          sed -i "s|- ./docker/redis.conf|- ${WORKSPACE_DIR}/docker/redis.conf|g" docker-compose.test.yml
-          cat docker-compose.test.yml
-
       - name: Build test environment
         run: |
           docker-compose -f docker-compose.test.yml build
@@ -369,6 +357,14 @@ jobs:
               return 1
           }
           
+          chcfg() {
+            local variable_name=$1
+            local variable_value=$1
+          
+            docker exec -it coffee_socialbox configlib --conf socialbox --prop="$variable_name" --val="$variable_value"
+            docker exec -it teapot_socialbox configlib --conf socialbox --prop="$variable_name" --val="$variable_value"
+          }
+          
           # Prepare the environment
           chmod -R 777 tests/docker
           
@@ -377,6 +373,12 @@ jobs:
           docker-compose -f docker-compose.test.yml up -d
           check_service 8087 || exit 1
           check_service 8086 || exit 1
+          
+          # Alter the default configuration properties for the testing stage
+          chcfg "registration.image_captcha_verification_required" "false"
+          chcfg "registration.accept_community_guidelines" "false"
+          chcfg "registration.accept_terms_of_service" "false"
+          chcfg "registration.accept_privacy_policy" "false"
           
           # Run the tests and tare down the test environment
           php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
