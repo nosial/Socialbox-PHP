@@ -356,28 +356,12 @@ jobs:
               echo "Error: Service on port $port not available after $max_attempts attempts"
               return 1
           }
-          modify_config() {
-            local property=$1
-            local value=$2
-            docker exec -it coffee_socialbox configlib --conf socialbox --prop="$property" --val="$value"
-            docker exec -it teapot_socialbox configlib --conf socialbox --prop="$property" --val="$value"
-          }
           
           # Prepare phpunit
           wget https://phar.phpunit.de/phpunit-11.3.phar
           docker-compose -f docker-compose.test.yml up -d
           check_service 8087 || exit 1
           check_service 8086 || exit 1
-          
-          # Configure the environment
-          modify_config "registration.accept_privacy_policy" "false"
-          modify_config "registration.accept_terms_of_service" "false"
-          modify_config "registration.accept_community_guidelines" "false"
-          modify_config "registration.image_captcha_verification_required" "false"
-          modify_config "authentication.image_captcha_verification_required" "false"
-          modify_config "policies.default_first_name_privacy" "PUBLIC"
-          modify_config "policies.default_middle_name_privacy" "PUBLIC"
-          modify_config "policies.default_last_name_privacy" "PUBLIC"
           
           # Run the tests and tare down the test environment
           php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
