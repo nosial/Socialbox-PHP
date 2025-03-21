@@ -22,9 +22,9 @@ services:
       - shared_network
     restart: unless-stopped
     volumes:
-      - ./tests/docker/coffee/config:/etc/config
-      - ./tests/docker/coffee/data:/etc/socialbox
-      - ./tests/docker/coffee/logs:/var/log
+      - ./tests/docker/coffee/config:/etc/config:z
+      - ./tests/docker/coffee/data:/etc/socialbox:z
+      - ./tests/docker/coffee/logs:/var/log:z
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}
@@ -120,9 +120,9 @@ services:
       - shared_network
     restart: unless-stopped
     volumes:
-      - ./tests/docker/teapot/config:/etc/config
-      - ./tests/docker/teapot/data:/etc/socialbox
-      - ./tests/docker/teapot/logs:/var/log
+      - ./tests/docker/teapot/config:/etc/config:z
+      - ./tests/docker/teapot/data:/etc/socialbox:z
+      - ./tests/docker/teapot/logs:/var/log:z
     environment:
       # No need to change these values
       LOG_LEVEL: ${LOG_LEVEL:-debug}
