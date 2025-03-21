@@ -329,6 +329,18 @@ jobs:
         run: |
           ncc package install --package="release/net.nosial.socialbox.ncc" --build-source --reinstall -y --log-level debug
 
+      - name: Modify docker-compose file for GitHub workflow
+        run: |
+          WORKSPACE_DIR="${GITHUB_WORKSPACE}"
+          sed -i "s|- ./tests/docker/coffee/config:/etc/config:z|- ${WORKSPACE_DIR}/tests/docker/coffee/config:/etc/config:z|g" docker-compose.test.yml
+          sed -i "s|- ./tests/docker/coffee/data:/etc/socialbox:z|- ${WORKSPACE_DIR}/tests/docker/coffee/data:/etc/socialbox:z|g" docker-compose.test.yml
+          sed -i "s|- ./tests/docker/coffee/logs:/var/log:z|- ${WORKSPACE_DIR}/tests/docker/coffee/logs:/var/log:z|g" docker-compose.test.yml
+          sed -i "s|- ./tests/docker/teapot/config:/etc/config:z|- ${WORKSPACE_DIR}/tests/docker/teapot/config:/etc/config:z|g" docker-compose.test.yml
+          sed -i "s|- ./tests/docker/teapot/data:/etc/socialbox:z|- ${WORKSPACE_DIR}/tests/docker/teapot/data:/etc/socialbox:z|g" docker-compose.test.yml
+          sed -i "s|- ./tests/docker/teapot/logs:/var/log:z|- ${WORKSPACE_DIR}/tests/docker/teapot/logs:/var/log:z|g" docker-compose.test.yml
+          sed -i "s|- ./docker/redis.conf|- ${WORKSPACE_DIR}/docker/redis.conf|g" docker-compose.test.yml
+          cat docker-compose.test.yml
+
       - name: Build test environment
         run: |
           docker-compose -f docker-compose.test.yml build
@@ -359,40 +371,6 @@ jobs:
           
           # Prepare the environment
           chmod -R 777 tests/docker
-
-          # Modify volume mounts to use named volumes
-          sed -i 's|./tests/docker/coffee/config:/etc/config:z|coffee_config_volume:/etc/config:z|g' docker-compose.test.yml
-          sed -i 's|./tests/docker/coffee/data:/etc/socialbox:z|coffee_data_volume:/etc/socialbox:z|g' docker-compose.test.yml
-          sed -i 's|./tests/docker/coffee/logs:/var/log:z|coffee_logs_volume:/var/log:z|g' docker-compose.test.yml
-          
-          sed -i 's|./tests/docker/teapot/config:/etc/config:z|teapot_config_volume:/etc/config:z|g' docker-compose.test.yml
-          sed -i 's|./tests/docker/teapot/data:/etc/socialbox:z|teapot_data_volume:/etc/socialbox:z|g' docker-compose.test.yml
-          sed -i 's|./tests/docker/teapot/logs:/var/log:z|teapot_logs_volume:/var/log:z|g' docker-compose.test.yml
-          
-          # Add the named volumes to the volumes section
-          echo "  coffee_config_volume:" >> docker-compose.test.yml
-          echo "    driver: local" >> docker-compose.test.yml
-          echo "  coffee_data_volume:" >> docker-compose.test.yml
-          echo "    driver: local" >> docker-compose.test.yml
-          echo "  coffee_logs_volume:" >> docker-compose.test.yml
-          echo "    driver: local" >> docker-compose.test.yml
-          echo "  teapot_config_volume:" >> docker-compose.test.yml
-          echo "    driver: local" >> docker-compose.test.yml
-          echo "  teapot_data_volume:" >> docker-compose.test.yml
-          echo "    driver: local" >> docker-compose.test.yml
-          echo "  teapot_logs_volume:" >> docker-compose.test.yml
-          echo "    driver: local" >> docker-compose.test.yml
-          
-          # Copy files to a temporary location that can be mounted
-          mkdir -p /tmp/coffee/config /tmp/coffee/data /tmp/coffee/logs
-          mkdir -p /tmp/teapot/config /tmp/teapot/data /tmp/teapot/logs
-          
-          cp -r tests/docker/coffee/config/* /tmp/coffee/config/ || true
-          cp -r tests/docker/coffee/data/* /tmp/coffee/data/ || true
-          cp -r tests/docker/teapot/config/* /tmp/teapot/config/ || true
-          cp -r tests/docker/teapot/data/* /tmp/teapot/data/ || true
-          
-          cat docker-compose.test.yml
           
           # Prepare phpunit
           wget https://phar.phpunit.de/phpunit-11.3.phar
