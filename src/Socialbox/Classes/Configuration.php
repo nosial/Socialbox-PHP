@@ -122,13 +122,13 @@
             $config->setDefault('registration.enabled', true);
             $config->setDefault('registration.privacy_policy_document', null);
             $config->setDefault('registration.privacy_policy_date', 1734985525);
-            $config->setDefault('registration.accept_privacy_policy', true);
+            $config->setDefault('registration.accept_privacy_policy', false);
             $config->setDefault('registration.terms_of_service_document', null);
             $config->setDefault('registration.terms_of_service_date', 1734985525);
-            $config->setDefault('registration.accept_terms_of_service', true);
+            $config->setDefault('registration.accept_terms_of_service', false);
             $config->setDefault('registration.community_guidelines_document', null);
             $config->setDefault('registration.community_guidelines_date', 1734985525);
-            $config->setDefault('registration.accept_community_guidelines', true);
+            $config->setDefault('registration.accept_community_guidelines', false);
             $config->setDefault('registration.password_required', true);
             $config->setDefault('registration.otp_required', false);
             $config->setDefault('registration.display_name_required', true);
@@ -140,11 +140,11 @@
             $config->setDefault('registration.phone_number_required', false);
             $config->setDefault('registration.birthday_required', false);
             $config->setDefault('registration.url_required', false);
-            $config->setDefault('registration.image_captcha_verification_required', true);
+            $config->setDefault('registration.image_captcha_verification_required', false);
 
             // Authentication configuration
             $config->setDefault('authentication.enabled', true);
-            $config->setDefault('authentication.image_captcha_verification_required', true);
+            $config->setDefault('authentication.image_captcha_verification_required', false);
 
             // Server Policies
             // The maximum number of signing keys a peer can register onto the server at once
