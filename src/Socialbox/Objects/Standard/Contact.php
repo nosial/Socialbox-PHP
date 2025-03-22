@@ -89,6 +89,18 @@
             return $this->knownKeys;
         }
 
+        public function signatureExists(string $signatureUuid): bool
+        {
+            foreach($this->knownKeys as $key)
+            {
+                if($key->getUuid() === $signatureUuid)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /**
          * Retrieves the timestamp when the contact was added.
          *

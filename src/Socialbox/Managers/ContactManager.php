@@ -8,7 +8,6 @@
     use PDO;
     use PDOException;
     use Socialbox\Classes\Configuration;
-    use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\Database;
     use Socialbox\Classes\Validator;
     use Socialbox\Enums\Types\ContactRelationshipType;
