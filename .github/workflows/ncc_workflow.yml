@@ -281,6 +281,7 @@ jobs:
       image: php:8.3
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
+        - ./tests/docker:/tests/docker
     if: needs.check-phpunit.outputs.phpunit-exists == 'true'
 
     steps:
