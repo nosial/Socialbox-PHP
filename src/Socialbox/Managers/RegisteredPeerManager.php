@@ -88,23 +88,23 @@
          * Deletes a peer from the database based on the given UUID or RegisteredPeerRecord.
          * WARNING: This operation is cascading and will delete all associated data.
          *
-         * @param string|PeerDatabaseRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer to be deleted.
+         * @param string|PeerDatabaseRecord $ppeerUuid The UUID or RegisteredPeerRecord instance representing the peer to be deleted.
          * @return void
          * @throws DatabaseOperationException If the operation fails.
          */
-        public static function deletePeer(string|PeerDatabaseRecord $uuid): void
+        public static function deletePeer(string|PeerDatabaseRecord $ppeerUuid): void
         {
-            if($uuid instanceof PeerDatabaseRecord)
+            if($ppeerUuid instanceof PeerDatabaseRecord)
             {
-                $uuid = $uuid->getUuid();
+                $ppeerUuid = $ppeerUuid->getUuid();
             }
 
-            Logger::getLogger()->verbose(sprintf("Deleting peer %s", $uuid));
+            Logger::getLogger()->verbose(sprintf("Deleting peer %s", $ppeerUuid));
 
             try
             {
                 $statement = Database::getConnection()->prepare('DELETE FROM peers WHERE uuid=?');
-                $statement->bindParam(1, $uuid);
+                $statement->bindParam(1, $ppeerUuid);
                 $statement->execute();
             }
             catch(PDOException $e)
@@ -116,30 +116,30 @@
         /**
          * Retrieves a registered peer record based on the given unique identifier or RegisteredPeerRecord object.
          *
-         * @param string|PeerDatabaseRecord $uuid The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
+         * @param string|PeerDatabaseRecord $peerUuid The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
          * @return PeerDatabaseRecord Returns a RegisteredPeerRecord object containing the peer's information.
          * @throws DatabaseOperationException If there is an error during the database operation.
          */
-        public static function getPeer(string|PeerDatabaseRecord $uuid): PeerDatabaseRecord
+        public static function getPeer(string|PeerDatabaseRecord $peerUuid): PeerDatabaseRecord
         {
-            if($uuid instanceof PeerDatabaseRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
-                $uuid = $uuid->getUuid();
+                $peerUuid = $peerUuid->getUuid();
             }
 
-            Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $uuid));
+            Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $peerUuid));
 
             try
             {
                 $statement = Database::getConnection()->prepare('SELECT * FROM peers WHERE uuid=?');
-                $statement->bindParam(1, $uuid);
+                $statement->bindParam(1, $peerUuid);
                 $statement->execute();
 
                 $result = $statement->fetch(PDO::FETCH_ASSOC);
 
                 if($result === false)
                 {
-                    throw new DatabaseOperationException(sprintf("The requested peer '%s' does not exist", $uuid));
+                    throw new DatabaseOperationException(sprintf("The requested peer '%s' does not exist", $peerUuid));
                 }
 
                 return new PeerDatabaseRecord($result);
@@ -153,20 +153,20 @@
         /**
          * Retrieves a peer record by the given username.
          *
-         * @param PeerAddress $address The address of the peer to be retrieved.
+         * @param PeerAddress $oeerAddress The address of the peer to be retrieved.
          * @return PeerDatabaseRecord|null The record of the peer associated with the given username.
          * @throws DatabaseOperationException If there is an error while querying the database.
          */
-        public static function getPeerByAddress(PeerAddress $address): ?PeerDatabaseRecord
+        public static function getPeerByAddress(PeerAddress $oeerAddress): ?PeerDatabaseRecord
         {
-            Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $address->getAddress()));
+            Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $oeerAddress->getAddress()));
 
             try
             {
                 $statement = Database::getConnection()->prepare('SELECT * FROM peers WHERE username=:username AND server=:server');
-                $username = $address->getUsername();
+                $username = $oeerAddress->getUsername();
                 $statement->bindParam(':username', $username);
-                $server = $address->getDomain();
+                $server = $oeerAddress->getDomain();
 
                 // Convert to 'host' if the domain is the same as the server's host
                 if($server === Configuration::getInstanceConfiguration()->getDomain())
@@ -291,23 +291,23 @@
         /**
          * Enables a peer identified by the given UUID or RegisteredPeerRecord.
          *
-         * @param string|PeerDatabaseRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer to be enabled.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID or RegisteredPeerRecord instance representing the peer to be enabled.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the database.
          */
-        public static function enablePeer(string|PeerDatabaseRecord $uuid): void
+        public static function enablePeer(string|PeerDatabaseRecord $peerUuid): void
         {
-            if($uuid instanceof PeerDatabaseRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
-                $uuid = $uuid->getUuid();
+                $peerUuid = $peerUuid->getUuid();
             }
 
-            Logger::getLogger()->verbose(sprintf("Enabling peer %s", $uuid));
+            Logger::getLogger()->verbose(sprintf("Enabling peer %s", $peerUuid));
 
             try
             {
                 $statement = Database::getConnection()->prepare('UPDATE peers SET enabled=1 WHERE uuid=?');
-                $statement->bindParam(1, $uuid);
+                $statement->bindParam(1, $peerUuid);
                 $statement->execute();
             }
             catch(PDOException $e)
@@ -319,23 +319,23 @@
         /**
          * Disables the peer identified by the given UUID or RegisteredPeerRecord.
          *
-         * @param string|PeerDatabaseRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID or RegisteredPeerRecord instance representing the peer.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the peer's status in the database.
          */
-        public static function disablePeer(string|PeerDatabaseRecord $uuid): void
+        public static function disablePeer(string|PeerDatabaseRecord $peerUuid): void
         {
-            if($uuid instanceof PeerDatabaseRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
-                $uuid = $uuid->getUuid();
+                $peerUuid = $peerUuid->getUuid();
             }
 
-            Logger::getLogger()->verbose(sprintf("Disabling peer %s", $uuid));
+            Logger::getLogger()->verbose(sprintf("Disabling peer %s", $peerUuid));
 
             try
             {
                 $statement = Database::getConnection()->prepare('UPDATE peers SET enabled=0 WHERE uuid=?');
-                $statement->bindParam(1, $uuid);
+                $statement->bindParam(1, $peerUuid);
                 $statement->execute();
             }
             catch(PDOException $e)
@@ -347,25 +347,25 @@
         /**
          * Adds a specific flag to the peer identified by the given UUID or RegisteredPeerRecord.
          *
-         * @param string|PeerDatabaseRecord $uuid The UUID or RegisteredPeerRecord instance representing the peer.
-         * @param PeerFlags|array $flags The flag or array of flags to be added to the peer.
+         * @param string|PeerDatabaseRecord $peerUuid The UUID or RegisteredPeerRecord instance representing the peer.
+         * @param PeerFlags|array $peerFlags The flag or array of flags to be added to the peer.
          * @return void
          * @throws DatabaseOperationException If there is an error while updating the database.
          */
-        public static function addFlag(string|PeerDatabaseRecord $uuid, PeerFlags|array $flags): void
+        public static function addFlag(string|PeerDatabaseRecord $peerUuid, PeerFlags|array $peerFlags): void
         {
-            if($uuid instanceof PeerDatabaseRecord)
+            if($peerUuid instanceof PeerDatabaseRecord)
             {
-                $uuid = $uuid->getUuid();
+                $peerUuid = $peerUuid->getUuid();
             }
 
-            Logger::getLogger()->verbose(sprintf("Adding flag(s) %s to peer %s", implode(',', $flags), $uuid));
+            Logger::getLogger()->verbose(sprintf("Adding flag(s) %s to peer %s", implode(',', $peerFlags), $peerUuid));
 
-            $peer = self::getPeer($uuid);
+            $peer = self::getPeer($peerUuid);
             $existingFlags = $peer->getFlags();
-            $flags = is_array($flags) ? $flags : [$flags];
+            $peerFlags = is_array($peerFlags) ? $peerFlags : [$peerFlags];
 
-            foreach($flags as $flag)
+            foreach($peerFlags as $flag)
             {
                 if(!in_array($flag, $existingFlags))
                 {
@@ -378,7 +378,7 @@
                 $implodedFlags = implode(',', array_map(fn($flag) => $flag->name, $existingFlags));
                 $statement = Database::getConnection()->prepare('UPDATE peers SET flags=? WHERE uuid=?');
                 $statement->bindParam(1, $implodedFlags);
-                $statement->bindParam(2, $uuid);
+                $statement->bindParam(2, $peerUuid);
                 $statement->execute();
             }
             catch(PDOException $e)
