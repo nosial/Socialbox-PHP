@@ -281,7 +281,12 @@
          */
         public function isExternal(): bool
         {
-            return RegisteredPeerManager::getPeer($this->peerUuid)->isExternal();
+            $peer = RegisteredPeerManager::getPeer($this->peerUuid);
+            if($peer === null)
+            {
+                return false;
+            }
+            return $peer->isExternal();
         }
 
         /**

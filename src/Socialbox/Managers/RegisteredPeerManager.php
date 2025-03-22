@@ -30,7 +30,7 @@
          */
         public static function usernameExists(string $username): bool
         {
-            Logger::getLogger()->verbose(sprintf("Checking if username %s already exists", $username));
+            Logger::getLogger()->debug(sprintf("Checking if username %s already exists", $username));
 
             try
             {
@@ -57,7 +57,7 @@
          */
         public static function createPeer(PeerAddress $peerAddress, bool $enabled=false): string
         {
-            Logger::getLogger()->verbose(sprintf("Registering peer %s", $peerAddress->getAddress()));
+            Logger::getLogger()->debug(sprintf("Registering peer %s", $peerAddress->getAddress()));
             $uuid = Uuid::v4()->toRfc4122();
             $server = $peerAddress->getDomain();
 
@@ -99,7 +99,7 @@
                 $ppeerUuid = $ppeerUuid->getUuid();
             }
 
-            Logger::getLogger()->verbose(sprintf("Deleting peer %s", $ppeerUuid));
+            Logger::getLogger()->debug(sprintf("Deleting peer %s", $ppeerUuid));
 
             try
             {
@@ -117,17 +117,17 @@
          * Retrieves a registered peer record based on the given unique identifier or RegisteredPeerRecord object.
          *
          * @param string|PeerDatabaseRecord $peerUuid The unique identifier of the registered peer, or an instance of RegisteredPeerRecord.
-         * @return PeerDatabaseRecord Returns a RegisteredPeerRecord object containing the peer's information.
+         * @return PeerDatabaseRecord|null Returns a RegisteredPeerRecord object containing the peer's information. null if the peer does not exist.
          * @throws DatabaseOperationException If there is an error during the database operation.
          */
-        public static function getPeer(string|PeerDatabaseRecord $peerUuid): PeerDatabaseRecord
+        public static function getPeer(string|PeerDatabaseRecord $peerUuid): ?PeerDatabaseRecord
         {
             if($peerUuid instanceof PeerDatabaseRecord)
             {
                 $peerUuid = $peerUuid->getUuid();
             }
 
-            Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $peerUuid));
+            Logger::getLogger()->debug(sprintf("Retrieving peer %s from the database", $peerUuid));
 
             try
             {
@@ -139,7 +139,7 @@
 
                 if($result === false)
                 {
-                    throw new DatabaseOperationException(sprintf("The requested peer '%s' does not exist", $peerUuid));
+                    return null;
                 }
 
                 return new PeerDatabaseRecord($result);
@@ -159,7 +159,7 @@
          */
         public static function getPeerByAddress(PeerAddress $oeerAddress): ?PeerDatabaseRecord
         {
-            Logger::getLogger()->verbose(sprintf("Retrieving peer %s from the database", $oeerAddress->getAddress()));
+            Logger::getLogger()->debug(sprintf("Retrieving peer %s from the database", $oeerAddress->getAddress()));
 
             try
             {
@@ -181,6 +181,7 @@
 
                 if($result === false)
                 {
+                    Logger::getLogger()->debug(sprintf("Peer %s not found in the database", $oeerAddress->getAddress()));
                     return null;
                 }
 
@@ -362,6 +363,11 @@
             Logger::getLogger()->verbose(sprintf("Adding flag(s) %s to peer %s", implode(',', $peerFlags), $peerUuid));
 
             $peer = self::getPeer($peerUuid);
+            if($peer === null)
+            {
+                throw new DatabaseOperationException('Peer does not exist');
+            }
+
             $existingFlags = $peer->getFlags();
             $peerFlags = is_array($peerFlags) ? $peerFlags : [$peerFlags];
 
@@ -400,6 +406,11 @@
             if(is_string($peer))
             {
                 $peer = self::getPeer($peer);
+            }
+
+            if($peer === null)
+            {
+                throw new DatabaseOperationException('Peer does not exist');
             }
 
             Logger::getLogger()->verbose(sprintf("Removing flag %s from peer %s", $flag->value, $peer->getUuid()));
