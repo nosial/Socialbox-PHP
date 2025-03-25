@@ -3,7 +3,7 @@ create table contacts_known_keys
     contact_uuid   varchar(36)                           not null comment 'The Unique Universal Identifier of the personal contact that this record is associated with',
     signature_uuid varchar(36)                           not null comment 'The Unique Universal Identifier for the signature key',
     signature_name varchar(64)                           not null comment 'The name of the signing key',
-    signature_key  varchar(32)                           not null comment 'The public signing key',
+    signature_key  varchar(64)                           not null comment 'The public signing key',
     expires        timestamp                             null comment 'The Timestamp for when this key expires, null means never',
     created        timestamp                             not null comment 'The Timestamp for when this key was created',
     trusted_on     timestamp default current_timestamp() not null comment 'The Timestamp for when the peer trusted this key',
