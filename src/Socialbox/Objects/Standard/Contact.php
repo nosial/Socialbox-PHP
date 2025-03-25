@@ -5,6 +5,7 @@
     use InvalidArgumentException;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Interfaces\SerializableInterface;
+    use Socialbox\Objects\Database\ContactKnownKeyRecord;
     use Socialbox\Objects\PeerAddress;
 
     class Contact implements SerializableInterface
@@ -51,9 +52,13 @@
                 {
                     $this->knownKeys[] = $key;
                 }
+                elseif($key instanceof ContactKnownKeyRecord)
+                {
+                    $this->knownKeys[] = $key->toStandard();
+                }
                 else
                 {
-                    throw new InvalidArgumentException('Invalid known key data');
+                    throw new InvalidArgumentException('Invalid known key data, got ' . gettype($key));
                 }
             }
             $this->addedTimestamp = $data['added_timestamp'];
@@ -89,6 +94,13 @@
             return $this->knownKeys;
         }
 
+        /**
+         * Checks if the contact has a signature with the given UUID.
+         *
+         * @param string $signatureUuid The UUID of the signature to check for.
+         *
+         * @return bool Returns true if the signature exists, otherwise false.
+         */
         public function signatureExists(string $signatureUuid): bool
         {
             foreach($this->knownKeys as $key)
@@ -99,6 +111,60 @@
                 }
             }
             return false;
+        }
+
+        /**
+         * Retrieves the signature by the UUID.
+         *
+         * @param string $signatureUuid The UUID of the signature to retrieve.
+         * @return KnownSigningKey|null Returns the signature if found, otherwise null.
+         */
+        public function getSignature(string $signatureUuid): ?KnownSigningKey
+        {
+            foreach($this->knownKeys as $key)
+            {
+                if($key->getUuid() === $signatureUuid)
+                {
+                    return $key;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Checks if the contact has a signature with the given public key.
+         *
+         * @param string $publicSignatureKey The public key of the signature to check for.
+         * @return bool Returns true if the signature exists, otherwise false.
+         */
+        public function signatureKeyExists(string $publicSignatureKey): bool
+        {
+            foreach($this->knownKeys as $key)
+            {
+                if($key->getPublicKey() === $publicSignatureKey)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Retrieves the signature key by the public key.
+         *
+         * @param string $publicSignatureKey The public key of the signature key to retrieve.
+         * @return KnownSigningKey|null Returns the signature key if found, otherwise null.
+         */
+        public function getSignatureByPublicKey(string $publicSignatureKey): ?KnownSigningKey
+        {
+            foreach($this->knownKeys as $key)
+            {
+                if($key->getPublicKey() === $publicSignatureKey)
+                {
+                    return $key;
+                }
+            }
+            return null;
         }
 
         /**
