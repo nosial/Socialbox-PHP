@@ -6,6 +6,7 @@
     use PDOException;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Database;
+    use Socialbox\Classes\Logger;
     use Socialbox\Classes\Validator;
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\Types\InformationFieldName;
@@ -304,6 +305,8 @@
                     throw new DatabaseOperationException(sprintf('Failed to get properties for peer %s with privacy state %s', $peerUuid, $privacyState->value), $e);
                 }
             }
+
+            Logger::getLogger()->debug(sprintf('Retrieved %d information field(s) from %s using filters (%s)', count($results), $peerUuid, implode(', ', array_map(fn($filter) => $filter->value, $privacyFilters))));
 
             if(!$results)
             {

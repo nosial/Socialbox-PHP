@@ -1015,6 +1015,8 @@
                 $identifiedAs = PeerAddress::fromAddress($identifiedAs);
             }
 
+            Logger::getLogger()->debug(sprintf('Resolving external peer by %s while identified as %s', $peerAddress, $identifiedAs ?? 'nobody'));
+
             // Resolve the peer from the local database if it exists
             try
             {
@@ -1030,6 +1032,7 @@
                 // if the peer doesn't exist, resolve it externally and synchronize it
                 try
                 {
+                    Logger::getLogger()->debug(sprintf('Local peer resolution does not exist, resolving %s externally as %s', $peerAddress->getAddress(), $identifiedAs ?? 'nobody'));
                     $peer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress, $identifiedAs);
                 }
                 catch(RpcException $e)
@@ -1045,6 +1048,7 @@
                 // the peer does not want to share with the server
                 if($identifiedAs !== null)
                 {
+                    Logger::getLogger()->debug(sprintf('Resolution is not personal, synchronizing peer %s', $peer->getPeerAddress()->getAddress()));
                     try
                     {
                         RegisteredPeerManager::synchronizeExternalPeer($peer);
@@ -1054,13 +1058,21 @@
                         throw new StandardRpcException('Failed to synchronize the external peer due to an internal server error', StandardError::INTERNAL_SERVER_ERROR, $e);
                     }
                 }
+                else
+                {
+                    Logger::getLogger()->debug(sprintf('Resolution is personal, skipping synchronization for %s', $peer->getPeerAddress()->getAddress()));
+                }
 
+                Logger::getLogger()->debug(sprintf('Resolved %s from external server', $peer->getPeerAddress()->getAddress()));
                 return $peer;
             }
 
             // if we're not identifying as a personal peer and If the peer exists, but it's outdated, synchronize it
             if($identifiedAs === null && $existingPeer->getUpdated()->getTimestamp() < time() - Configuration::getPoliciesConfiguration()->getPeerSyncInterval())
             {
+                $expired = $existingPeer->getUpdated()->getTimestamp() < time();
+                Logger::getLogger()->debug(sprintf('Local peer %s is outdated by %d seconds, synchronizing from external server', $peerAddress, $expired));
+
                 try
                 {
                     $peer = self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress, $identifiedAs);
@@ -1089,6 +1101,7 @@
             // If the peer exists and is up to date, return it from our local database instead. (Quicker)
             try
             {
+                Logger::getLogger()->debug(sprintf('Local peer resolution occurred, resolving locally stored information fields for %s', $existingPeer->getAddress()));
                 $informationFields = PeerInformationManager::getFields($existingPeer);
             }
             catch(DatabaseOperationException $e)
@@ -1124,6 +1137,8 @@
                 $identifiedAs = PeerAddress::fromAddress($identifiedAs);
             }
 
+            Logger::getLogger()->debug(sprintf('Resolving local peer %s as %s', $peerAddress, $identifiedAs ?? 'nobody'));
+
             // Resolve the peer
             try
             {
@@ -1142,6 +1157,7 @@
             {
                 // Get the initial peer information fields, public always
                 $peerInformationFields = PeerInformationManager::getFilteredFields($peer, [PrivacyState::PUBLIC]);
+                Logger::getLogger()->debug(sprintf('Retrieved %d public information fields from %s', count($peerInformationFields), $peer->getAddress()));
             }
             catch (DatabaseOperationException $e)
             {
@@ -1164,17 +1180,27 @@
                 // If it is a contact, what sort of contact? retrieve depending on the contact type
                 if($peerContact !== null)
                 {
+                    Logger::getLogger()->debug(sprintf('Peer resolution notice, %s has a contact for %s as %s, resolving additional information fields', $peer->getAddress(), $identifiedAs, $peerContact->getRelationship()->value));
+
                     try
                     {
                         if($peerContact->getRelationship() === ContactRelationshipType::MUTUAL)
                         {
+                            Logger::getLogger()->debug(sprintf('Resolving mutual information fields for %s', $peer->getAddress()));
+
                             // Retrieve the mutual information fields
-                            array_merge($peerInformationFields, PeerInformationManager::getFilteredFields($peer, [PrivacyState::CONTACTS]));
+                            $peerInformationFields = array_merge($peerInformationFields, PeerInformationManager::getFilteredFields($peer, [PrivacyState::CONTACTS]));
                         }
                         elseif($peerContact->getRelationship() === ContactRelationshipType::TRUSTED)
                         {
+                            Logger::getLogger()->debug(sprintf('Resolving trusted information fields for %s', $peer->getAddress()));
+
                             // Retrieve the mutual and trusted information fields
-                            array_merge($peerInformationFields, PeerInformationManager::getFilteredFields($peer, [PrivacyState::CONTACTS, PrivacyState::TRUSTED]));
+                            $peerInformationFields = array_merge($peerInformationFields, PeerInformationManager::getFilteredFields($peer, [PrivacyState::CONTACTS, PrivacyState::TRUSTED]));
+                        }
+                        else
+                        {
+                            Logger::getLogger()->debug(sprintf('No additional information fields to resolve for %s', $peer->getAddress()));
                         }
                     }
                     catch (DatabaseOperationException $e)
