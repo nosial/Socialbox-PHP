@@ -1,11 +1,11 @@
 <?php
 
-use Random\RandomException;
-use Socialbox\Exceptions\CryptographyException;
-use Socialbox\Exceptions\DatabaseOperationException;
-use Socialbox\Exceptions\ResolutionException;
-use Socialbox\Exceptions\RpcException;
-use Socialbox\SocialClient;
+    use Random\RandomException;
+    use Socialbox\Exceptions\CryptographyException;
+    use Socialbox\Exceptions\DatabaseOperationException;
+    use Socialbox\Exceptions\ResolutionException;
+    use Socialbox\Exceptions\RpcException;
+    use Socialbox\SocialClient;
 
     class Helper
     {
