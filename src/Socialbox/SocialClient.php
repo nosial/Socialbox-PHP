@@ -194,10 +194,10 @@
          *
          * @param PeerAddress|string $peer The address of the peer to add as a contact
          * @param string|ContactRelationshipType|null $relationship Optional. The relationship for the peer
-         * @return bool Returns True if the contact was created, False if it already exists
+         * @return string Returns the contact uuid if the contact was created, False if it already exists
          * @throws RpcException Thrown if there was an error with the RPC request
          */
-        public function addressBookAddContact(PeerAddress|string $peer, null|string|ContactRelationshipType $relationship=ContactRelationshipType::MUTUAL): bool
+        public function addressBookAddContact(PeerAddress|string $peer, null|string|ContactRelationshipType $relationship=ContactRelationshipType::MUTUAL): string
         {
             if($peer instanceof PeerAddress)
             {
