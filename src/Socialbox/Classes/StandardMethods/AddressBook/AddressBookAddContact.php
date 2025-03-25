@@ -2,7 +2,6 @@
 
     namespace Socialbox\Classes\StandardMethods\AddressBook;
 
-    use InvalidArgumentException;
     use Socialbox\Abstracts\Method;
     use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
@@ -35,7 +34,7 @@
 
             $peerAddress = PeerAddress::fromAddress($rpcRequest->getParameter('peer'));
 
-            if($rpcRequest->containsParameter('relationship') && $rpcRequest->getParameter('relationship') !== null)
+            if($rpcRequest->containsParameter('relationship'))
             {
                 $relationship = ContactRelationshipType::tryFrom(strtoupper($rpcRequest->getParameter('relationship')));
                 if($relationship === null)
@@ -66,11 +65,11 @@
                 // Check if the contact already exists
                 if(ContactManager::isContact($peer, $peerAddress))
                 {
-                    return $rpcRequest->produceResponse(false);
+                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Contact already exists');
                 }
 
                 // Create the contact
-                ContactManager::createContact($peer, $peerAddress, $relationship);
+                $contactUuid = ContactManager::createContact($peer, $peerAddress, $relationship);
             }
             catch (DatabaseOperationException $e)
             {
@@ -78,6 +77,6 @@
             }
 
             // Return success
-            return $rpcRequest->produceResponse(true);
+            return $rpcRequest->produceResponse($contactUuid);
         }
     }
