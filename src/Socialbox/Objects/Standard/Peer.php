@@ -4,6 +4,7 @@
 
     use InvalidArgumentException;
     use Socialbox\Enums\Flags\PeerFlags;
+    use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Interfaces\SerializableInterface;
     use Socialbox\Objects\Database\PeerInformationFieldRecord;
     use Socialbox\Objects\PeerAddress;
@@ -117,6 +118,35 @@
         public function getInformationFields(): array
         {
             return $this->informationFields;
+        }
+
+        /**
+         * Retrieves the information field associated with the peer.
+         *
+         * @param InformationFieldName $name The name of the information field to retrieve.
+         * @return InformationField|null The information field associated with the peer.
+         */
+        public function getInformationField(InformationFieldName $name): ?InformationField
+        {
+            foreach($this->informationFields as $field)
+            {
+                if($field->getName() == $name)
+                {
+                    return $field;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Checks if the information field exists.
+         *
+         * @param InformationFieldName $name The name of the information field to check.
+         * @return bool True if the information field exists, false otherwise.
+         */
+        public function informationFieldExists(InformationFieldName $name): bool
+        {
+            return $this->getInformationField($name) !== null;
         }
 
         /**
