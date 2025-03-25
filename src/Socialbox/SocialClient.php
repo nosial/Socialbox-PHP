@@ -212,7 +212,7 @@
             return (bool)$this->sendRequest(
                 new RpcRequest(StandardMethods::ADDRESS_BOOK_ADD_CONTACT, parameters: [
                     'peer' => $peer,
-                    'relationship' => $relationship?->value
+                    'relationship' => $relationship
                 ])
             )->getResponse()->getResult();
         }

@@ -101,7 +101,7 @@
             }
 
             $uuid = UuidV4::v4()->toRfc4122();
-            Logger::getLogger()->debug(sprintf('Creating new contact (%s) for %s as UUID %s', $contactAddress, $peerUuid, $uuid));
+            Logger::getLogger()->debug(sprintf('Creating new contact (%s) for %s with a relationship of %s as UUID %s', $contactAddress, $peerUuid, $relationship->value, $uuid));
 
             try
             {
