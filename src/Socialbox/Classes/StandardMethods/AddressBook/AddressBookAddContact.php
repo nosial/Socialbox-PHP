@@ -65,11 +65,11 @@
                 // Check if the contact already exists
                 if(ContactManager::isContact($peer, $peerAddress))
                 {
-                    return $rpcRequest->produceError(StandardError::FORBIDDEN, 'Contact already exists');
+                    return $rpcRequest->produceResponse(false);
                 }
 
                 // Create the contact
-                $contactUuid = ContactManager::createContact($peer, $peerAddress, $relationship);
+                ContactManager::createContact($peer, $peerAddress, $relationship);
             }
             catch (DatabaseOperationException $e)
             {
@@ -77,6 +77,6 @@
             }
 
             // Return success
-            return $rpcRequest->produceResponse($contactUuid);
+            return $rpcRequest->produceResponse(true);
         }
     }
