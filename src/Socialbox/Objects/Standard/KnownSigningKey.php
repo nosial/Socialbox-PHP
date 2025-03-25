@@ -44,6 +44,10 @@
             {
                 $this->expires = $data['expires']->getTimestamp();
             }
+            elseif($data['expires'] === null)
+            {
+                $this->expires = 0;
+            }
             else
             {
                 throw new InvalidArgumentException('Invalid expires value');
