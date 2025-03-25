@@ -9,6 +9,7 @@
     use PDOException;
     use Socialbox\Classes\Configuration;
     use Socialbox\Classes\Database;
+    use Socialbox\Classes\Logger;
     use Socialbox\Classes\Validator;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -50,6 +51,8 @@
                 throw new InvalidArgumentException('The given peer internal UUID is not a valid UUID V4');
             }
 
+            Logger::getLogger()->debug(sprintf('Querying if %s is a contact of %s', $contactAddress, $peerUuid));
+
             try
             {
                 // Check if the contact is already in the database
@@ -89,7 +92,7 @@
             }
             elseif(!Validator::validatePeerAddress($contactAddress))
             {
-                throw new InvalidArgumentException('The given contact address is not a valid peer address');
+                throw new InvalidArgumentException(sprintf('The given contact address %s is not a valid peer address', $contactAddress));
             }
 
             if(!Validator::validateUuid($peerUuid))
@@ -98,6 +101,7 @@
             }
 
             $uuid = UuidV4::v4()->toRfc4122();
+            Logger::getLogger()->debug(sprintf('Creating new contact (%s) for %s as UUID %s', $contactAddress, $peerUuid, $uuid));
 
             try
             {
@@ -131,6 +135,8 @@
             {
                 $peerUuid = $peerUuid->getUuid();
             }
+
+            Logger::getLogger()->debug(sprintf('Querying contact count for %s', $peerUuid));
 
             try
             {
@@ -167,13 +173,15 @@
             }
             elseif(!Validator::validatePeerAddress($contactAddress))
             {
-                throw new InvalidArgumentException('The given contact address is not a valid peer address');
+                throw new InvalidArgumentException(sprintf('The given contact address %s is not a valid peer address', $contactAddress));
             }
 
             if(!Validator::validateUuid($peerUuid))
             {
                 throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
             }
+
+            Logger::getLogger()->debug(sprintf('Querying contact %s for %s', $contactAddress, $peerUuid));
 
             try
             {
@@ -226,6 +234,8 @@
                 throw new InvalidArgumentException('The given internal peer UUID is not a valid UUID V4');
             }
 
+            Logger::getLogger()->debug(sprintf('Deleting contact %s for %s', $contactAddress, $peerUuid));
+
             try
             {
                 $statement = Database::getConnection()->prepare('DELETE FROM contacts WHERE peer_uuid=:peer AND contact_peer_address=:address');
@@ -261,7 +271,7 @@
             }
             elseif(!Validator::validatePeerAddress($contactAddress))
             {
-                throw new InvalidArgumentException('The given contact address is not a valid peer address');
+                throw new InvalidArgumentException(sprintf('The given contact address %s is not a valid peer address', $contactAddress));
             }
 
             if(!Validator::validateUuid($peerUuid))
@@ -411,7 +421,7 @@
 
             try
             {
-                $statement = Database::getConnection()->prepare("SELECT uuid FROM contacts WHERE peer_uuid=:peer ORDER BY created DESC LIMIT :limit OFFSET :offset");
+                $statement = Database::getConnection()->prepare("SELECT contact_peer_address FROM contacts WHERE peer_uuid=:peer ORDER BY created DESC LIMIT :limit OFFSET :offset");
                 $offset = ($page - 1) * $limit;
                 $statement->bindParam(':peer', $peerUuid);
                 $statement->bindParam(':limit', $limit, PDO::PARAM_INT);
@@ -424,7 +434,7 @@
                 // Convert results to ContactRecord instances
                 foreach ($results as $result)
                 {
-                    $contacts[] = self::getStandardContact($peerUuid, $result['uuid']);
+                    $contacts[] = self::getStandardContact($peerUuid, $result['contact_peer_address']);
                 }
             }
             catch (PDOException $e)
@@ -465,11 +475,21 @@
                 $signatureKey = $signingKey->getPublicKey();
                 $statement->bindParam(':signature_key', $signatureKey);
                 $expires = $signingKey->getExpires();
+                if($expires === 0)
+                {
+                    $expires = null;
+                }
+                else
+                {
+                    $expires = (new DateTime())->setTimestamp($expires)->format('Y-m-d H:i:s');
+                }
                 $statement->bindParam(':expires', $expires);
-                $created = $signingKey->getCreated();
+                $created = (new DateTime())->setTimestamp($signingKey->getCreated())->format('Y-m-d H:i:s');
                 $statement->bindParam(':created', $created);
                 $trustedOn = (new DateTime())->format('Y-m-d H:i:s');
                 $statement->bindParam(':trusted_on', $trustedOn);
+
+                $statement->execute();
             }
             catch(PDOException $e)
             {
