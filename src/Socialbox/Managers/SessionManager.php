@@ -62,6 +62,7 @@
             {
                 Logger::getLogger()->debug('Creating a session for an enabled peer');
                 $flags[] = SessionFlags::AUTHENTICATION_REQUIRED;
+
                 if(PasswordManager::usesPassword($peer->getUuid()))
                 {
                     $flags[] = SessionFlags::VER_PASSWORD;
@@ -70,6 +71,11 @@
                 if(Configuration::getRegistrationConfiguration()->isImageCaptchaVerificationRequired())
                 {
                     $flags[] = SessionFlags::VER_IMAGE_CAPTCHA;
+                }
+
+                if(OneTimePasswordManager::usesOtp($peer->getUuid()))
+                {
+                    $flags[] = SessionFlags::VER_OTP;
                 }
             }
             else
