@@ -6,6 +6,7 @@
     use PHPUnit\Framework\TestCase;
     use Socialbox\Classes\Cryptography;
     use Socialbox\Enums\PrivacyState;
+    use Socialbox\Enums\ReservedUsernames;
     use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\ContactRelationshipType;
     use Socialbox\Enums\Types\InformationFieldName;
@@ -174,6 +175,57 @@
             $this->assertEquals($johnSigningKeyUuid, $johnKnownSigningKeyTest->getUuid());
             $this->assertEquals($johnSigningKeypair->getPublicKey(), $johnKnownSigningKeyTest->getPublicKey());
             $this->assertEquals('John Test Signature', $johnKnownSigningKeyTest->getName());
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddHostAsContact(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnAddressBookTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact(sprintf('%s@%s', ReservedUsernames::HOST->value, TEAPOT_DOMAIN));
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookTrustNonExistent(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnAddressBookTest');
+            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe');
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookUpdateRelationship(sprintf('phonyUser@%s', COFFEE_DOMAIN), ContactRelationshipType::TRUSTED);
+        }
+
+        /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testAddSelfAsContact(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnAddressBookTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact($johnClient->getIdentifiedAs());
         }
 
         /**
