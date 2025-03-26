@@ -616,4 +616,158 @@
 
             $this->assertFalse($johnClient->addressBookDeleteContact(Helper::generateRandomPeer($johnClient->getIdentifiedAs()->getDomain())));
         }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookAddDuplicateContact(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnDupTest');
+            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe');
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceDupTest');
+            $aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith');
+            $aliceClient->settingsSetPassword('SecretTestingPassword123');
+
+            // First addition should succeed
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+
+            // Second addition should fail
+            $this->assertFalse($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookUpdateRelationshipToBlocked(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnBlockTest');
+            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe', PrivacyState::PUBLIC);
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceBlockTest');
+            $aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith', PrivacyState::PUBLIC);
+            $aliceClient->settingsAddInformationField(InformationFieldName::EMAIL_ADDRESS, 'alice@example.com', PrivacyState::CONTACTS);
+            $aliceClient->settingsSetPassword('SecretTestingPassword123');
+
+            $johnClient->addressBookAddContact($aliceClient->getIdentifiedAs());
+            $johnClient->addressBookUpdateRelationship($aliceClient->getIdentifiedAs(), ContactRelationshipType::BLOCKED);
+
+            $resolved = $johnClient->resolvePeer($aliceClient->getIdentifiedAs());
+            $this->assertCount(1, $resolved->getInformationFields(), 'Blocked contacts should return not return anything but public information');
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testInvalidContactAddressFormat(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnInvalidTest');
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact('invalid-email-format');
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testCaseInsensitiveContactAddress(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnCaseTest');
+            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe');
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceCaseTest');
+            $aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith');
+            $aliceClient->settingsSetPassword('SecretTestingPassword123');
+            $aliceAddress = $aliceClient->getIdentifiedAs();
+            $mixedCaseAddress = ucfirst(strtolower($aliceAddress->getUsername())).'@'.strtoupper($aliceAddress->getDomain());
+
+            $johnClient->addressBookAddContact($mixedCaseAddress);
+            $this->assertTrue($johnClient->addressBookContactExists($aliceAddress), 'Address comparison should be case-insensitive');
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testContactInformationUpdatePropagation(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnUpdateTest');
+            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe');
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceUpdateTest');
+            $aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith');
+            $aliceClient->settingsSetPassword('SecretTestingPassword123');
+
+            $johnClient->addressBookAddContact($aliceClient->getIdentifiedAs());
+
+            // Update Alice's information
+            $aliceClient->settingsUpdateInformationField(InformationFieldName::DISPLAY_NAME, 'New Name');
+
+            // Verify John sees the update
+            $resolved = $johnClient->resolvePeer($aliceClient->getIdentifiedAs());
+            $this->assertEquals('New Name', $resolved->getInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testRevokeNonExistentSignature(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnRevokeTest');
+            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe');
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceRevokeTest');
+            $aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith');
+            $aliceClient->settingsSetPassword('SecretTestingPassword123');
+
+            $this->assertFalse($johnClient->addressBookRevokeSignature($aliceClient->getIdentifiedAs(), 'non-existent-uuid'));
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookGetSingleContact(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnGetSingleTest');
+            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe');
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceGetSingleTest');
+            $aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith');
+            $aliceClient->settingsSetPassword('SecretTestingPassword123');
+            $johnClient->addressBookAddContact($aliceClient->getIdentifiedAs());
+
+            $contact = $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs());
+            $this->assertInstanceOf(Contact::class, $contact);
+            $this->assertEquals($aliceClient->getIdentifiedAs(), $contact->getAddress()->getAddress());
+
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookGetContact('non-existent@coffee.com');
+        }
     }
