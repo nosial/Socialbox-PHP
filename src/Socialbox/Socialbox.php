@@ -539,7 +539,7 @@
                     return;
                 }
                 // First check if the client is identifying as the host
-                elseif($hostPeer->getAddress() !== ReservedUsernames::HOST->value)
+                elseif($hostPeer->getUsername() !== ReservedUsernames::HOST->value)
                 {
                     self::returnError(403, StandardError::FORBIDDEN, 'Cannot identify as a peer when not identifying as the host');
                     return;
@@ -1017,6 +1017,25 @@
 
             Logger::getLogger()->debug(sprintf('Resolving external peer by %s while identified as %s', $peerAddress, $identifiedAs ?? 'nobody'));
 
+            // Always resolve remotely if an identifier has been provided (this is a personal resolution)
+            // Otherwise, in all other cases we try to use local peers first and fall back on remote if necessary
+            // and use local storage to improve performance when possible
+            if($identifiedAs !== null)
+            {
+                try
+                {
+                    return self::getExternalSession($peerAddress->getDomain())->resolvePeer($peerAddress, $identifiedAs);
+                }
+                catch(RpcException $e)
+                {
+                    throw StandardRpcException::fromRpcException($e);
+                }
+                catch(Exception $e)
+                {
+                    throw new StandardRpcException('Failed to resolve the peer: ' . $e->getMessage(), StandardError::RESOLUTION_FAILED, $e);
+                }
+            }
+
             // Resolve the peer from the local database if it exists
             try
             {
@@ -1098,9 +1117,9 @@
                 return $peer;
             }
 
-            // If the peer exists and is up to date, return it from our local database instead. (Quicker)
             try
             {
+                // If the peer exists and is up to date, return it from our local database instead. (Quicker)
                 Logger::getLogger()->debug(sprintf('Local peer resolution occurred, resolving locally stored information fields for %s', $existingPeer->getAddress()));
                 $informationFields = PeerInformationManager::getFields($existingPeer);
             }
