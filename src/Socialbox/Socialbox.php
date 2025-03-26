@@ -541,13 +541,13 @@
                 // First check if the client is identifying as the host
                 elseif($hostPeer->getAddress() !== ReservedUsernames::HOST->value)
                 {
-                    self::returnError(403, StandardError::FORBIDDEN, 'Forbidden: External servers must identify as a host');
+                    self::returnError(403, StandardError::FORBIDDEN, 'Cannot identify as a peer when not identifying as the host');
                     return;
                 }
                 // Secondly, check if the peer's server belongs to another server than the server is identified as
                 elseif($hostPeer->getServer() !== $clientRequest->getIdentifyAs()->getDomain())
                 {
-                    self::returnError(403, StandardError::FORBIDDEN, 'Forbidden: Not allowed to identify as a peer outside from the host server');
+                    self::returnError(403, StandardError::FORBIDDEN, 'Not allowed to identify as a peer outside from the host server');
                     return;
                 }
 
