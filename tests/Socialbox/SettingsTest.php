@@ -4,6 +4,7 @@
 
     use Helper;
     use PHPUnit\Framework\TestCase;
+    use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -406,5 +407,109 @@
             {
                 $this->assertEquals(-1001, $e->getCode(), sprintf('Unexpected error code: %d', $e->getCode()));
             }
+        }
+
+        /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testInvalidInformationField(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'invalidInformationFieldTest');
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $testClient->settingsAddInformationField('Invalid', 'foo bar');
+        }
+
+        /**
+         * @throws ResolutionException
+         * @throws RpcException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         * @noinspection HttpUrlsUsage
+         */
+        public function testInvalidInformationFieldPrivacy(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'invalidInformationFieldPrivacyTest');
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $testClient->settingsAddInformationField(InformationFieldName::URL, 'http://example.com/', 'Invalid Privacy');
+        }
+
+        /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testDeleteRequiredInformationField(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'invalidInformationFieldPrivacyTest');
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $testClient->settingsDeleteInformationField(InformationFieldName::DISPLAY_NAME);
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testDeleteInformationField(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnDeleteInformationFieldTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::FIRST_NAME, 'John', PrivacyState::PUBLIC));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceDeleteInformationFieldTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::FIRST_NAME, 'Alice', PrivacyState::PUBLIC));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($aliceClient->getSessionState()->isAuthenticated());
+
+            $johnResolved = $aliceClient->resolvePeer($johnClient->getIdentifiedAs());
+            $this->assertNotNull($johnResolved);
+            $this->assertCount(2, $johnResolved->getInformationFields());
+            $this->assertTrue($johnResolved->informationFieldExists(InformationFieldName::DISPLAY_NAME));
+            $this->assertEquals('John Doe', $johnResolved->getInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
+            $this->assertTrue($johnResolved->informationFieldExists(InformationFieldName::FIRST_NAME));
+            $this->assertEquals('John', $johnResolved->getInformationField(InformationFieldName::FIRST_NAME)->getValue());
+
+            $aliceResolved = $johnClient->resolvePeer($aliceClient->getIdentifiedAs());
+            $this->assertNotNull($aliceResolved);
+            $this->assertCount(2, $aliceResolved->getInformationFields());
+            $this->assertTrue($aliceResolved->informationFieldExists(InformationFieldName::DISPLAY_NAME));
+            $this->assertEquals('Alice Smith', $aliceResolved->getInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
+            $this->assertTrue($aliceResolved->informationFieldExists(InformationFieldName::FIRST_NAME));
+            $this->assertEquals('Alice', $aliceResolved->getInformationField(InformationFieldName::FIRST_NAME)->getValue());
+
+            $aliceClient->settingsDeleteInformationField(InformationFieldName::FIRST_NAME);
+            $johnClient->settingsDeleteInformationField(InformationFieldName::FIRST_NAME);
+
+            $johnResolved = $aliceClient->resolvePeer($johnClient->getIdentifiedAs());
+            $this->assertNotNull($johnResolved);
+            $this->assertCount(1, $johnResolved->getInformationFields());
+            $this->assertTrue($johnResolved->informationFieldExists(InformationFieldName::DISPLAY_NAME));
+            $this->assertEquals('John Doe', $johnResolved->getInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
+
+            $aliceResolved = $johnClient->resolvePeer($aliceClient->getIdentifiedAs());
+            $this->assertNotNull($aliceResolved);
+            $this->assertCount(1, $aliceResolved->getInformationFields());
+            $this->assertTrue($aliceResolved->informationFieldExists(InformationFieldName::DISPLAY_NAME));
+            $this->assertEquals('Alice Smith', $aliceResolved->getInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
         }
     }
