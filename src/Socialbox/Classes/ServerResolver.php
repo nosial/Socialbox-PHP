@@ -24,6 +24,8 @@
          */
         public static function resolveDomain(string $domain, bool $useDatabase=true): DnsRecord
         {
+            $domain = strtolower($domain);
+
             // Return the mocked record if the mocking record is set
             if(isset(self::$mockedRecords[$domain]))
             {
@@ -124,11 +126,13 @@
          * Adds a mock DNS record for a specific domain.
          *
          * @param string $domain The domain name for which the DNS record is being mocked.
-         * @param DnsRecord $record The DNS record to be associated with the specified domain.
+         * @param DnsRecord|string $record The DNS record to be associated with the specified domain.
          * @return void
          */
         public static function addMock(string $domain, DnsRecord|string $record): void
         {
+            $domain = strtolower($domain);
+
             if(isset(self::$mockedRecords[$domain]))
             {
                 return;
