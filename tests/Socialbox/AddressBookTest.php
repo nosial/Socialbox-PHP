@@ -576,4 +576,44 @@
             $this->assertEquals('John', $johnResolved->getInformationField(InformationFieldName::FIRST_NAME)->getValue());
             $this->assertEquals('Doe', $johnResolved->getInformationField(InformationFieldName::LAST_NAME)->getValue());
         }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testDeleteExistingContact(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnAddressBookTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe', PrivacyState::PUBLIC));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceAddressBookTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith', PrivacyState::PUBLIC));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($aliceClient->getSessionState()->isAuthenticated());
+
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+            $this->assertTrue($johnClient->addressBookContactExists($aliceClient->getIdentifiedAs()));
+
+            $this->assertTrue($johnClient->addressBookDeleteContact($aliceClient->getIdentifiedAs()));
+            $this->assertFalse($johnClient->addressBookContactExists($aliceClient->getIdentifiedAs()));
+        }
+
+        /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testDeleteNonExistentContact(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnAddressBookTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe', PrivacyState::PUBLIC));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+
+            $this->assertFalse($johnClient->addressBookDeleteContact(Helper::generateRandomPeer($johnClient->getIdentifiedAs()->getDomain())));
+        }
     }
