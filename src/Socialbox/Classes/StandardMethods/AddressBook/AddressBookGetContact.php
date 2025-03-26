@@ -35,7 +35,7 @@
             {
                 if(!ContactManager::isContact($request->getPeer(), $peerAddress))
                 {
-                    return $rpcRequest->produceResponse();
+                    return $rpcRequest->produceError(StandardError::NOT_FOUND, sprintf('The requested contact for %s does not exist', $peerAddress->getAddress()));
                 }
 
                 return $rpcRequest->produceResponse(ContactManager::getStandardContact($request->getPeer(), $peerAddress));
