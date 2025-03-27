@@ -656,4 +656,66 @@
                 $signingKeys[$signatureUuid] = $signingKeypair;
             }
         }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testGetInformationFields(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testGetInformationFields');
+            $phoneNumber = sprintf('+%d', Helper::generateRandomNumber(12));
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe', PrivacyState::PUBLIC));
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::FIRST_NAME, 'John', PrivacyState::PUBLIC));
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::LAST_NAME, 'Doe', PrivacyState::PUBLIC));
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::EMAIL_ADDRESS, 'johndoe@example.com', PrivacyState::CONTACTS));
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::PHONE_NUMBER, $phoneNumber, PrivacyState::TRUSTED));
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::BIRTHDAY, '1978-16-05', PrivacyState::TRUSTED));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+
+            $informationFields = $testClient->settingsGetInformationFields();
+            $this->assertCount(6, $informationFields);
+
+            foreach($informationFields as $informationField)
+            {
+                switch($informationField->getName())
+                {
+                    case InformationFieldName::DISPLAY_NAME:
+                        $this->assertEquals('John Doe', $informationField->getValue());
+                        $this->assertEquals(PrivacyState::PUBLIC, $informationField->getPrivacyState());
+                        break;
+
+                    case InformationFieldName::FIRST_NAME:
+                        $this->assertEquals('John', $informationField->getValue());
+                        $this->assertEquals(PrivacyState::PUBLIC, $informationField->getPrivacyState());
+                        break;
+
+                    case InformationFieldName::LAST_NAME:
+                        $this->assertEquals('Doe', $informationField->getValue());
+                        $this->assertEquals(PrivacyState::PUBLIC, $informationField->getPrivacyState());
+                        break;
+
+                    case InformationFieldName::EMAIL_ADDRESS:
+                        $this->assertEquals('johndoe@example.com', $informationField->getValue());
+                        $this->assertEquals(PrivacyState::CONTACTS, $informationField->getPrivacyState());
+                        break;
+
+                    case InformationFieldName::PHONE_NUMBER:
+                        $this->assertEquals($phoneNumber, $informationField->getValue());
+                        $this->assertEquals(PrivacyState::TRUSTED, $informationField->getPrivacyState());
+                        break;
+
+                    case InformationFieldName::BIRTHDAY:
+                        $this->assertEquals('1978-16-05', $informationField->getValue());
+                        $this->assertEquals(PrivacyState::TRUSTED, $informationField->getPrivacyState());
+                        break;
+
+                    default:
+                        $this->fail(sprintf('Unexpected information field: %s', $informationField->getName()->value));
+                }
+            }
+        }
     }
