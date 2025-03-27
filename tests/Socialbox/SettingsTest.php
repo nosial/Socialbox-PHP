@@ -4,6 +4,7 @@
 
     use Helper;
     use PHPUnit\Framework\TestCase;
+    use Socialbox\Classes\OtpCryptography;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\PrivacyState;
     use Socialbox\Enums\Types\InformationFieldName;
@@ -545,11 +546,36 @@
             $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
             $this->assertTrue($testClient->getSessionState()->isAuthenticated());
 
-            $secret = $testClient->settingsSetOtp('SecretTestingPassword123');
-            $this->assertNotEmpty($secret);
+            $totpUri = $testClient->settingsSetOtp('SecretTestingPassword123');
+            $this->assertNotEmpty($totpUri);
 
             $testClient = new SocialClient($testAddress);
             $this->assertFalse($testClient->getSessionState()->isAuthenticated());
             $this->assertTrue($testClient->getSessionState()->containsFlag(SessionFlags::VER_OTP));
+            $this->assertTrue($testClient->getSessionState()->containsFlag(SessionFlags::VER_PASSWORD));
+
+            $this->assertTrue($testClient->verificationPasswordAuthentication('SecretTestingPassword123'));
+
+            // Parse the TOTP URI
+            $parsedUri = parse_url($totpUri);
+            parse_str($parsedUri['query'], $queryParams);
+
+            // Extract secret and other parameters
+            $secret = $queryParams['secret'];
+            $algorithm = strtolower(str_replace('SHA', 'sha', $queryParams['algorithm'] ?? 'sha512'));
+            $digits = (int)($queryParams['digits'] ?? 6);
+            $period = (int)($queryParams['period'] ?? 30);
+
+            // Generate the OTP
+            $otp = OtpCryptography::generateOTP(
+                $secret,
+                $period,
+                $digits,
+                null,
+                $algorithm
+            );
+
+            // Verify the OTP
+            $this->assertTrue($testClient->verificationOtpAuthentication($otp));
         }
     }

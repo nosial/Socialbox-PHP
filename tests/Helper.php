@@ -106,4 +106,33 @@
         {
             return new SocialClient(self::generateRandomPeer($domain, $length, $prefix));
         }
+
+        /**
+         * Encodes a string to Base32.
+         *
+         * @param string $input The string to be encoded.
+         * @return string Returns the encoded string.
+         */
+        public static function decodeBase32(string $input): string
+        {
+            $input = strtoupper($input);
+            $v = 0;
+            $k = 0;
+            $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            $output = '';
+
+            for ($i = 0; $i < strlen($input); $i++)
+            {
+                $v = ($v << 5) | strpos($chars, $input[$i]);
+                $k += 5;
+
+                if ($k >= 8)
+                {
+                    $k -= 8;
+                    $output .= chr(($v >> $k) & 0xFF);
+                }
+            }
+
+            return $output;
+        }
     }
