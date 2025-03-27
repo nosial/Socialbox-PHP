@@ -303,12 +303,13 @@ class MultiProtocolServer:
 
     def _start_udp_server(self):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
+            udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024)
             udp_socket.bind((self.host, self.port))
             self.logger.debug(f"UDP server running on {self.host}:{self.port}")
 
             while not self.stop_event.is_set():
                 try:
-                    data, address = udp_socket.recvfrom(4096)
+                    data, address = udp_socket.recvfrom(65535)
                     self._handle_udp_client(data, address)
                 except Exception as e:
                     self.logger.error(f"UDP server error: {e}")
