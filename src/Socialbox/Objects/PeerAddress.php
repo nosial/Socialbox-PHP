@@ -20,8 +20,8 @@
          */
         public function __construct(string $username, string $domain)
         {
-            $this->username = $username;
-            $this->domain = $domain;
+            $this->username = strtolower($username);
+            $this->domain = strtolower($domain);
         }
 
         /**
@@ -78,11 +78,6 @@
          */
         public function isExternal(): bool
         {
-            if($this->isHost())
-            {
-                return false;
-            }
-
             return $this->domain !== Configuration::getInstanceConfiguration()->getDomain();
         }
 

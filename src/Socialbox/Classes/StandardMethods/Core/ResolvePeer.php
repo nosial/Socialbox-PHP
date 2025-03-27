@@ -34,13 +34,18 @@
             // Check if host is making the request & the identifier is not empty
             try
             {
+                $identifyAs = null;
                 if ($request->getPeer()->getUsername() === ReservedUsernames::HOST->value && $request->getIdentifyAs() !== null)
                 {
                     $identifyAs = $request->getIdentifyAs();
                 }
                 else
                 {
-                    $identifyAs = $request->getPeer()->getAddress();
+                    $requestingPeer = $request->getPeer();
+                    if($requestingPeer->getUsername() !== ReservedUsernames::HOST->value)
+                    {
+                        $identifyAs = $requestingPeer->getAddress();
+                    }
                 }
             }
             catch (DatabaseOperationException $e)

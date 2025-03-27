@@ -47,7 +47,7 @@
          */
         public function getDomain(): ?string
         {
-            return $this->domain;
+            return strtolower($this->domain);
         }
 
         /**

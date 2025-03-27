@@ -978,12 +978,12 @@
          */
         public static function resolvePeer(PeerAddress|string $peerAddress, null|PeerAddress|string $identifiedAs=null): Peer
         {
-            if($peerAddress->getDomain() !== Configuration::getInstanceConfiguration()->getDomain())
+            if(strtolower($peerAddress->getDomain()) !== strtolower(Configuration::getInstanceConfiguration()->getDomain()))
             {
                 return self::resolveExternalPeer($peerAddress, $identifiedAs);
             }
 
-            if($peerAddress->getUsername() === ReservedUsernames::HOST->value)
+            if(strtolower($peerAddress->getUsername()) === strtolower(ReservedUsernames::HOST->value))
             {
                 return new Peer([
                     'address' => sprintf('%s@%s', ReservedUsernames::HOST->value, Configuration::getInstanceConfiguration()->getDomain()),
