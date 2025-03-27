@@ -734,6 +734,8 @@
          */
         public static function getExternalSession(string $domain): SocialClient
         {
+            $domain = strtolower($domain);
+
             if(ExternalSessionManager::sessionExists($domain))
             {
                 return new SocialClient(self::getServerAddress(), $domain, ExternalSessionManager::getSession($domain));
@@ -747,6 +749,11 @@
             catch (Exception $e)
             {
                 throw new ResolutionException(sprintf('Failed to connect to remote server %s: %s', $domain, $e->getMessage()), $e->getCode(), $e);
+            }
+
+            if(!$client->getSessionState()->isAuthenticated())
+            {
+                throw new ResolutionException(sprintf('Failed to authenticate with remote server %s', $domain));
             }
 
             ExternalSessionManager::addSession($client->exportSession());
