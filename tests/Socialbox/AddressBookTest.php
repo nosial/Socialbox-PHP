@@ -767,7 +767,7 @@
 
             $contact = $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs());
             $this->assertInstanceOf(Contact::class, $contact);
-            $this->assertEquals($aliceClient->getIdentifiedAs(), $contact->getAddress()->getAddress());
+            $this->assertEquals($aliceClient->getIdentifiedAs()->getAddress(), $contact->getAddress()->getAddress());
 
             $this->expectException(RpcException::class);
             $johnClient->addressBookGetContact('non-existent@coffee.com');
