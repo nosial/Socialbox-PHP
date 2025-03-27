@@ -2,7 +2,7 @@ create table signing_keys
 (
     peer_uuid  varchar(36)                                            not null comment 'The UUID of the peer',
     uuid       varchar(36)                default uuid()              not null comment 'The UUID of the key record',
-    name       varchar(64)                                            not null comment 'Optional. User provided name for the key',
+    name       varchar(64)                                            null comment 'Optional. User provided name for the key',
     public_key varchar(64)                                            not null comment 'The Public Signature Key',
     state      enum ('ACTIVE', 'EXPIRED') default 'ACTIVE'            not null comment 'The state of the public key',
     expires    timestamp                                              null comment 'The Timestamp for when this key expires, null = Never expires',

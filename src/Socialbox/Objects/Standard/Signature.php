@@ -11,7 +11,7 @@
     class Signature implements SerializableInterface
     {
         private string $uuid;
-        private string $name;
+        private ?string $name;
         private string $publicKey;
         private SigningKeyState $state;
         private int $expires;
@@ -35,7 +35,7 @@
         public function __construct(array $data)
         {
             $this->uuid = $data['uuid'];
-            $this->name = $data['name'];
+            $this->name = $data['name'] ?? null;
             $this->publicKey = $data['public_key'];
             $this->state = SigningKeyState::from($data['state']);
 
