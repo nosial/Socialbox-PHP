@@ -4,9 +4,11 @@
 
     use Helper;
     use PHPUnit\Framework\TestCase;
+    use Socialbox\Classes\Cryptography;
     use Socialbox\Classes\OtpCryptography;
     use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\PrivacyState;
+    use Socialbox\Enums\StandardError;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -577,5 +579,55 @@
 
             // Verify the OTP
             $this->assertTrue($testClient->verificationOtpAuthentication($otp));
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testSettingsAddMultipleSigningKeys(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'deleteRequiredPassword');
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+
+            $signingKeys = [];
+            for($i = 0; $i < 20; $i++)
+            {
+                $signingKeypair = Cryptography::generateSigningKeyPair();
+                $signatureUuid = $testClient->settingsAddSignature($signingKeypair->getPublicKey());
+                $this->assertNotNull($signatureUuid);
+                $signingKeys[$signatureUuid] = $signingKeypair;
+            }
+
+            $this->assertCount(10, $testClient->settingsGetSignatures());
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testSettingsAddExceedingSigningKeys(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'deleteRequiredPassword');
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+
+            $signingKeys = [];
+            $this->expectException(RpcException::class);
+            $this->expectExceptionCode(StandardError::FORBIDDEN->value);
+            for($i = 0; $i < 25; $i++)
+            {
+                $signingKeypair = Cryptography::generateSigningKeyPair();
+                $signatureUuid = $testClient->settingsAddSignature($signingKeypair->getPublicKey());
+                $this->assertNotNull($signatureUuid);
+                $signingKeys[$signatureUuid] = $signingKeypair;
+            }
         }
     }
