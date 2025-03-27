@@ -4,9 +4,8 @@
 
     use Helper;
     use PHPUnit\Framework\TestCase;
-q    use Socialbox\Enums\Flags\SessionFlags;
+    use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\PrivacyState;
-    use Socialbox\Enums\SessionState;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
