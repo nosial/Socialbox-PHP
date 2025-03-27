@@ -59,6 +59,10 @@
         public function __construct(string|PeerAddress $identifiedAs, ?string $server=null, ?ExportedSession $exportedSession=null)
         {
             $this->logger = new \LogLib2\Logger('net.nosial.socialbox');
+            if($server !== null)
+            {
+                $server = strtolower($server);
+            }
 
             // If an exported session is provided, no need to re-connect.
             // Just use the session details provided.
