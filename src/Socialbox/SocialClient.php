@@ -1111,7 +1111,7 @@
         public function settingsGetSignatures(): array
         {
             return array_map(fn($signatures) => new Signature($signatures), $this->sendRequest(
-                new RpcRequest(StandardMethods::SETTINGS_GET_INFORMATION_FIELDS)
+                new RpcRequest(StandardMethods::SETTINGS_GET_SIGNATURES)
             )->getResponse()->getResult());
         }
 
