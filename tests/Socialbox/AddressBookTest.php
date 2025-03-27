@@ -688,12 +688,14 @@
         public function testCaseInsensitiveContactAddress(): void
         {
             $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnCaseTest');
-            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe');
-            $johnClient->settingsSetPassword('SecretTestingPassword123');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
 
             $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceCaseTest');
-            $aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith');
-            $aliceClient->settingsSetPassword('SecretTestingPassword123');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($aliceClient->getSessionState()->isAuthenticated());
             $aliceAddress = $aliceClient->getIdentifiedAs();
             $mixedCaseAddress = ucfirst(strtolower($aliceAddress->getUsername())).'@'.strtoupper($aliceAddress->getDomain());
 

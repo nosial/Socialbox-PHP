@@ -4,7 +4,9 @@
 
     use Helper;
     use PHPUnit\Framework\TestCase;
+q    use Socialbox\Enums\Flags\SessionFlags;
     use Socialbox\Enums\PrivacyState;
+    use Socialbox\Enums\SessionState;
     use Socialbox\Enums\Types\InformationFieldName;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -511,5 +513,44 @@
             $this->assertCount(1, $aliceResolved->getInformationFields());
             $this->assertTrue($aliceResolved->informationFieldExists(InformationFieldName::DISPLAY_NAME));
             $this->assertEquals('Alice Smith', $aliceResolved->getInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
+        }
+
+        /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testDeleteRequiredPassword(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'deleteRequiredPassword');
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $testClient->settingsDeletePassword();
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testSettingsSetOtp(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testSetOtp');
+            $testAddress = $testClient->getIdentifiedAs();
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+
+            $secret = $testClient->settingsSetOtp('SecretTestingPassword123');
+            $this->assertNotEmpty($secret);
+
+            $testClient = new SocialClient($testAddress);
+            $this->assertFalse($testClient->getSessionState()->isAuthenticated());
+            $this->assertTrue($testClient->getSessionState()->containsFlag(SessionFlags::VER_OTP));
         }
     }
