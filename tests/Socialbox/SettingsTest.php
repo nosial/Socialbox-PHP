@@ -603,6 +603,32 @@
                 $signingKeys[$signatureUuid] = $signingKeypair;
             }
 
+            $this->assertCount(20, $testClient->settingsGetSignatures());
+
+            // Verify all the signatures
+            foreach($signingKeys as $signatureUuid => $signingKeypair)
+            {
+                $signature = $testClient->settingsGetSignature($signatureUuid);
+                $this->assertNotNull($signature);
+                $this->assertEquals($signingKeypair->getPublicKey(), $signature->getPublicKey());
+            }
+
+            // Delete the first 5 signatures
+            $deletedSignatures = array_slice($signingKeys, 0, 10);
+            foreach($deletedSignatures as $signatureUuid => $signingKeypair)
+            {
+                $this->assertTrue($testClient->settingsDeleteSignature($signatureUuid));
+            }
+
+            // Verify the remaining signatures
+            $remainingSignatures = array_slice($signingKeys, 10);
+            foreach($remainingSignatures as $signatureUuid => $signingKeypair)
+            {
+                $signature = $testClient->settingsGetSignature($signatureUuid);
+                $this->assertNotNull($signature);
+                $this->assertEquals($signingKeypair->getPublicKey(), $signature->getPublicKey());
+            }
+
             $this->assertCount(10, $testClient->settingsGetSignatures());
         }
 
