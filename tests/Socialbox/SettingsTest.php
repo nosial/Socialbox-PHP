@@ -26,7 +26,7 @@
          */
         public function testInformationFieldDisplayName(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'validInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldDisplayName');
 
             $displayName = Helper::generateRandomString(32);
             $rpcClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, $displayName);
@@ -42,7 +42,7 @@
          */
         public function testInformationFieldInvalidDisplayName(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'malformedInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldInvalidDisplayName');
 
             try
             {
@@ -73,7 +73,7 @@
          */
         public function testInformationFieldFirstName(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'validInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldFirstName');
 
             $firstName = Helper::generateRandomString(32);
             $rpcClient->settingsAddInformationField(InformationFieldName::FIRST_NAME, $firstName);
@@ -89,7 +89,7 @@
          */
         public function testInformationFieldInvalidFirstName(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'malformedInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldInvalidFirstName');
 
             try
             {
@@ -120,7 +120,7 @@
          */
         public function testInformationFieldMiddleName(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'validInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldMiddleName');
 
             $middleName = Helper::generateRandomString(32);
             $rpcClient->settingsAddInformationField(InformationFieldName::MIDDLE_NAME, $middleName);
@@ -137,7 +137,7 @@
          */
         public function testInformationFieldInvalidMiddleName(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'malformedInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldInvalidMiddleName');
 
             try
             {
@@ -168,7 +168,7 @@
          */
         public function testInformationFieldLastName(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'validInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldLastName');
 
             $lastName = Helper::generateRandomString(32);
             $rpcClient->settingsAddInformationField(InformationFieldName::LAST_NAME, $lastName);
@@ -184,7 +184,7 @@
          */
         public function testInformationFieldInvalidLastName(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'malformedInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldInvalidLastName');
 
             try
             {
@@ -215,7 +215,7 @@
          */
         public function testInformationFieldPhoneNumber(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'validInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldPhoneNumber');
 
             $phoneNumber = sprintf('+%d', Helper::generateRandomNumber(12));
             $rpcClient->settingsAddInformationField(InformationFieldName::PHONE_NUMBER, $phoneNumber);
@@ -231,7 +231,7 @@
          */
         public function testInformationFieldInvalidPhoneNumber(): void
         {
-            $rpcClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'malformedTest');
+            $rpcClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'testInformationFieldInvalidPhoneNumber');
 
             try
             {
@@ -282,7 +282,7 @@
          */
         public function testInformationFieldEmailAddress(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'validInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldEmailAddress');
 
             $rpcClient->settingsAddInformationField(InformationFieldName::EMAIL_ADDRESS, 'testing@example.com');
             $this->assertTrue($rpcClient->settingsInformationFieldExists(InformationFieldName::EMAIL_ADDRESS));
@@ -298,7 +298,7 @@
          */
         public function testInformationFieldInvalidEmailAddress(): void
         {
-            $rpcClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'malformedTest');
+            $rpcClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'testInformationFieldInvalidEmailAddress');
 
             try
             {
@@ -344,7 +344,7 @@
          */
         public function testInformationFieldInvalidUrl(): void
         {
-            $rpcClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'malformedTest');
+            $rpcClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'testInformationFieldInvalidUrl');
 
             try
             {
@@ -375,7 +375,7 @@
          */
         public function testInformationFieldBirthday(): void
         {
-            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'validInputTest');
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInformationFieldBirthday');
 
             $rpcClient->settingsAddInformationField(InformationFieldName::BIRTHDAY, '2021-01-01');
             $this->assertTrue($rpcClient->settingsInformationFieldExists(InformationFieldName::BIRTHDAY));
@@ -390,7 +390,7 @@
          */
         public function testInformationFieldInvalidBirthday(): void
         {
-            $rpcClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'malformedTest');
+            $rpcClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'testInformationFieldInvalidBirthday');
 
             try
             {
@@ -421,7 +421,7 @@
          */
         public function testInvalidInformationField(): void
         {
-            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'invalidInformationFieldTest');
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInvalidInformationField');
             $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
             $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
             $this->assertTrue($testClient->getSessionState()->isAuthenticated());
@@ -456,7 +456,7 @@
          */
         public function testDeleteRequiredInformationField(): void
         {
-            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'invalidInformationFieldPrivacyTest');
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testDeleteRequiredInformationField');
             $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
             $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
             $this->assertTrue($testClient->getSessionState()->isAuthenticated());
@@ -473,7 +473,7 @@
          */
         public function testDeleteInformationField(): void
         {
-            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnDeleteInformationFieldTest');
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'testDeleteInformationField');
             $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
             $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::FIRST_NAME, 'John', PrivacyState::PUBLIC));
             $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
@@ -589,7 +589,7 @@
          */
         public function testSettingsAddMultipleSigningKeys(): void
         {
-            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'deleteRequiredPassword');
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testSettingsAddMultipleSigningKeys');
             $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
             $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
             $this->assertTrue($testClient->getSessionState()->isAuthenticated());
@@ -640,7 +640,7 @@
          */
         public function testSettingsAddExceedingSigningKeys(): void
         {
-            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'deleteRequiredPassword');
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testSettingsAddExceedingSigningKeys');
             $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
             $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
             $this->assertTrue($testClient->getSessionState()->isAuthenticated());
