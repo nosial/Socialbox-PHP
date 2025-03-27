@@ -20,6 +20,8 @@
          */
         public static function sessionExists(string $domain): bool
         {
+            $domain = strtolower($domain);
+
             try
             {
                 $stmt = Database::getConnection()->prepare("SELECT COUNT(*) FROM external_sessions WHERE domain=:domain LIMIT 1");
@@ -47,7 +49,7 @@
             try
             {
                 $stmt = Database::getConnection()->prepare("INSERT INTO external_sessions (domain, rpc_endpoint, session_uuid, transport_encryption_algorithm, server_keypair_expires, server_public_signing_key, server_public_encryption_key, host_public_encryption_key, host_private_encryption_key, private_shared_secret, host_transport_encryption_key, server_transport_encryption_key) VALUES (:domain, :rpc_endpoint, :session_uuid, :transport_encryption_algorithm, :server_keypair_expires, :server_public_signing_key, :server_public_encryption_key, :host_public_encryption_key, :host_private_encryption_key, :private_shared_secret, :host_transport_encryption_key, :server_transport_encryption_key)");
-                $domain = $exportedSession->getRemoteServer();
+                $domain = strtolower($exportedSession->getRemoteServer());
                 $stmt->bindParam(':domain', $domain);
                 $rpcEndpoint = $exportedSession->getRpcEndpoint();
                 $stmt->bindParam(':rpc_endpoint', $rpcEndpoint);
@@ -89,6 +91,8 @@
          */
         public static function getSession(string $domain): ?ExportedSession
         {
+            $domain = strtolower($domain);
+
             try
             {
                 $stmt = Database::getConnection()->prepare("SELECT * FROM external_sessions WHERE domain=:domain LIMIT 1");
@@ -134,6 +138,8 @@
          */
         public static function removeSession(string $domain): void
         {
+            $domain = strtolower($domain);
+
             try
             {
                 $stmt = Database::getConnection()->prepare("DELETE FROM external_sessions WHERE domain=:domain");
@@ -156,6 +162,8 @@
          */
         public static function updateLastAccessed(string $domain): void
         {
+
+
             try
             {
                 $stmt = Database::getConnection()->prepare("UPDATE external_sessions SET last_accessed=CURRENT_TIMESTAMP WHERE domain=:domain");
