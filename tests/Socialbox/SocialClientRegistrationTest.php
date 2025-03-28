@@ -76,14 +76,16 @@
             $this->assertFalse($rpcClient->getSessionState()->isAuthenticated());
             $this->assertTrue($rpcClient->getSessionState()->containsFlag(SessionFlags::AUTHENTICATION_REQUIRED));
             $this->assertTrue($rpcClient->getSessionState()->containsFlag(SessionFlags::VER_PASSWORD));
+            $this->assertFalse($rpcClient->getSessionState()->isAuthenticated());
 
             $this->assertFalse($rpcClient->verificationPasswordAuthentication('IncorrectPassword'));
             $this->assertTrue($rpcClient->getSessionState()->containsFlag(SessionFlags::AUTHENTICATION_REQUIRED));
             $this->assertTrue($rpcClient->getSessionState()->containsFlag(SessionFlags::VER_PASSWORD));
+            $this->assertFalse($rpcClient->getSessionState()->isAuthenticated());
         }
 
         /**
-         * @throws DatabaseOperationException
+         * @throws DatabaseOperationException`
          * @throws ResolutionException
          * @throws CryptographyException
          * @throws RpcException
@@ -100,9 +102,11 @@
             $this->assertFalse($rpcClient->getSessionState()->isAuthenticated());
             $this->assertTrue($rpcClient->getSessionState()->containsFlag(SessionFlags::AUTHENTICATION_REQUIRED));
             $this->assertTrue($rpcClient->getSessionState()->containsFlag(SessionFlags::VER_PASSWORD));
+            $this->assertFalse($rpcClient->getSessionState()->isAuthenticated());
 
             $this->assertTrue($rpcClient->verificationPasswordAuthentication('SecuredTestingPassword123'));
             $this->assertFalse($rpcClient->getSessionState()->containsFlag(SessionFlags::AUTHENTICATION_REQUIRED));
             $this->assertFalse($rpcClient->getSessionState()->containsFlag(SessionFlags::VER_PASSWORD));
+            $this->assertTrue($rpcClient->getSessionState()->isAuthenticated());
         }
     }
