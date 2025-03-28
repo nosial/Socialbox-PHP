@@ -122,7 +122,7 @@
             try
             {
                 $stmt = Database::getConnection()->prepare("UPDATE authentication_passwords SET hash=:hash, updated=:updated WHERE peer_uuid=:peer_uuid");
-                $updated = (new DateTime())->setTimestamp(time());
+                $updated = (new DateTime())->setTimestamp(time())->format('Y-m-d H:i:s');
                 $stmt->bindParam(':hash', $securedPassword);
                 $stmt->bindParam(':updated', $updated);
                 $stmt->bindParam(':peer_uuid', $peerUuid);

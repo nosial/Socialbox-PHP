@@ -1263,7 +1263,7 @@
         {
             if($hash)
             {
-                $existingPassword = hash('sha512', $password);
+                $existingPassword = hash('sha512', $existingPassword);
                 $password = Cryptography::hashPassword($password);
             }
 

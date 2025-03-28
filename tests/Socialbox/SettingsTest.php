@@ -645,7 +645,6 @@
             $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
             $this->assertTrue($testClient->getSessionState()->isAuthenticated());
 
-            $signingKeys = [];
             $this->expectException(RpcException::class);
             $this->expectExceptionCode(StandardError::FORBIDDEN->value);
             for($i = 0; $i < 25; $i++)
@@ -653,7 +652,6 @@
                 $signingKeypair = Cryptography::generateSigningKeyPair();
                 $signatureUuid = $testClient->settingsAddSignature($signingKeypair->getPublicKey());
                 $this->assertNotNull($signatureUuid);
-                $signingKeys[$signatureUuid] = $signingKeypair;
             }
         }
 
@@ -719,6 +717,12 @@
             }
         }
 
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
         public function testSettingsUpdatePassword(): void
         {
             $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testSettingsAddExceedingSigningKeys');
