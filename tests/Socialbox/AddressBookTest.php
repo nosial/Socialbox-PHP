@@ -807,4 +807,555 @@
             $this->expectException(RpcException::class);
             $johnClient->addressBookGetContact('non-existent@coffee.com');
         }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddContactWithSpecialCharactersInUsername(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnSpecialTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Try with various special characters that should be properly sanitized
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact('user!name@coffee.com');
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddContactWithPotentialSqlInjection(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnSqlTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact("user'; DROP TABLE users; --@coffee.com");
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testContactPersistenceAcrossSessions(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnPersistTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'alicePersistTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($aliceClient->getSessionState()->isAuthenticated());
+
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+
+            // Create a new client instance (simulating new session)
+            $newJohnClient = new SocialClient($johnClient->getIdentifiedAs());
+            $this->assertTrue($newJohnClient->verificationPasswordAuthentication('SecretTestingPassword123'));
+
+            // Verify the contact persists
+            $this->assertTrue($newJohnClient->addressBookContactExists($aliceClient->getIdentifiedAs()));
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookLargeBatchOperations(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnBatchTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Add a large number of contacts to test system under load
+            $contactClients = [];
+            $limit = 30; // Adjust based on system capabilities
+
+            for ($i = 0; $i < $limit; $i++) {
+                $contactClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: "batchContact{$i}");
+                $contactClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, "Contact {$i}");
+                $contactClient->settingsSetPassword('ContactPassword123');
+                $contactClients[] = $contactClient;
+                $this->assertTrue($johnClient->addressBookAddContact($contactClient->getIdentifiedAs()));
+            }
+
+            // Verify all contacts were added successfully
+            $allContacts = $johnClient->addressBookGetContacts(1, $limit);
+            $this->assertCount($limit, $allContacts);
+
+            // Delete half the contacts
+            for ($i = 0; $i < ($limit / 2); $i++) {
+                $this->assertTrue($johnClient->addressBookDeleteContact($contactClients[$i]->getIdentifiedAs()));
+            }
+
+            // Verify correct number of contacts remain
+            $remainingContacts = $johnClient->addressBookGetContacts();
+            $this->assertCount($limit / 2, $remainingContacts);
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookRelationshipCycles(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnCycleTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceCycleTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+
+            // Test rapid relationship cycling (trusted -> blocked -> mutual -> trusted)
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs(), ContactRelationshipType::TRUSTED));
+            $this->assertEquals(ContactRelationshipType::TRUSTED, $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs())->getRelationship());
+
+            $this->assertTrue($johnClient->addressBookUpdateRelationship($aliceClient->getIdentifiedAs(), ContactRelationshipType::BLOCKED));
+            $this->assertEquals(ContactRelationshipType::BLOCKED, $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs())->getRelationship());
+
+            // Add Alice -> John to create MUTUAL (from John's perspective it should stay BLOCKED)
+            $this->assertTrue($aliceClient->addressBookAddContact($johnClient->getIdentifiedAs()));
+            $this->assertEquals(ContactRelationshipType::BLOCKED, $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs())->getRelationship());
+
+            // Change back to TRUSTED from John's side
+            $this->assertTrue($johnClient->addressBookUpdateRelationship($aliceClient->getIdentifiedAs(), ContactRelationshipType::TRUSTED));
+            $this->assertEquals(ContactRelationshipType::TRUSTED, $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs())->getRelationship());
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookInvalidKeyTrust(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnInvalidKeyTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceInvalidKeyTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+
+            // Test with various invalid key formats
+            try {
+                $johnClient->addressBookTrustSignature($aliceClient->getIdentifiedAs(), '');
+                $this->fail("Empty signature UUID should throw an exception");
+            } catch (RpcException $e) {
+                $this->assertEquals(StandardError::RPC_INVALID_ARGUMENTS->value, $e->getCode());
+            }
+
+            try {
+                $johnClient->addressBookTrustSignature($aliceClient->getIdentifiedAs(), str_repeat('x', 1000));
+                $this->fail("Excessively long signature UUID should throw an exception");
+            } catch (RpcException $e) {
+                $this->assertEquals(StandardError::RPC_INVALID_ARGUMENTS->value, $e->getCode());
+            }
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookRaceConditions(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnRaceTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceRaceTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+
+            // Create two instances of the same client (simulating concurrent operations)
+            $johnClient2 = new SocialClient($johnClient->getIdentifiedAs());
+            $this->assertTrue($johnClient2->verificationPasswordAuthentication('SecretTestingPassword123'));
+
+            // Both add the same contact
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+            $this->assertFalse($johnClient2->addressBookAddContact($aliceClient->getIdentifiedAs()),
+                "Second attempt to add the same contact should return false");
+
+            // First deletes, second updates (should fail appropriately)
+            $this->assertTrue($johnClient->addressBookDeleteContact($aliceClient->getIdentifiedAs()));
+
+            try {
+                $johnClient2->addressBookUpdateRelationship($aliceClient->getIdentifiedAs(), ContactRelationshipType::TRUSTED);
+                $this->fail("Should not be able to update relationship of deleted contact");
+            } catch (RpcException $e) {
+                // This could be PEER_NOT_FOUND or similar depending on implementation
+                $this->assertTrue(in_array($e->getCode(), [
+                    StandardError::PEER_NOT_FOUND->value,
+                    StandardError::FORBIDDEN->value,
+                    StandardError::NOT_FOUND->value
+                ]));
+            }
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testConcurrentRelationshipUpdates(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnConcurrentTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceConcurrentTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($aliceClient->getSessionState()->isAuthenticated());
+
+            // Add contact
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+
+            // Create two instances representing concurrent sessions
+            $johnClient1 = new SocialClient($johnClient->getIdentifiedAs());
+            $johnClient2 = new SocialClient($johnClient->getIdentifiedAs());
+
+            $this->assertTrue($johnClient1->verificationPasswordAuthentication('SecretTestingPassword123'));
+            $this->assertTrue($johnClient2->verificationPasswordAuthentication('SecretTestingPassword123'));
+
+            // Perform conflicting relationship updates
+            $this->assertTrue($johnClient1->addressBookUpdateRelationship($aliceClient->getIdentifiedAs(), ContactRelationshipType::TRUSTED));
+            $this->assertTrue($johnClient2->addressBookUpdateRelationship($aliceClient->getIdentifiedAs(), ContactRelationshipType::BLOCKED));
+
+            // Last operation should win
+            $contact = $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs());
+            $this->assertEquals(ContactRelationshipType::BLOCKED, $contact->getRelationship());
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookWithVeryLongAddresses(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnLongTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Generate very long username (near system limits)
+            $veryLongUsername = Helper::generateRandomString(200) . '@' . COFFEE_DOMAIN;
+
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact($veryLongUsername);
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookWithUnicodeCharacters(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnUnicodeTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Try adding contact with Unicode characters
+            $unicodeAddress = 'user😊test@coffee.com';
+
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact($unicodeAddress);
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookEmptyParameters(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnEmptyTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Test with empty address
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact('');
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookWithDomainOnlyAddress(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnDomainOnlyTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Test with domain-only address (missing username)
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact('@coffee.com');
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookWithUsernameOnlyAddress(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnUsernameOnlyTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Test with username-only address (missing domain)
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact('testuser');
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookWithMultipleAtSymbols(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnMultiAtTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Test with multiple @ symbols
+            $this->expectException(RpcException::class);
+            $johnClient->addressBookAddContact('user@name@coffee.com');
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookRaceConditionOnSignatureTrust(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnRaceSigTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceRaceSigTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($aliceClient->getSessionState()->isAuthenticated());
+
+            // Generate signing key for Alice
+            $aliceSigningKeypair = Cryptography::generateSigningKeyPair();
+            $aliceSigningKeyUuid = $aliceClient->settingsAddSignature($aliceSigningKeypair->getPublicKey(), 'Alice Test Signature');
+            $this->assertNotNull($aliceSigningKeyUuid);
+
+            // John adds Alice
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+
+            // Create two instances of John's client to simulate race condition
+            $johnClient1 = new SocialClient($johnClient->getIdentifiedAs());
+            $johnClient2 = new SocialClient($johnClient->getIdentifiedAs());
+
+            $this->assertTrue($johnClient1->verificationPasswordAuthentication('SecretTestingPassword123'));
+            $this->assertTrue($johnClient2->verificationPasswordAuthentication('SecretTestingPassword123'));
+
+            // First client trusts signature
+            $this->assertTrue($johnClient1->addressBookTrustSignature($aliceClient->getIdentifiedAs(), $aliceSigningKeyUuid));
+
+            // Second client tries to revoke the same signature
+            $this->assertTrue($johnClient2->addressBookRevokeSignature($aliceClient->getIdentifiedAs(), $aliceSigningKeyUuid));
+
+            // Check final state - should be revoked (last operation wins)
+            $aliceContact = $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs());
+            $this->assertEmpty($aliceContact->getKnownKeys(), "Signature should be revoked after race condition");
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookDelayedMutualContactRelationship(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnDelayedTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceDelayedTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($aliceClient->getSessionState()->isAuthenticated());
+
+            // John adds Alice first
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+            $johnView = $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs());
+            $this->assertEquals(ContactRelationshipType::MUTUAL, $johnView->getRelationship());
+
+            // Alice adds John later with a non-default relationship
+            $this->assertTrue($aliceClient->addressBookAddContact($johnClient->getIdentifiedAs(), ContactRelationshipType::TRUSTED));
+
+            // Check both perspectives
+            $johnViewAfter = $johnClient->addressBookGetContact($aliceClient->getIdentifiedAs());
+            $this->assertEquals(ContactRelationshipType::MUTUAL, $johnViewAfter->getRelationship());
+
+            $aliceView = $aliceClient->addressBookGetContact($johnClient->getIdentifiedAs());
+            $this->assertEquals(ContactRelationshipType::TRUSTED, $aliceView->getRelationship());
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookMultipleClientInstances(): void
+        {
+            // Create first client and configuration
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnMultipleTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $aliceClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'aliceMultipleTest');
+            $this->assertTrue($aliceClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Alice Smith'));
+            $this->assertTrue($aliceClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($aliceClient->getSessionState()->isAuthenticated());
+
+            // Add contact in first client
+            $this->assertTrue($johnClient->addressBookAddContact($aliceClient->getIdentifiedAs()));
+
+            // Create multiple new instances of the same client (simulating multiple devices/sessions)
+            $devices = [];
+            for ($i = 0; $i < 3; $i++) {
+                $device = new SocialClient($johnClient->getIdentifiedAs());
+                $this->assertTrue($device->verificationPasswordAuthentication('SecretTestingPassword123'));
+                $devices[] = $device;
+            }
+
+            // Verify each instance can see the contact
+            foreach ($devices as $index => $device) {
+                $this->assertTrue(
+                    $device->addressBookContactExists($aliceClient->getIdentifiedAs()),
+                    "Device $index should see the contact"
+                );
+            }
+
+            // Update relationship in one device
+            $devices[0]->addressBookUpdateRelationship($aliceClient->getIdentifiedAs(), ContactRelationshipType::TRUSTED);
+
+            // Verify change is visible in other devices
+            foreach ($devices as $index => $device) {
+                $contact = $device->addressBookGetContact($aliceClient->getIdentifiedAs());
+                $this->assertEquals(
+                    ContactRelationshipType::TRUSTED,
+                    $contact->getRelationship(),
+                    "Device $index should see updated relationship"
+                );
+            }
+
+            // Delete contact from one device
+            $this->assertTrue($devices[1]->addressBookDeleteContact($aliceClient->getIdentifiedAs()));
+
+            // Verify deletion is visible in other devices
+            foreach ($devices as $index => $device) {
+                $this->assertFalse(
+                    $device->addressBookContactExists($aliceClient->getIdentifiedAs()),
+                    "Device $index should not see deleted contact"
+                );
+            }
+        }
+
+        /**
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws RpcException
+         */
+        public function testAddressBookWithExcessiveQueryPagination(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnPaginationTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            // Add a moderate number of contacts
+            for ($i = 0; $i < 10; $i++) {
+                $contactClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: "paginationContact{$i}");
+                $contactClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, "Contact {$i}");
+                $contactClient->settingsSetPassword('ContactPassword123');
+                $this->assertTrue($johnClient->addressBookAddContact($contactClient->getIdentifiedAs()));
+            }
+
+            // Test with excessive page number
+            $highPageContacts = $johnClient->addressBookGetContacts(1000, 10);
+            $this->assertEmpty($highPageContacts, "Excessive page number should return empty results");
+
+            // Test with negative page number (should handle gracefully)
+            try {
+                $johnClient->addressBookGetContacts(-1, 10);
+                $this->fail("Should not accept negative page numbers");
+            } catch (RpcException $e) {
+                $this->assertEquals(StandardError::RPC_INVALID_ARGUMENTS->value, $e->getCode());
+            }
+
+            // Test with excessive page size
+            try {
+                $johnClient->addressBookGetContacts(1, 10000);
+                // If it succeeds, should have a reasonable number of results
+                $this->assertLessThanOrEqual(100, count($highPageContacts), "System should limit excessive page sizes");
+            } catch (RpcException $e) {
+                // Or it might throw an exception for excessive page size
+                $this->assertEquals(StandardError::RPC_INVALID_ARGUMENTS->value, $e->getCode());
+            }
+
+            // Test with zero page size
+            try {
+                $johnClient->addressBookGetContacts(1, 0);
+                $this->fail("Should not accept zero page size");
+            } catch (RpcException $e) {
+                $this->assertEquals(StandardError::RPC_INVALID_ARGUMENTS->value, $e->getCode());
+            }
+        }
     }
