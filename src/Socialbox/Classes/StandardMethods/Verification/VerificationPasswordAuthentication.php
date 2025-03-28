@@ -36,7 +36,7 @@
                     return $rpcRequest->produceError(StandardError::METHOD_NOT_ALLOWED, 'Password verification is not required at this time');
                 }
 
-                $result = PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('password'));
+                $result = PasswordManager::verifyPassword($request->getPeer(), $rpcRequest->getParameter('password'));
 
                 if($result)
                 {
