@@ -718,4 +718,18 @@
                 }
             }
         }
+
+        public function testSettingsUpdatePassword(): void
+        {
+            $testClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testSettingsAddExceedingSigningKeys');
+            $this->assertTrue($testClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($testClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+            $this->assertTrue($testClient->settingsUpdatePassword('NewPassword123', 'SecretTestingPassword123'));
+
+            $testClient = new SocialClient($testClient->getIdentifiedAs());
+            $this->assertFalse($testClient->getSessionState()->isAuthenticated());
+            $this->assertTrue($testClient->verificationPasswordAuthentication('NewPassword123'));
+            $this->assertTrue($testClient->getSessionState()->isAuthenticated());
+        }
     }
