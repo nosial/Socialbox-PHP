@@ -123,8 +123,6 @@
         {
             http_response_code(200);
             header('Content-Type: application/json');
-            Logger::getLogger()->info(json_encode(self::getServerInformation()->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-            print(json_encode(self::getServerInformation()->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         }
 
         /**
