@@ -44,6 +44,24 @@
         }
 
         /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testAddressBookAddInvalidAddress(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnAddressBookTest');
+            $johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe');
+            $johnClient->settingsSetPassword('SecretTestingPassword123');
+            $this->assertTrue($johnClient->getSessionState()->isAuthenticated());
+
+            $this->expectException(RpcException::class);
+            $this->expectExceptionCode(StandardError::RPC_INVALID_ARGUMENTS->value);
+            $johnClient->addressBookAddContact('invalid invalid invalid');
+        }
+
+        /**
          * @throws ResolutionException
          * @throws RpcException
          * @throws CryptographyException
@@ -615,6 +633,23 @@
             $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
 
             $this->assertFalse($johnClient->addressBookDeleteContact(Helper::generateRandomPeer($johnClient->getIdentifiedAs()->getDomain())));
+        }
+
+        /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testDeleteInvalidContact(): void
+        {
+            $johnClient = Helper::generateRandomClient(TEAPOT_DOMAIN, prefix: 'johnAddressBookTest');
+            $this->assertTrue($johnClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe', PrivacyState::PUBLIC));
+            $this->assertTrue($johnClient->settingsSetPassword('SecretTestingPassword123'));
+
+            $this->expectException(RpcException::class);
+            $this->expectExceptionCode(StandardError::RPC_INVALID_ARGUMENTS->value);
+            $this->assertFalse($johnClient->addressBookDeleteContact('invalid invalid invalid'));
         }
 
         /**
