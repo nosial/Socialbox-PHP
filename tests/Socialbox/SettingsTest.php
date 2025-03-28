@@ -736,4 +736,117 @@
             $this->assertTrue($testClient->verificationPasswordAuthentication('NewPassword123'));
             $this->assertTrue($testClient->getSessionState()->isAuthenticated());
         }
+
+        /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testInformationFieldWithMaximumLengthValues(): void
+        {
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testMaxLengthValues');
+
+            // Testing with maximum allowed lengths (assuming 255 characters is the max)
+            $maxLengthString = Helper::generateRandomString(255);
+            $rpcClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, $maxLengthString);
+            $this->assertTrue($rpcClient->settingsInformationFieldExists(InformationFieldName::DISPLAY_NAME));
+            $this->assertEquals($maxLengthString, $rpcClient->settingsGetInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
+        }
+
+        /**
+         * @throws RpcException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @throws DatabaseOperationException
+         */
+        public function testSettingsPrivacyStateChanges(): void
+        {
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testPrivacyChanges');
+            $this->assertTrue($rpcClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($rpcClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($rpcClient->getSessionState()->isAuthenticated());
+
+            // Add field with initial privacy setting
+            $rpcClient->settingsAddInformationField(InformationFieldName::EMAIL_ADDRESS, 'john@example.com', PrivacyState::PRIVATE);
+            $this->assertEquals(
+                PrivacyState::PRIVATE,
+                $rpcClient->settingsGetInformationField(InformationFieldName::EMAIL_ADDRESS)->getPrivacyState()
+            );
+
+            // Update to different privacy settings
+            $this->assertTrue($rpcClient->settingsUpdateInformationPrivacy(InformationFieldName::EMAIL_ADDRESS, PrivacyState::PUBLIC));
+            $this->assertEquals(
+                PrivacyState::PUBLIC,
+                $rpcClient->settingsGetInformationField(InformationFieldName::EMAIL_ADDRESS)->getPrivacyState()
+            );
+
+            // Update to CONTACTS privacy
+            $this->assertTrue($rpcClient->settingsUpdateInformationPrivacy(InformationFieldName::EMAIL_ADDRESS, PrivacyState::CONTACTS));
+            $this->assertEquals(
+                PrivacyState::CONTACTS,
+                $rpcClient->settingsGetInformationField(InformationFieldName::EMAIL_ADDRESS)->getPrivacyState()
+            );
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testInformationFieldValueUpdate(): void
+        {
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testValueUpdate');
+            $this->assertTrue($rpcClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'Initial Name'));
+            $this->assertTrue($rpcClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($rpcClient->getSessionState()->isAuthenticated());
+
+            // Update the value of an existing field
+            $this->assertTrue($rpcClient->settingsUpdateInformationField(InformationFieldName::DISPLAY_NAME, 'Updated Name'));
+            $this->assertEquals('Updated Name', $rpcClient->settingsGetInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testInformationFieldSpecialCharacters(): void
+        {
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testSpecialChars');
+            $this->assertTrue($rpcClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($rpcClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($rpcClient->getSessionState()->isAuthenticated());
+
+            // Test with various special characters
+            $specialChars = "!@#$%^&*()_+{}|:<>?[];',./`~éñüÄß漢字";
+            $rpcClient->settingsAddInformationField(InformationFieldName::FIRST_NAME, $specialChars);
+            $this->assertEquals($specialChars, $rpcClient->settingsGetInformationField(InformationFieldName::FIRST_NAME)->getValue());
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testMaliciousInformationFieldValues(): void
+        {
+            $rpcClient = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testMaliciousValues');
+            $this->assertTrue($rpcClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($rpcClient->settingsSetPassword('SecretTestingPassword123'));
+            $this->assertTrue($rpcClient->getSessionState()->isAuthenticated());
+
+            // Test with SQL injection attempt
+            $sqlInjection = "Robert'); DROP TABLE users;--";
+            $rpcClient->settingsAddInformationField(InformationFieldName::FIRST_NAME, $sqlInjection);
+            $this->assertEquals($sqlInjection, $rpcClient->settingsGetInformationField(InformationFieldName::FIRST_NAME)->getValue());
+
+            // Test with XSS attempt
+            $xssAttempt = "<script>alert('XSS')</script>";
+            $rpcClient->settingsAddInformationField(InformationFieldName::MIDDLE_NAME, $xssAttempt);
+            $this->assertEquals($xssAttempt, $rpcClient->settingsGetInformationField(InformationFieldName::MIDDLE_NAME)->getValue());
+        }
     }
