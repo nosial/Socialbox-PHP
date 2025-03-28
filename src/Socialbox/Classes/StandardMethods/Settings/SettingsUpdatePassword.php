@@ -3,6 +3,7 @@
     namespace Socialbox\Classes\StandardMethods\Settings;
 
     use Socialbox\Abstracts\Method;
+    use Socialbox\Classes\Logger;
     use Socialbox\Enums\StandardError;
     use Socialbox\Exceptions\CryptographyException;
     use Socialbox\Exceptions\DatabaseOperationException;
@@ -43,7 +44,7 @@
 
             try
             {
-                if (!PasswordManager::verifyPassword($request->getPeer()->getUuid(), $rpcRequest->getParameter('existing_password')))
+                if (!PasswordManager::verifyPassword($request->getPeer(), (string)$rpcRequest->getParameter('existing_password')))
                 {
                     return $rpcRequest->produceResponse(false);
                 }
