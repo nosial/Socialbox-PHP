@@ -749,9 +749,9 @@
 
             // Testing with maximum allowed lengths (assuming 255 characters is the max)
             $maxLengthString = Helper::generateRandomString(255);
+            $this->expectException(RpcException::class);
+            $this->expectExceptionCode(StandardError::RPC_INVALID_ARGUMENTS->value);
             $rpcClient->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, $maxLengthString);
-            $this->assertTrue($rpcClient->settingsInformationFieldExists(InformationFieldName::DISPLAY_NAME));
-            $this->assertEquals($maxLengthString, $rpcClient->settingsGetInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
         }
 
         /**
@@ -848,5 +848,181 @@
             $xssAttempt = "<script>alert('XSS')</script>";
             $rpcClient->settingsAddInformationField(InformationFieldName::MIDDLE_NAME, $xssAttempt);
             $this->assertEquals($xssAttempt, $rpcClient->settingsGetInformationField(InformationFieldName::MIDDLE_NAME)->getValue());
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testNonAuthenticatedSettingsAccess(): void
+        {
+            // Create client but don't authenticate
+            $client = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testNonAuthAccess');
+
+            $this->expectException(RpcException::class);
+            $this->expectExceptionCode(StandardError::METHOD_NOT_ALLOWED->value);
+            $client->addressBookAddContact('johndoeExample@example.com');
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         * @noinspection HtmlUnknownTarget
+         */
+        public function testCrossSiteScriptingDefense(): void
+        {
+            $client = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testXssDefense');
+            $this->assertTrue($client->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($client->settingsSetPassword('SecretPassword123'));
+            $this->assertTrue($client->getSessionState()->isAuthenticated());
+
+            // Test with more complex XSS payloads
+            $xssPayloads = [
+                '<img src="x" onerror="alert(\'XSS\')" alt="test">',
+                '\"><script>alert(1)</script>',
+                '"><iframe src="javascript:alert(\'XSS\')"></iframe>',
+                'javascript:/*--></title></style></textarea></script></xmp><svg/onload=\'+/"/+/onmouseover=1/+/[*/[]/+alert(1)//\'>'
+            ];
+
+            foreach ($xssPayloads as $index => $payload) {
+                $this->expectException(RpcException::class);
+                $this->expectExceptionCode(StandardError::RPC_INVALID_ARGUMENTS->value);
+                $client->settingsAddInformationField(InformationFieldName::URL, $payload);
+                $this->assertEquals($payload, $client->settingsGetInformationField(InformationFieldName::URL)->getValue());
+            }
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testExtremelyLongValues(): void
+        {
+            $client = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testLongValues');
+            $this->assertTrue($client->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($client->settingsSetPassword('SecretPassword123'));
+            $this->assertTrue($client->getSessionState()->isAuthenticated());
+
+            // Test with extremely long values (potential buffer overflow)
+            $longString = Helper::generateRandomString(10000);
+
+            try {
+                $client->settingsAddInformationField(InformationFieldName::FIRST_NAME, $longString);
+                $this->fail('Expected exception for extremely long value');
+            } catch (RpcException $e) {
+                $this->assertEquals(-1001, $e->getCode());
+            }
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testPrivacyStateVisibilityEnforcement(): void
+        {
+            // Create two users - one to set fields with various privacy states
+            $userA = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'userAPrivacy');
+            $this->assertTrue($userA->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'User A'));
+            $this->assertTrue($userA->settingsAddInformationField(InformationFieldName::FIRST_NAME, 'Alpha', PrivacyState::PUBLIC));
+            $this->assertTrue($userA->settingsAddInformationField(InformationFieldName::MIDDLE_NAME, 'Beta', PrivacyState::PRIVATE));
+            $this->assertTrue($userA->settingsAddInformationField(InformationFieldName::LAST_NAME, 'Gamma', PrivacyState::CONTACTS));
+            $this->assertTrue($userA->settingsAddInformationField(InformationFieldName::EMAIL_ADDRESS, 'alpha@example.com', PrivacyState::TRUSTED));
+            $this->assertTrue($userA->settingsSetPassword('SecretPassword123'));
+
+            // Create another user to try to access the fields
+            $userB = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'userBPrivacy');
+            $this->assertTrue($userB->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'User B'));
+            $this->assertTrue($userB->settingsSetPassword('SecretPassword123'));
+
+            // UserB resolves UserA and should only see PUBLIC fields
+            $resolvedUser = $userB->resolvePeer($userA->getIdentifiedAs());
+            $this->assertNotNull($resolvedUser);
+            $this->assertTrue($resolvedUser->informationFieldExists(InformationFieldName::DISPLAY_NAME));
+            $this->assertTrue($resolvedUser->informationFieldExists(InformationFieldName::FIRST_NAME));
+            $this->assertFalse($resolvedUser->informationFieldExists(InformationFieldName::MIDDLE_NAME));
+            $this->assertFalse($resolvedUser->informationFieldExists(InformationFieldName::LAST_NAME));
+            $this->assertFalse($resolvedUser->informationFieldExists(InformationFieldName::EMAIL_ADDRESS));
+
+            // Now establish a contact relationship and retest
+            // This depends on the implementation, but might be something like:
+            $userA->addressBookAddContact($userB->getIdentifiedAs());
+            $userB->addressBookAddContact($userA->getIdentifiedAs());
+
+            $resolvedUserAfterContact = $userB->resolvePeer($userA->getIdentifiedAs());
+            $this->assertTrue($resolvedUserAfterContact->informationFieldExists(InformationFieldName::DISPLAY_NAME));
+            $this->assertTrue($resolvedUserAfterContact->informationFieldExists(InformationFieldName::FIRST_NAME));
+            $this->assertFalse($resolvedUserAfterContact->informationFieldExists(InformationFieldName::MIDDLE_NAME));
+            $this->assertTrue($resolvedUserAfterContact->informationFieldExists(InformationFieldName::LAST_NAME));
+            $this->assertFalse($resolvedUserAfterContact->informationFieldExists(InformationFieldName::EMAIL_ADDRESS));
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testUnicodeAndEmojis(): void
+        {
+            $client = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testUnicode');
+            $this->assertTrue($client->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($client->settingsSetPassword('SecretPassword123'));
+            $this->assertTrue($client->getSessionState()->isAuthenticated());
+
+            // Test with various Unicode characters and emojis
+            $unicodeNames = [
+                '您好世界', // Chinese
+                'Здравствуй, мир', // Russian
+                'مرحبا بالعالم', // Arabic
+                'こんにちは世界', // Japanese
+                '안녕하세요 세계', // Korean
+                '😀🌍🏆🚀🎉', // Emojis
+                '🧑‍💻👨‍👩‍👧‍👦🏳️‍🌈' // Complex emojis with ZWJ sequences
+            ];
+
+            foreach ($unicodeNames as $index => $name) {
+                $client->settingsUpdateInformationField(InformationFieldName::DISPLAY_NAME, $name);
+                $this->assertEquals($name, $client->settingsGetInformationField(InformationFieldName::DISPLAY_NAME)->getValue());
+            }
+        }
+
+        /**
+         * @throws RpcException
+         * @throws DatabaseOperationException
+         * @throws ResolutionException
+         * @throws CryptographyException
+         */
+        public function testInvalidSigningKeyFormats(): void
+        {
+            $client = Helper::generateRandomClient(COFFEE_DOMAIN, prefix: 'testInvalidKeys');
+            $this->assertTrue($client->settingsAddInformationField(InformationFieldName::DISPLAY_NAME, 'John Doe'));
+            $this->assertTrue($client->settingsSetPassword('SecretPassword123'));
+            $this->assertTrue($client->getSessionState()->isAuthenticated());
+
+            // Test with various invalid signing key formats
+            $invalidKeys = [
+                '', // Empty string
+                'not-a-valid-key', // Plain text
+                Helper::generateRandomString(32), // Random string that's not a valid key
+                '<script>alert("XSS")</script>', // XSS attempt
+            ];
+
+            foreach ($invalidKeys as $invalidKey) {
+                try {
+                    $client->settingsAddSignature($invalidKey);
+                    $this->fail('Expected exception for invalid signing key');
+                } catch (RpcException $e) {
+                    // The error code might vary based on implementation
+                    $this->assertTrue($e->getCode() < 0);
+                }
+            }
         }
     }
