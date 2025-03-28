@@ -199,7 +199,7 @@
                 $record = $stmt->fetch(PDO::FETCH_ASSOC);
                 if($record === false)
                 {
-                    return false;
+                    throw new DatabaseOperationException('No password hash found for the given peer UUID');
                 }
 
                 $encryptedHash = $record['hash'];
