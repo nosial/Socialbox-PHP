@@ -414,10 +414,12 @@
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $encryptedData);
 
-            $this->logger->debug(sprintf('Sending RPC request to %s', $this->rpcEndpoint));
-            $this->logger->debug(sprintf('Headers: %s', json_encode($headers)));
-            $this->logger->debug(sprintf('Encrypted Data Size: %d', strlen($encryptedData)));
+            $this->logger->debug(sprintf('Request Endpoint: %s', $this->rpcEndpoint));
+            $this->logger->debug(sprintf('Request Headers: %s', json_encode($headers)));
+            $this->logger->debug(sprintf('Request Size: %d bytes', strlen($encryptedData)));
             $this->logger->debug(sprintf('Request Signature: %s', $signature));
+            $this->logger->debug(sprintf('Request Data: %s', $jsonData));
+
 
             $response = curl_exec($ch);
 
@@ -454,7 +456,7 @@
             }
 
             curl_close($ch);
-            $this->logger->debug(sprintf('Encrypted Response Size: %d', strlen($responseString)));
+            $this->logger->debug(sprintf('Response Size: %d bytes', strlen($responseString)));
 
             try
             {
@@ -463,7 +465,7 @@
                     encryptionKey: $this->clientTransportEncryptionKey,
                     algorithm: $this->serverInformation->getTransportEncryptionAlgorithm()
                 );
-                $this->logger->debug(sprintf('Decrypted Response: %s', $decryptedResponse));
+                $this->logger->debug(sprintf('Response Data: %s', $decryptedResponse));
             }
             catch (CryptographyException $e)
             {
@@ -532,14 +534,14 @@
             $this->logger->debug(sprintf('Getting server information from %s', $this->rpcEndpoint));
             $this->logger->debug(sprintf('Headers: %s', json_encode($headers)));
             $response = curl_exec($ch);
+            $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 
             if($response === false)
             {
                 curl_close($ch);
-                throw new RpcException(sprintf('Failed to get server information at %s, no response received', $this->rpcEndpoint));
+                throw new RpcException(sprintf('Failed to get server information at %s with response code %d, no response received', $this->rpcEndpoint, $responseCodet));
             }
 
-            $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
             if($responseCode !== 200)
             {
                 curl_close($ch);
@@ -551,7 +553,18 @@
             }
 
             curl_close($ch);
-            return ServerInformation::fromArray(json_decode($response, true));
+            if(empty($response))
+            {
+                throw new RpcException(sprintf('Failed to get server information at %s with response code %d, server returned an empty response', $this->rpcEndpoint, $responseCode));
+            }
+
+            $decodedResponse = json_decode($response, true);
+            if(!is_array($decodedResponse))
+            {
+                throw new RpcException(sprintf('Failed to get server information at %s with response code %d, server did not return a valid response', $this->rpcEndpoint, $responseCode));
+            }
+
+            return ServerInformation::fromArray($decodedResponse);
         }
 
         /**
